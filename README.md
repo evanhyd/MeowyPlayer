@@ -1,7 +1,6 @@
-# MeowyPlayer  
+# MeowyPlayer
 ![Main Menu](README_IMAGES/main_menu.PNG?raw=true)  
   
-# What is this
 A light weight personal music player that's intend to replace spotify.  
 Supports downloading music from youtube in mp3 format.  
 
@@ -16,5 +15,4 @@ To run in Windows:
 - Click `Run Anyway`  
 
 "From Remote" downloading feature accepts a youtube video url. Make sure the url ends with video ID, for example,  
-https://www.youtube.com/watch?v=dQw4w9WgXcQ  is a valid link, since it ends with the video ID "dQw4w9WgXcQ".
-# MeowyPlayer
+https://www.youtube.com/watch?v=dQw4w9WgXcQ  is a valid link, since it ends with the video ID "dQw4w9WgXcQ".  
