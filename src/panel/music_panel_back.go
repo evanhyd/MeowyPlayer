@@ -54,7 +54,7 @@ func addMusicConfig(musicTitle, albumTitle string) error {
 }
 
 //Create a music file by copying to the music folder
-func AddLocalMusicFile(musicPath, musicTitle, albumTitle string) error {
+func AddMusicFromLocal(musicPath, musicTitle, albumTitle string) error {
 
 	destPath := resource.GetMusicPath(musicTitle)
 
@@ -79,7 +79,7 @@ func AddLocalMusicFile(musicPath, musicTitle, albumTitle string) error {
 }
 
 //Download a music file from the remote server
-func AddRemoteMusicFile(youtubeUrl, musicTitle, albumTitle string) error {
+func AddMusicFromRemote(youtubeUrl, musicTitle, albumTitle string) error {
 
 	//sanitize url strings
 	if strings.ContainsAny(musicTitle, `<>:"/\|?*`) {

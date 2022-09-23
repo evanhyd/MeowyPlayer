@@ -21,15 +21,7 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 	if err != nil {
 		log.Println(err)
 	}
-	musicAdder := widget.NewButtonWithIcon(
-		"+", musicAdderIcon,
-		func() {
-			//upload new music to the album
-			if panelInfo.SelectedAlbumInfo != nil {
-				ShowMusicAdderWin(panelInfo)
-			}
-		},
-	)
+	musicAdder := widget.NewButtonWithIcon("+", musicAdderIcon, func() { ShowMusicAdderWin(panelInfo) })
 
 	//music search list
 	panelInfo.MusicSearchList = custom_canvas.NewSearchList(
@@ -44,9 +36,7 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 				data.Title, data.Duration,
 
 				//play music
-				func() {
-					seeker.MusicQueue.SetPlaylist(panelInfo.MusicSearchList.DataList, data.Index)
-				},
+				func() { seeker.MusicQueue.SetPlaylist(panelInfo.MusicSearchList.DataList, data.Index) },
 
 				//remove music
 				func() {
@@ -76,6 +66,10 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 //Display adding music window
 func ShowMusicAdderWin(panelInfo *custom_canvas.PanelInfo) {
 
+	if panelInfo.SelectedAlbumInfo == nil {
+		return
+	}
+
 	addLocalMusicBtn := widget.NewButton("From Local", func() {
 		ShowAddLocalMusicWin(panelInfo)
 	})
@@ -103,12 +97,12 @@ func ShowAddLocalMusicWin(panelInfo *custom_canvas.PanelInfo) {
 
 				//add music from local
 				musicTitle := res.URI().Path()[strings.LastIndex(res.URI().Path(), `/`)+1:]
-				if err := AddLocalMusicFile(res.URI().Path(), musicTitle, panelInfo.SelectedAlbumInfo.Title); err != nil {
+				if err := AddMusicFromLocal(res.URI().Path(), musicTitle, panelInfo.SelectedAlbumInfo.Title); err != nil {
 					log.Println(err)
 				}
 
 				//reload album list
-				if err := LoadAlbums(panelInfo); err != nil {
+				if err := LoadAlbumFromDir(panelInfo); err != nil {
 					log.Println(err)
 				}
 
@@ -122,6 +116,7 @@ func ShowAddLocalMusicWin(panelInfo *custom_canvas.PanelInfo) {
 		win,
 	)
 	dia.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
+	dia.SetConfirmText("Upload")
 
 	//display
 	sz := fyne.NewSize(UPLOAD_DIALOG_WIN_WIDTH, UPLOAD_DIALOG_WIN_HEIGHT)
@@ -144,12 +139,12 @@ func ShowAddRemoteMusicWin(panelInfo *custom_canvas.PanelInfo) {
 	downloadBtn := widget.NewButton("Download", func() {
 
 		//download music
-		if err := AddRemoteMusicFile(urlEntry.Text, titleEntry.Text+`.mp3`, panelInfo.SelectedAlbumInfo.Title); err != nil {
+		if err := AddMusicFromRemote(urlEntry.Text, titleEntry.Text+`.mp3`, panelInfo.SelectedAlbumInfo.Title); err != nil {
 			log.Println(err)
 		}
 
 		//reload album list
-		if err := LoadAlbums(panelInfo); err != nil {
+		if err := LoadAlbumFromDir(panelInfo); err != nil {
 			log.Println(err)
 		}
 

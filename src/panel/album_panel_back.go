@@ -26,7 +26,7 @@ func SatisfyAlbumInfo(query string, data *custom_canvas.AlbumInfo) bool {
 }
 
 //Load albums from the directories to the album search list
-func LoadAlbums(panelInfo *custom_canvas.PanelInfo) error {
+func LoadAlbumFromDir(panelInfo *custom_canvas.PanelInfo) error {
 
 	//read directories
 	albumDirs, err := os.ReadDir(resource.GetAlbumBasePath())
@@ -100,7 +100,7 @@ func LoadMusicFromAlbum(panelInfo *custom_canvas.PanelInfo) error {
 }
 
 //Create an album folder given by the image and title
-func CreateAlbumFolder(imagePath, albumTitle string) error {
+func AddAlbum(imagePath, albumTitle string) error {
 
 	albumPath := resource.GetAlbumFolderPath(albumTitle)
 
@@ -130,4 +130,11 @@ func CreateAlbumFolder(imagePath, albumTitle string) error {
 	} else {
 		return err
 	}
+}
+
+func RemoveAlbum(albumTitle string) error {
+	albumPath := resource.GetAlbumFolderPath(albumTitle)
+
+	//remove album directory
+	return os.RemoveAll(albumPath)
 }

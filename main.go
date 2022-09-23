@@ -43,7 +43,7 @@ func main() {
 	menu.Append(musicPanel)
 
 	//load album on launch
-	err = panel.LoadAlbums(panelInfo)
+	err = panel.LoadAlbumFromDir(panelInfo)
 	if err != nil {
 		log.Println(err)
 	}

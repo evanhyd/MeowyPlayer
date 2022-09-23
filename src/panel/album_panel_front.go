@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/src/custom_canvas"
@@ -36,9 +37,10 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 					menu.Select(musicPanel)
 				},
 
-				//secondary tap, perhaps create a menu?
+				//remove album
 				func() {
-					log.Println("secondary tap")
+					panelInfo.SelectedAlbumInfo = data
+					ShowAlbumRemoverWin(panelInfo)
 				},
 			)
 
@@ -49,20 +51,19 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 		},
 	)
 
-	//album adder
+	//album adder window
 	albumAdderIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("album_adder_icon.png"))
 	if err != nil {
 		log.Println(err)
 	}
 	albumAdder := widget.NewButtonWithIcon("+", albumAdderIcon, func() { ShowAlbumAdderWin(panelInfo) })
-	albumFrame := container.NewBorder(albumAdder, nil, nil, nil, &panelInfo.AlbumSearchList.Container)
 
 	//Create tab
 	tabIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("album_tab.png"))
 	if err != nil {
 		log.Println(err)
 	}
-	tab := container.NewTabItemWithIcon("Album", tabIcon, albumFrame)
+	tab := container.NewTabItemWithIcon("Album", tabIcon, container.NewBorder(albumAdder, nil, nil, nil, &panelInfo.AlbumSearchList.Container))
 	return tab
 }
 
@@ -70,8 +71,8 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
 
 	//album adder window
-	albumAdderWin := fyne.CurrentApp().NewWindow("Add Album")
-	albumAdderWin.CenterOnScreen()
+	win := fyne.CurrentApp().NewWindow("Add Album")
+	win.CenterOnScreen()
 
 	//album card preview
 	imagePath := resource.GetImagePath("default_album_icon.png")
@@ -83,28 +84,26 @@ func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
 	title.SetPlaceHolder("Title...")
 
 	//image upload button
-	uploadBtn := widget.NewButton("Upload Image", func() {
-		ShowAddImageWin(&imagePath, image, &albumAdderWin)
-	})
+	uploadBtn := widget.NewButton("Upload Image", func() { ShowAddImageWin(&imagePath, image, &win) })
 
 	//confirmation button
-	confirmBtn := widget.NewButton("create!", func() {
-		if err := CreateAlbumFolder(imagePath, title.Text); err != nil {
+	confirmBtn := widget.NewButton("Create!", func() {
+		if err := AddAlbum(imagePath, title.Text); err != nil {
 			title.SetText("")
 			title.SetPlaceHolder("duplicated name")
 		} else {
-			LoadAlbums(panelInfo)
-			albumAdderWin.Close()
+			LoadAlbumFromDir(panelInfo)
+			win.Close()
 		}
 	})
 
-	albumAdderWin.SetContent(
+	win.SetContent(
 		container.NewBorder(
 			container.NewVBox(image, title), nil, nil, nil,
 			container.NewVBox(uploadBtn, confirmBtn),
 		),
 	)
-	albumAdderWin.Show()
+	win.Show()
 }
 
 //Display uploading image dialog
@@ -129,11 +128,48 @@ func ShowAddImageWin(imagePath *string, image *canvas.Image, parent *fyne.Window
 		win,
 	)
 	dia.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", ".bmp"}))
+	dia.SetConfirmText("Upload")
 
 	//display
 	sz := fyne.NewSize(UPLOAD_DIALOG_WIN_WIDTH, UPLOAD_DIALOG_WIN_HEIGHT)
 	dia.Resize(sz)
 	win.Resize(sz)
+	dia.Show()
+	win.Show()
+}
+
+func ShowAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) {
+	win := fyne.CurrentApp().NewWindow("Remove Album")
+
+	dia := container.NewBorder(
+		widget.NewLabel("Remove \""+panelInfo.SelectedAlbumInfo.Title+"\" ?"),
+		nil,
+		nil,
+		nil,
+
+		container.NewHBox(
+			layout.NewSpacer(),
+
+			widget.NewButton("Yes", func() {
+				if err := RemoveAlbum(panelInfo.SelectedAlbumInfo.Title); err != nil {
+					log.Println(err)
+				}
+				if err := LoadAlbumFromDir(panelInfo); err != nil {
+					log.Println(err)
+				}
+				panelInfo.MusicSearchList.ClearData()
+				panelInfo.MusicSearchList.ResetSearch()
+				panelInfo.SelectedAlbumInfo = nil
+				win.Close()
+			}),
+
+			layout.NewSpacer(),
+			widget.NewButton("No", func() { win.Close() }),
+			layout.NewSpacer(),
+		),
+	)
+
+	win.SetContent(dia)
 	dia.Show()
 	win.Show()
 }
