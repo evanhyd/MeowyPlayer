@@ -14,5 +14,5 @@ To run in Windows:
 - Anti-virus warning will pop up  
 - Click `Run Anyway`  
 
-"From Remote" downloading feature accepts a youtube video url. Make sure the url ends with video ID, for example,  
+"From Remote" downloading feature accepts a youtube video url. Make sure the url ends with a video ID, for example,  
 https://www.youtube.com/watch?v=dQw4w9WgXcQ  is a valid link, since it ends with the video ID "dQw4w9WgXcQ".  

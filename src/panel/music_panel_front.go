@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/src/custom_canvas"
@@ -36,17 +37,10 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 				data.Title, data.Duration,
 
 				//play music
-				func() { seeker.MusicQueue.SetPlaylist(panelInfo.MusicSearchList.DataList, data.Index) },
+				func() { seeker.TheUniquePlayer.SetPlaylist(panelInfo.MusicSearchList.DataList, data.Index) },
 
 				//remove music
-				func() {
-					if err := RemoveMusic(panelInfo.SelectedAlbumInfo.Title, data.Index); err != nil {
-						log.Println(err)
-					}
-					if err := LoadMusicFromAlbum(panelInfo); err != nil {
-						log.Println(err)
-					}
-				},
+				func() { ShowMusicRemoverWin(panelInfo, data.Index) },
 			)
 			if err != nil {
 				log.Println(err)
@@ -157,5 +151,39 @@ func ShowAddRemoteMusicWin(panelInfo *custom_canvas.PanelInfo) {
 	})
 
 	win.SetContent(container.NewBorder(container.NewVBox(titleEntry, urlEntry), nil, nil, nil, downloadBtn))
+	win.Show()
+}
+
+//Show music removing window
+func ShowMusicRemoverWin(panelInfo *custom_canvas.PanelInfo, musicIndex int) {
+
+	musicInfo := panelInfo.MusicSearchList.DataList[musicIndex]
+
+	win := fyne.CurrentApp().NewWindow("Remove Music")
+	dia := container.NewBorder(
+		widget.NewLabel("Remove \""+musicInfo.Title+"\" ?"),
+		nil,
+		nil,
+		nil,
+
+		container.NewHBox(
+			layout.NewSpacer(),
+			widget.NewButton("Yes", func() {
+				if err := RemoveMusic(panelInfo.SelectedAlbumInfo.Title, musicIndex); err != nil {
+					log.Println(err)
+				}
+				if err := LoadMusicFromAlbum(panelInfo); err != nil {
+					log.Println(err)
+				}
+				win.Close()
+			}),
+			layout.NewSpacer(),
+			widget.NewButton("No", func() { win.Close() }),
+			layout.NewSpacer(),
+		),
+	)
+
+	win.SetContent(dia)
+	dia.Show()
 	win.Show()
 }

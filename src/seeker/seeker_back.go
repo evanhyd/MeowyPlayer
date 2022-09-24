@@ -1,25 +1,21 @@
 package seeker
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"math/rand"
-	"sync"
+	"os"
 	"time"
 
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
 	"meowyplayer.com/src/custom_canvas"
 	"meowyplayer.com/src/resource"
 )
 
-const (
-	MAX_MUSIC_QUEUE_SIZE = 128
+var TheUniquePlayer *MusicPlayer
 
+const (
 	//music quality
 	SAMPLING_RATE   = 44100
 	NUM_OF_CHANNELS = 2
@@ -31,328 +27,233 @@ const (
 	ORDER_LEN    = 3
 )
 
-var MusicQueue *MusicSeeker
+type MusicPlayer struct {
+	UpdateMusicInfo chan custom_canvas.MusicInfo
+	UpdateProgress  chan float64
+	UpdatePlay      chan bool
+	UpdateOrder     chan int
 
-type MusicSeeker struct {
-	curr      int
-	musicInfo []custom_canvas.MusicInfo
-	mux       sync.Mutex
+	RequestPrev     chan struct{}
+	RequestNext     chan struct{}
+	RequestAdhoc    chan struct{}
+	RequestPlay     chan struct{}
+	RequestOrder    chan struct{}
+	RequestVolume   chan float64
+	RequestProgress chan float64
 
-	//widgets
-	Title    *widget.Label
-	Play     *SeekerPlay
-	Prev     *SeekerPrev
-	Next     *SeekerNext
-	Progress *SeekerProgress
-	Volume   *SeekerVolume
-	Order    *SeekerOrder
+	otoCtx         *oto.Context
+	musicInfoList  []custom_canvas.MusicInfo
+	currMusicIndex int
 }
 
-func NewMusicSeeker() (*MusicSeeker, error) {
+func NewMusicPlayer() (*MusicPlayer, error) {
+	p := &MusicPlayer{}
+	p.UpdateMusicInfo = make(chan custom_canvas.MusicInfo, 32)
+	p.UpdateProgress = make(chan float64, 32)
+	p.UpdatePlay = make(chan bool, 32)
+	p.UpdateOrder = make(chan int, 32)
 
-	s := MusicSeeker{}
-	s.musicInfo = make([]custom_canvas.MusicInfo, 0, MAX_MUSIC_QUEUE_SIZE)
+	p.RequestPrev = make(chan struct{}, 32)
+	p.RequestNext = make(chan struct{}, 32)
+	p.RequestAdhoc = make(chan struct{}, 32)
+	p.RequestPlay = make(chan struct{}, 32)
+	p.RequestOrder = make(chan struct{}, 32)
+	p.RequestVolume = make(chan float64, 32)
+	p.RequestProgress = make(chan float64, 32)
 
-	s.Title = widget.NewLabel("")
-
-	//play button
+	var ready chan struct{}
 	var err error
-	s.Play, err = NewSeekerPlay()
+	p.otoCtx, ready, err = oto.NewContext(SAMPLING_RATE, NUM_OF_CHANNELS, AUDIO_BIT_DEPTH)
 	if err != nil {
 		return nil, err
 	}
-	s.Play.OnTapped = func() {
-		if !s.IsEmpty() {
-			s.Play.Signal <- struct{}{}
-		}
-	}
+	<-ready
 
-	//prev button
-	s.Prev = NewSeekerPrev()
-	s.Prev.OnTapped = func() {
-		if !s.IsEmpty() {
-			s.PrevMusic()
-			s.Prev.Signal <- struct{}{}
-		}
-	}
+	p.musicInfoList = make([]custom_canvas.MusicInfo, 0)
+	p.currMusicIndex = 0
 
-	//next button
-	s.Next = NewSeekerNext()
-	s.Next.OnTapped = func() {
-		if !s.IsEmpty() {
-			s.NextMusic()
-			s.Next.Signal <- struct{}{}
-		}
-	}
-
-	//music progress bar
-	s.Progress = NewSeekerProgress()
-
-	//music volume bar
-	s.Volume = NewSeekerVolume()
-
-	//music playing order
-	s.Order = NewSeekerOrder()
-
-	return &s, nil
+	return p, nil
 }
 
-func (s *MusicSeeker) NewPlaylist() *container.Scroll {
-
-	playlist := container.NewVBox()
-	playlistScroll := container.NewVScroll(playlist)
-	return playlistScroll
+/**
+Set the music queue to the provided music info.
+Reload and play the music given by the index.
+*/
+func (p *MusicPlayer) SetPlaylist(musicInfo []custom_canvas.MusicInfo, musicIndex int) {
+	p.musicInfoList = musicInfo
+	p.currMusicIndex = musicIndex
+	p.RequestAdhoc <- struct{}{}
 }
 
-func (s *MusicSeeker) SetPlaylist(musicInfo []custom_canvas.MusicInfo, i int) {
-	s.mux.Lock()
-	s.musicInfo = make([]custom_canvas.MusicInfo, len(musicInfo))
-	copy(s.musicInfo, musicInfo)
-	s.curr = i
+/**
+Go to the previous song determined by the playing order.
+*/
+func (p *MusicPlayer) goPrev(order int) {
 
-	//must reload seeker
-	//assume the music info list is never empty
-	s.Next.Signal <- struct{}{}
-	s.mux.Unlock()
-}
-
-func (s *MusicSeeker) IsEmpty() bool {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	return len(s.musicInfo) == 0
-}
-
-func (s *MusicSeeker) GetCurrMusic() custom_canvas.MusicInfo {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	return s.musicInfo[s.curr]
-}
-
-func (s *MusicSeeker) PrevMusic() {
-	s.mux.Lock()
-	s.curr--
-	if s.curr < 0 {
-		s.curr += len(s.musicInfo)
-	}
-	s.mux.Unlock()
-}
-
-func (s *MusicSeeker) NextMusic() {
-	s.mux.Lock()
-
-	switch s.Order.Mode {
+	switch order {
 	case LOOP_ORDER:
-		s.curr++
-		if s.curr >= len(s.musicInfo) {
-			s.curr -= len(s.musicInfo)
+		p.currMusicIndex--
+		if p.currMusicIndex < 0 {
+			p.currMusicIndex += len(p.musicInfoList)
 		}
 
 	case REPEAT_ORDER:
-		//literally nothing
 
 	case RANDOM_ORDER:
 		rand.Seed(time.Now().UnixNano())
-		s.curr = rand.Int() % len(s.musicInfo)
+		p.currMusicIndex = rand.Int() % len(p.musicInfoList)
 	}
-	s.mux.Unlock()
 }
 
-/*
-
-Components
-
+/**
+Go to the next song determined by the playing order.
 */
+func (p *MusicPlayer) goNext(order int) {
+	switch order {
+	case LOOP_ORDER:
+		p.currMusicIndex++
+		if p.currMusicIndex >= len(p.musicInfoList) {
+			p.currMusicIndex -= len(p.musicInfoList)
+		}
 
-type SeekerPlay struct {
-	widget.Button
-	Signal chan struct{}
+	case REPEAT_ORDER:
 
-	playIcon  fyne.Resource
-	pauseIcon fyne.Resource
-}
-
-func NewSeekerPlay() (*SeekerPlay, error) {
-	play := &SeekerPlay{}
-	play.ExtendBaseWidget(play)
-
-	//load
-	var err error
-	play.playIcon, err = fyne.LoadResourceFromPath(resource.GetImagePath("seeker_play.png"))
-	if err != nil {
-		return nil, err
-	}
-
-	play.pauseIcon, err = fyne.LoadResourceFromPath(resource.GetImagePath("seeker_pause.png"))
-	if err != nil {
-		return nil, err
-	}
-
-	play.SetText("")
-	play.SetIcon(play.playIcon)
-	play.Signal = make(chan struct{}, 4)
-
-	return play, nil
-}
-
-func (play *SeekerPlay) UpdateIcon(shouldPlay bool) {
-	if shouldPlay {
-		play.SetIcon(play.pauseIcon)
-	} else {
-		play.SetIcon(play.playIcon)
+	case RANDOM_ORDER:
+		rand.Seed(time.Now().UnixNano())
+		p.currMusicIndex = rand.Int() % len(p.musicInfoList)
 	}
 }
 
-type SeekerPrev struct {
-	widget.Button
-	Signal chan struct{}
+/**
+Change the playing order to the next mode.
+*/
+func (p *MusicPlayer) incOrder(order int) int {
+	order++
+	if order >= ORDER_LEN {
+		order -= ORDER_LEN
+	}
+	p.UpdateOrder <- order
+	return order
 }
 
-func NewSeekerPrev() *SeekerPrev {
-	prev := &SeekerPrev{}
-	prev.ExtendBaseWidget(prev)
+/**
+Launch me to start the music player!
+*/
+func (p *MusicPlayer) launch() {
 
-	prev.SetText("<<")
-	prev.Signal = make(chan struct{}, 4)
+	volume := 1.0
+	order := RANDOM_ORDER
+	// lock := sync.Mutex{}
 
-	return prev
-}
+	for {
+		if len(p.musicInfoList) > 0 {
 
-type SeekerNext struct {
-	widget.Button
-	Signal chan struct{}
-}
-
-func NewSeekerNext() *SeekerNext {
-	next := &SeekerNext{}
-	next.ExtendBaseWidget(next)
-
-	next.SetText(">>")
-	next.Signal = make(chan struct{}, 4)
-
-	return next
-}
-
-type SeekerProgress struct {
-	widget.Slider
-	Ignore     chan struct{}
-	decodedMP3 *mp3.Decoder
-}
-
-func NewSeekerProgress() *SeekerProgress {
-	s := SeekerProgress{}
-	s.ExtendBaseWidget(&s)
-
-	s.Min = 0.0
-	s.Max = 1.0
-	s.Step = 1.0
-	return &s
-}
-
-func (s *SeekerProgress) BindMP3(mp3 *mp3.Decoder, player *oto.Player) {
-
-	s.decodedMP3 = mp3
-
-	//set up the progress bar range
-	s.Max = float64(mp3.Length())
-
-	//sometime the play list reload sends an extra signal
-	//2 avoids buffer locks
-	s.Ignore = make(chan struct{}, 2)
-	s.OnChanged = func(tick float64) {
-		select {
-		case <-s.Ignore:
-
-		default:
-
-			wasPlaying := (*player).IsPlaying()
-
-			if wasPlaying {
-				(*player).Pause()
+			//load music file
+			musicInfo := p.musicInfoList[p.currMusicIndex]
+			mp3File, err := os.Open(resource.GetMusicPath(musicInfo.Title))
+			if err != nil {
+				log.Panic(err)
 			}
 
-			iTick := int64(tick)
-			mp3.Seek(iTick-iTick%4, io.SeekStart)
-
-			if wasPlaying {
-				(*player).Play()
+			//decode music file
+			decodedMp3File, err := mp3.NewDecoder(mp3File)
+			if err != nil {
+				log.Panic(err)
 			}
+
+			//obtain music player
+			player := p.otoCtx.NewPlayer(decodedMp3File)
+			player.SetVolume(volume)
+			p.UpdateProgress <- 0.0
+			p.UpdateMusicInfo <- musicInfo
+			p.UpdatePlay <- true
+
+			player.Play()
+			pausedByUser := false
+			forceReload := false
+			for {
+
+				if !player.IsPlaying() && !pausedByUser || forceReload {
+					break
+				}
+
+				select {
+
+				//change playing status
+				case <-p.RequestPlay:
+					pausedByUser = !pausedByUser
+					if pausedByUser {
+						player.Pause()
+					} else {
+						player.Play()
+					}
+					p.UpdatePlay <- !pausedByUser
+
+				//roll back song
+				case <-p.RequestPrev:
+					p.goPrev(order)
+					forceReload = true
+
+				//skip song
+				case <-p.RequestNext:
+					p.goNext(order)
+					forceReload = true
+
+				case <-p.RequestAdhoc:
+					forceReload = true
+
+				//set to user wanted playing order
+				case <-p.RequestOrder:
+					order = p.incOrder(order)
+
+				//set to user wanted volume
+				case newVolume := <-p.RequestVolume:
+					volume = newVolume
+					player.SetVolume(volume)
+
+				//set to user wanted music progress
+				case percent := <-p.RequestProgress:
+					log.Println("magic begin") //it forces thread syncrhonization?????
+					// lock.Lock()
+					player.Pause()
+					tick := int64(percent * float64(decodedMp3File.Length()))
+					tick -= tick % 4
+					decodedMp3File.Seek(tick, io.SeekStart)
+					player.Play()
+					p.UpdatePlay <- true
+					// lock.Unlock()
+					log.Println("magic end")
+
+				//update music progress
+				default:
+					currTick, err := decodedMp3File.Seek(0, io.SeekCurrent)
+					if err != nil {
+						log.Panic(err)
+					}
+					percent := float64(currTick) / float64(decodedMp3File.Length())
+					p.UpdateProgress <- percent
+					time.Sleep(100.0 * time.Millisecond)
+				}
+			}
+
+			//normal playing sequence
+			if !forceReload {
+				p.goNext(order)
+			}
+
+			//close the resources
+			err = player.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+			err = mp3File.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+
+		} else {
+			log.Println("empty queue...")
+			time.Sleep(1000 * time.Millisecond)
 		}
 	}
-}
-
-func (s *SeekerProgress) UpdateBar() {
-
-	s.Ignore <- struct{}{}
-	currTick, err := s.decodedMP3.Seek(0, io.SeekCurrent)
-	if err != nil {
-		log.Panic(err)
-	}
-	s.SetValue(float64(currTick))
-	log.Printf("%v / %v (%.4f)\n", currTick, s.decodedMP3.Length(), (float64(currTick) / float64(s.decodedMP3.Length())))
-}
-
-type SeekerVolume struct {
-	widget.Slider
-}
-
-func NewSeekerVolume() *SeekerVolume {
-
-	s := SeekerVolume{}
-	s.ExtendBaseWidget(&s)
-
-	s.Min = 0.0
-	s.Max = 1.0
-	s.Step = 0.01
-
-	return &s
-}
-
-func (s *SeekerVolume) BindMP3(mp3 *mp3.Decoder, player *oto.Player) {
-
-	s.SetValue((*player).Volume())
-	s.OnChanged = func(volume float64) {
-		(*player).SetVolume(volume)
-		log.Printf("volume: %v\n", volume)
-	}
-}
-
-type SeekerOrder struct {
-	widget.Button
-	Mode  int
-	icons []fyne.Resource
-}
-
-func NewSeekerOrder() *SeekerOrder {
-	s := SeekerOrder{}
-	s.ExtendBaseWidget(&s)
-
-	//load icon resource
-	s.icons = make([]fyne.Resource, 0, ORDER_LEN)
-	for i := 0; i < ORDER_LEN; i++ {
-		icon, err := fyne.LoadResourceFromPath(resource.GetImagePath(fmt.Sprintf("seeker_order_icon_%v.png", i)))
-		if err != nil {
-			log.Panic(err)
-		}
-		s.icons = append(s.icons, icon)
-	}
-
-	s.Mode = RANDOM_ORDER
-	s.updateIcon()
-
-	return &s
-}
-
-func (s *SeekerOrder) Tapped(_ *fyne.PointEvent) {
-
-	if s.Mode == RANDOM_ORDER {
-		s.Mode = LOOP_ORDER
-	} else {
-		s.Mode++
-	}
-	s.updateIcon()
-}
-
-func (s *SeekerOrder) updateIcon() {
-	log.Printf("set icon %v\n", s.Mode)
-	s.SetIcon(s.icons[s.Mode])
 }

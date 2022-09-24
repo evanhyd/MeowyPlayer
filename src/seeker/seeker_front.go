@@ -1,134 +1,99 @@
 package seeker
 
 import (
+	"fmt"
 	"log"
-	"os"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
-	"github.com/hajimehoshi/go-mp3"
-	"github.com/hajimehoshi/oto/v2"
+	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/src/resource"
 )
 
 //music controller
 func NewSeekerUI() *fyne.Container {
 
+	log.Println("loading music player...")
 	var err error
-	MusicQueue, err = NewMusicSeeker()
+	TheUniquePlayer, err = NewMusicPlayer()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
-	//launch seeker
-	go LaunchSeeker()
-
-	bot := container.NewVBox(
-		container.NewMax(layout.NewSpacer(), MusicQueue.Progress, layout.NewSpacer()),
-		container.NewBorder(nil, nil, MusicQueue.Title, container.NewHBox(MusicQueue.Prev, MusicQueue.Play, MusicQueue.Next, MusicQueue.Order, MusicQueue.Volume)))
-	return container.NewBorder(nil, bot, nil, nil)
-}
-
-func LaunchSeeker() {
-
-	//create oto context
-	log.Println("loading driver...")
-	otoCtx, ready, err := oto.NewContext(SAMPLING_RATE, NUM_OF_CHANNELS, AUDIO_BIT_DEPTH)
+	log.Println("loading music player textures")
+	playingIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("seeker_play.png"))
 	if err != nil {
-		log.Panic(err)
+		log.Println(err)
 	}
-
-	//wait for the hardware to get ready
-	<-ready
-	log.Println("driver is ready")
-
-	for {
-		if !MusicQueue.IsEmpty() {
-
-			//load music file
-			info := MusicQueue.GetCurrMusic()
-			musicFile, err := os.Open(resource.GetMusicPath(info.Title))
-			if err != nil {
-				log.Panic(err)
-			}
-
-			//decode music file
-			decodedMP3, err := mp3.NewDecoder(musicFile)
-			if err != nil {
-				log.Panic(err)
-			}
-
-			//obtain music player
-			player := otoCtx.NewPlayer(decodedMP3)
-
-			//connect music progress bar
-			MusicQueue.Progress.BindMP3(decodedMP3, &player)
-
-			//connect volume bar
-			MusicQueue.Volume.BindMP3(decodedMP3, &player)
-
-			//set up title
-			MusicQueue.Title.SetText(info.Title)
-			log.Println("playing: " + info.Title)
-
-			shouldPlay := true
-			shouldReload := false
-			player.Play()
-			MusicQueue.Play.UpdateIcon(true)
-			for (player.IsPlaying() || !shouldPlay) && !shouldReload {
-
-				select {
-				//play or pause
-				case <-MusicQueue.Play.Signal:
-					shouldPlay = !shouldPlay
-					if shouldPlay {
-						player.Play()
-						log.Println("resumed")
-					} else {
-						player.Pause()
-						log.Println("paused")
-					}
-					MusicQueue.Play.UpdateIcon(shouldPlay)
-
-					//rewind to previous song
-				case <-MusicQueue.Prev.Signal:
-					shouldReload = true
-					log.Println("prev")
-
-					//skip to next song
-				case <-MusicQueue.Next.Signal:
-					shouldReload = true
-					log.Println("next")
-
-				default:
-
-					//update the music progress bar
-					if shouldPlay {
-						MusicQueue.Progress.UpdateBar()
-					}
-					time.Sleep(time.Second)
-				}
-			}
-
-			//check if should proceed normally
-			if !shouldReload {
-				MusicQueue.NextMusic()
-			}
-
-			err = player.Close()
-			if err != nil {
-				log.Panic(err)
-			}
-			err = musicFile.Close()
-			if err != nil {
-				log.Panic(err)
-			}
-
-		} else {
-			log.Println("empty queue...")
-			time.Sleep(time.Second)
+	pausingIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("seeker_pause.png"))
+	if err != nil {
+		log.Println(err)
+	}
+	orderIcons := make([]fyne.Resource, 0, ORDER_LEN)
+	for i := 0; i < ORDER_LEN; i++ {
+		icon, err := fyne.LoadResourceFromPath(resource.GetImagePath(fmt.Sprintf("seeker_order_icon_%v.png", i)))
+		if err != nil {
+			log.Panic(err)
 		}
+		orderIcons = append(orderIcons, icon)
 	}
+
+	title := widget.NewLabel("")
+	progressTitle := widget.NewLabel("00.00%")
+	progressBar := widget.NewSlider(0.0, 1.0)
+	progressBar.Step = 0.00000001
+	progressBar.OnChanged = func(val float64) { TheUniquePlayer.RequestProgress <- val }
+	prevBtn := widget.NewButton("<<", func() { TheUniquePlayer.RequestPrev <- struct{}{} })
+	nextBtn := widget.NewButton(">>", func() { TheUniquePlayer.RequestNext <- struct{}{} })
+	playBtn := widget.NewButtonWithIcon("", pausingIcon, func() { TheUniquePlayer.RequestPlay <- struct{}{} })
+	orderBtn := widget.NewButtonWithIcon("", orderIcons[RANDOM_ORDER], func() { TheUniquePlayer.RequestOrder <- struct{}{} })
+	volume := widget.NewSlider(0.0, 1.0)
+	volume.SetValue(1.0)
+	volume.Step = 0.01
+	volume.OnChanged = func(val float64) { TheUniquePlayer.RequestVolume <- val }
+
+	go func() {
+		for {
+			select {
+			//update music title
+			case musicInfo := <-TheUniquePlayer.UpdateMusicInfo:
+				title.SetText(musicInfo.Title)
+				log.Println("playing: " + musicInfo.Title)
+
+			//update music progress
+			case percent := <-TheUniquePlayer.UpdateProgress:
+				progressTitle.SetText(fmt.Sprintf("%05.2f%%", percent*100))
+
+				//avoid SetValue triggering OnChanged()
+				progressBar.Value = percent
+				progressBar.Refresh()
+
+			//update play button
+			case isPlaying := <-TheUniquePlayer.UpdatePlay:
+				if isPlaying {
+					playBtn.SetIcon(pausingIcon)
+				} else {
+					playBtn.SetIcon(playingIcon)
+				}
+
+			//update play order
+			case order := <-TheUniquePlayer.UpdateOrder:
+				orderBtn.SetIcon(orderIcons[order])
+			}
+		}
+	}()
+
+	go TheUniquePlayer.launch()
+
+	return container.NewBorder(
+		title,
+		nil,
+		nil,
+		nil,
+		container.NewVBox(
+			container.NewBorder(nil, nil, progressTitle, nil, progressBar),
+			container.NewHBox(layout.NewSpacer(), prevBtn, playBtn, nextBtn, orderBtn, volume, layout.NewSpacer()),
+		),
+	)
 }

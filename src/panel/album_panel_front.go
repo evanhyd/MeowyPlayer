@@ -140,7 +140,6 @@ func ShowAddImageWin(imagePath *string, image *canvas.Image, parent *fyne.Window
 
 func ShowAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) {
 	win := fyne.CurrentApp().NewWindow("Remove Album")
-
 	dia := container.NewBorder(
 		widget.NewLabel("Remove \""+panelInfo.SelectedAlbumInfo.Title+"\" ?"),
 		nil,
@@ -149,7 +148,6 @@ func ShowAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) {
 
 		container.NewHBox(
 			layout.NewSpacer(),
-
 			widget.NewButton("Yes", func() {
 				if err := RemoveAlbum(panelInfo.SelectedAlbumInfo.Title); err != nil {
 					log.Println(err)
@@ -162,7 +160,6 @@ func ShowAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) {
 				panelInfo.SelectedAlbumInfo = nil
 				win.Close()
 			}),
-
 			layout.NewSpacer(),
 			widget.NewButton("No", func() { win.Close() }),
 			layout.NewSpacer(),
