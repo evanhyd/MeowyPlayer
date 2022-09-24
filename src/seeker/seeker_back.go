@@ -213,7 +213,8 @@ func (p *MusicPlayer) launch() {
 
 				//set to user wanted music progress
 				case percent := <-p.RequestProgress:
-					log.Println("magic begin") //it forces thread syncrhonization?????
+					//it forces thread syncrhonization?????
+					log.Println("magic begin")
 					// lock.Lock()
 					player.Pause()
 					tick := int64(percent * float64(decodedMp3File.Length()))

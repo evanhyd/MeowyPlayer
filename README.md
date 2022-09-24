@@ -1,5 +1,6 @@
 # MeowyPlayer
-![Main Menu](README_IMAGES/main_menu.PNG?raw=true)  
+![Album Menu](https://i.imgur.com/G8ffmAe.png)  
+![Music Menu](https://i.imgur.com/BzqY774.png)  
   
 A light weight personal music player that's intend to replace spotify.  
 Supports downloading music from youtube in mp3 format.  
