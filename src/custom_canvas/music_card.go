@@ -2,6 +2,7 @@ package custom_canvas
 
 import (
 	"fmt"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -17,13 +18,6 @@ type MusicCard struct {
 func NewMusicCard(title string, duration int64, playTapped, deleteTapped func()) (*MusicCard, error) {
 	card := MusicCard{}
 
-	//play button
-	playIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("music_card_play.png"))
-	if err != nil {
-		return nil, err
-	}
-	play := widget.NewButtonWithIcon("", playIcon, playTapped)
-
 	//delete button
 	deleteIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("music_card_delete.png"))
 	if err != nil {
@@ -31,12 +25,12 @@ func NewMusicCard(title string, duration int64, playTapped, deleteTapped func())
 	}
 	delete := widget.NewButtonWithIcon("", deleteIcon, deleteTapped)
 
-	//music duraiton
-	musicDuration := widget.NewLabel(fmt.Sprintf("%02d:%02d", duration/60, duration%60))
+	//play button
+	title = title[:strings.LastIndex(title, ".mp3")]
+	play := widget.NewButton(fmt.Sprintf("%02d:%02d", duration/60, duration%60)+" | "+title, playTapped)
+	play.Importance = widget.LowImportance
+	play.Alignment = widget.ButtonAlignLeading
 
-	//music title
-	musicTitle := widget.NewLabel(title)
-
-	card.Container = *container.NewHBox(play, delete, musicDuration, musicTitle)
+	card.Container = *container.NewBorder(nil, nil, delete, nil, play)
 	return &card, nil
 }

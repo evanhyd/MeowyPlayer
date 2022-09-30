@@ -100,8 +100,13 @@ func (p *MusicPlayer) goPrev(order int) {
 	case REPEAT_ORDER:
 
 	case RANDOM_ORDER:
-		rand.Seed(time.Now().UnixNano())
-		p.currMusicIndex = rand.Int() % len(p.musicInfoList)
+		for {
+			newIndex := rand.Int() % len(p.musicInfoList)
+			if newIndex != p.currMusicIndex {
+				p.currMusicIndex = newIndex
+				break
+			}
+		}
 	}
 }
 
@@ -119,8 +124,13 @@ func (p *MusicPlayer) goNext(order int) {
 	case REPEAT_ORDER:
 
 	case RANDOM_ORDER:
-		rand.Seed(time.Now().UnixNano())
-		p.currMusicIndex = rand.Int() % len(p.musicInfoList)
+		for {
+			newIndex := rand.Int() % len(p.musicInfoList)
+			if newIndex != p.currMusicIndex {
+				p.currMusicIndex = newIndex
+				break
+			}
+		}
 	}
 }
 

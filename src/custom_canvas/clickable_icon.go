@@ -13,14 +13,14 @@ type ClickableIcon struct {
 	secondaryCallback func()
 }
 
-func NewClickableIcon(imagePath string, imageSize fyne.Size, onPrimaryTap, onSecondaryTap func()) (*ClickableIcon, error) {
+func NewClickableIcon(image *canvas.Image, iconSize fyne.Size, onPrimaryTap, onSecondaryTap func()) (*ClickableIcon, error) {
 
 	icon := ClickableIcon{}
 	icon.ExtendBaseWidget(&icon)
 
 	//load image
-	icon.SetImage(canvas.NewImageFromFile(imagePath))
-	icon.Image.SetMinSize(imageSize)
+	icon.SetImage(image)
+	icon.Image.SetMinSize(iconSize)
 
 	//save callback
 	icon.primaryCallback = onPrimaryTap

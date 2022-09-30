@@ -57,6 +57,42 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 	return container.NewTabItemWithIcon("Music", tabIcon, container.NewBorder(musicAdder, nil, nil, nil, &panelInfo.MusicSearchList.Container))
 }
 
+//Show music removing window
+func ShowMusicRemoverWin(panelInfo *custom_canvas.PanelInfo, musicIndex int) {
+
+	musicInfo := panelInfo.MusicSearchList.DataList[musicIndex]
+
+	win := fyne.CurrentApp().NewWindow("Remove Music")
+	win.CenterOnScreen()
+
+	dia := container.NewBorder(
+		widget.NewLabel("Remove \""+musicInfo.Title+"\" ?"),
+		nil,
+		nil,
+		nil,
+
+		container.NewHBox(
+			layout.NewSpacer(),
+			widget.NewButton("Yes", func() {
+				if err := removeMusic(panelInfo.SelectedAlbumInfo.Title, musicIndex); err != nil {
+					log.Println(err)
+				}
+				if err := LoadMusicFromAlbum(panelInfo); err != nil {
+					log.Println(err)
+				}
+				win.Close()
+			}),
+			layout.NewSpacer(),
+			widget.NewButton("No", func() { win.Close() }),
+			layout.NewSpacer(),
+		),
+	)
+
+	win.SetContent(dia)
+	dia.Show()
+	win.Show()
+}
+
 //Display adding music window
 func ShowMusicAdderWin(panelInfo *custom_canvas.PanelInfo) {
 
@@ -68,20 +104,26 @@ func ShowMusicAdderWin(panelInfo *custom_canvas.PanelInfo) {
 		ShowAddLocalMusicWin(panelInfo)
 	})
 
-	addRemoteMusicBtn := widget.NewButton("From Remote", func() {
-		ShowAddRemoteMusicWin(panelInfo)
+	addURLMusicBtn := widget.NewButton("From URL", func() {
+		ShowAddURLMusicWin(panelInfo)
+	})
+
+	addYoutubeMusicBtn := widget.NewButton("From Youtube", func() {
+		ShowAddYoutubeMusicWin(panelInfo)
 	})
 
 	win := fyne.CurrentApp().NewWindow("Add Music")
-	win.SetContent(container.NewVBox(addLocalMusicBtn, addRemoteMusicBtn))
+	win.SetContent(container.NewVBox(addLocalMusicBtn, addURLMusicBtn, addYoutubeMusicBtn))
+	win.CenterOnScreen()
 	win.Show()
 }
 
-//Selecting music from local window
+//Create add local music window
 func ShowAddLocalMusicWin(panelInfo *custom_canvas.PanelInfo) {
 
-	//create image uploading window
 	win := fyne.CurrentApp().NewWindow("From Local")
+	win.CenterOnScreen()
+
 	dia := dialog.NewFileOpen(
 		func(res fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -91,7 +133,7 @@ func ShowAddLocalMusicWin(panelInfo *custom_canvas.PanelInfo) {
 
 				//add music from local
 				musicTitle := res.URI().Path()[strings.LastIndex(res.URI().Path(), `/`)+1:]
-				if err := AddMusicFromLocal(res.URI().Path(), musicTitle, panelInfo.SelectedAlbumInfo.Title); err != nil {
+				if err := addMusicFromLocal(res.URI().Path(), musicTitle, panelInfo.SelectedAlbumInfo.Title); err != nil {
 					log.Println(err)
 				}
 
@@ -120,10 +162,11 @@ func ShowAddLocalMusicWin(panelInfo *custom_canvas.PanelInfo) {
 	win.Show()
 }
 
-//Downloading music from remote window
-func ShowAddRemoteMusicWin(panelInfo *custom_canvas.PanelInfo) {
+//Create add url music window
+func ShowAddURLMusicWin(panelInfo *custom_canvas.PanelInfo) {
 
-	win := fyne.CurrentApp().NewWindow("Download Music")
+	win := fyne.CurrentApp().NewWindow("From URL")
+	win.CenterOnScreen()
 
 	titleEntry := widget.NewEntry()
 	urlEntry := widget.NewEntry()
@@ -133,7 +176,7 @@ func ShowAddRemoteMusicWin(panelInfo *custom_canvas.PanelInfo) {
 	downloadBtn := widget.NewButton("Download", func() {
 
 		//download music
-		if err := AddMusicFromRemote(urlEntry.Text, titleEntry.Text+`.mp3`, panelInfo.SelectedAlbumInfo.Title); err != nil {
+		if err := addMusicFromURL(urlEntry.Text, titleEntry.Text+`.mp3`, panelInfo.SelectedAlbumInfo.Title); err != nil {
 			log.Println(err)
 		}
 
@@ -154,36 +197,47 @@ func ShowAddRemoteMusicWin(panelInfo *custom_canvas.PanelInfo) {
 	win.Show()
 }
 
-//Show music removing window
-func ShowMusicRemoverWin(panelInfo *custom_canvas.PanelInfo, musicIndex int) {
+//Create add youtube music window
+func ShowAddYoutubeMusicWin(panelInfo *custom_canvas.PanelInfo) {
 
-	musicInfo := panelInfo.MusicSearchList.DataList[musicIndex]
+	win := fyne.CurrentApp().NewWindow("From Youtube")
+	win.Resize(fyne.NewSize(340.0, 340.0*1.618))
+	win.CenterOnScreen()
 
-	win := fyne.CurrentApp().NewWindow("Remove Music")
-	dia := container.NewBorder(
-		widget.NewLabel("Remove \""+musicInfo.Title+"\" ?"),
-		nil,
-		nil,
-		nil,
+	queryEntry := widget.NewEntry()
+	searchBtn := widget.NewButton("Search", func() {})
 
-		container.NewHBox(
-			layout.NewSpacer(),
-			widget.NewButton("Yes", func() {
-				if err := RemoveMusic(panelInfo.SelectedAlbumInfo.Title, musicIndex); err != nil {
-					log.Println(err)
-				}
-				if err := LoadMusicFromAlbum(panelInfo); err != nil {
-					log.Println(err)
-				}
-				win.Close()
-			}),
-			layout.NewSpacer(),
-			widget.NewButton("No", func() { win.Close() }),
-			layout.NewSpacer(),
+	win.SetContent(
+		container.NewBorder(
+			container.NewBorder(nil, nil, nil, searchBtn, queryEntry),
+			nil,
+			nil,
+			nil,
 		),
 	)
-
-	win.SetContent(dia)
-	dia.Show()
 	win.Show()
 }
+
+/*
+
+<div class=\"thumbnail\"> <a class=\"item-thumbnail\" style=\"position: relative\"
+
+{
+    "status": "success",
+    "result": "<div class=\"row\" id=\"search-result\"> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/FvSWwYk7G3k\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"FUNNY CAT MEMES COMPILATION OF 2022 PART 57\" src=\"https:\/\/i.ytimg.com\/vi\/FvSWwYk7G3k\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/FvSWwYk7G3k\" target=\"_blank\"> FUNNY CAT MEMES COMPILATION OF 2022 PART 57 <\/a> <p> <a href=\"\/youtube\/FvSWwYk7G3k\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/katD5xvV2t8\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Cat crying\" src=\"https:\/\/i.ytimg.com\/vi\/katD5xvV2t8\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/katD5xvV2t8\" target=\"_blank\"> Cat crying <\/a> <p> <a href=\"\/youtube\/katD5xvV2t8\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/WyN-E60PJh0\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Funny Animal Videos 2022 \ud83d\ude02 - Best Dogs And Cats Videos \ud83d\ude3a\ud83d\ude0d #23\" src=\"https:\/\/i.ytimg.com\/vi\/WyN-E60PJh0\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/WyN-E60PJh0\" target=\"_blank\"> Funny Animal Videos 2022 \ud83d\ude02 - Best Dogs And Cats Videos \ud83d\ude3a\ud83d\ude0d #23 <\/a> <p> <a href=\"\/youtube\/WyN-E60PJh0\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/zFXMOfFzoRc\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Funniest Cat Videos on the Planet #3 - Funny Cats and Dogs Videos\" src=\"https:\/\/i.ytimg.com\/vi\/zFXMOfFzoRc\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/zFXMOfFzoRc\" target=\"_blank\"> Funniest Cat Videos on the Planet #3 - Funny Cats and Dogs Videos <\/a> <p> <a href=\"\/youtube\/zFXMOfFzoRc\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/H24Epu-1k6c\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Cat TV for Cats to Watch \ud83d\ude3a Halloween pumpkin, feral squirrels, blackbirds \ud83d\udc3f 8 Hours(4K HDR)\" src=\"https:\/\/i.ytimg.com\/vi\/H24Epu-1k6c\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/H24Epu-1k6c\" target=\"_blank\"> Cat TV for Cats to Watch \ud83d\ude3a Halloween pumpkin, feral squirrels, blackbirds \ud83d\udc3f 8 Hours(4K HDR) <\/a> <p> <a href=\"\/youtube\/H24Epu-1k6c\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/ODiHIS3AWLg\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"BEST CAT TIKTOKS!! #4\" src=\"https:\/\/i.ytimg.com\/vi\/ODiHIS3AWLg\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/ODiHIS3AWLg\" target=\"_blank\"> BEST CAT TIKTOKS!! #4 <\/a> <p> <a href=\"\/youtube\/ODiHIS3AWLg\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/xbs7FT7dXYc\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Videos for Cats to Watch - 8 Hour Birds Bonanza - Cat TV Bird Watch\" src=\"https:\/\/i.ytimg.com\/vi\/xbs7FT7dXYc\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/xbs7FT7dXYc\" target=\"_blank\"> Videos for Cats to Watch - 8 Hour Birds Bonanza - Cat TV Bird Watch <\/a> <p> <a href=\"\/youtube\/xbs7FT7dXYc\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/Pms2R85EWC4\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Kitten Kiki feels annoyed when mother cat is around, but feels lonely when she isn't...\" src=\"https:\/\/i.ytimg.com\/vi\/Pms2R85EWC4\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/Pms2R85EWC4\" target=\"_blank\"> Kitten Kiki feels annoyed when mother cat is around, but feels lonely when she isn't... <\/a> <p> <a href=\"\/youtube\/Pms2R85EWC4\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/fXuYx81aYoI\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Cat Goes On Walks With His Dog In The Cutest Way | The Dodo Odd Couples\" src=\"https:\/\/i.ytimg.com\/vi\/fXuYx81aYoI\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/fXuYx81aYoI\" target=\"_blank\"> Cat Goes On Walks With His Dog In The Cutest Way | The Dodo Odd Couples <\/a> <p> <a href=\"\/youtube\/fXuYx81aYoI\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/nbFTp0RadzQ\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"I Taught My Cat to Play Minecraft\" src=\"https:\/\/i.ytimg.com\/vi\/nbFTp0RadzQ\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/nbFTp0RadzQ\" target=\"_blank\"> I Taught My Cat to Play Minecraft <\/a> <p> <a href=\"\/youtube\/nbFTp0RadzQ\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/Y0NWybTQv9A\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Funny animals - Funny cats \/ dogs - Funny animal videos 232\" src=\"https:\/\/i.ytimg.com\/vi\/Y0NWybTQv9A\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/Y0NWybTQv9A\" target=\"_blank\"> Funny animals - Funny cats \/ dogs - Funny animal videos 232 <\/a> <p> <a href=\"\/youtube\/Y0NWybTQv9A\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <div class=\"col-xs-6 col-sm-4 col-md-3\">
+		href=\"\/youtube\/S5JqSlAsldQ\" target=\"_blank\"> <img class=\"ythumbnail\" alt=\"Real Meanings Behind 9 Strange Cat Behaviors Explained\" src=\"https:\/\/i.ytimg.com\/vi\/S5JqSlAsldQ\/0.jpg\"> <\/a> <div class=\"search-info\"> <a href=\"\/youtube\/S5JqSlAsldQ\" target=\"_blank\"> Real Meanings Behind 9 Strange Cat Behaviors Explained <\/a> <p> <a href=\"\/youtube\/S5JqSlAsldQ\" target=\"_blank\" class=\"btn btn-success btn-xs\"> <i class=\"glyphicon glyphicon-download-alt\"><\/i>&nbsp; Download video<\/a> <\/p> <br \/> <\/div> <\/div> <\/div> <\/div> <script type=\"text\/javascript\"> k_data_vid = \"cat\"; video_service = \"youtube\"; video_extractor = \"search\"; <\/script> "
+}
+
+
+*/

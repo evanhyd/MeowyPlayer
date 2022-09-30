@@ -111,6 +111,7 @@ func ShowAddImageWin(imagePath *string, image *canvas.Image, parent *fyne.Window
 
 	//create image uploading window
 	win := fyne.CurrentApp().NewWindow("Select Icon")
+	win.CenterOnScreen()
 
 	dia := dialog.NewFileOpen(
 		func(res fyne.URIReadCloser, err error) {
@@ -139,7 +140,10 @@ func ShowAddImageWin(imagePath *string, image *canvas.Image, parent *fyne.Window
 }
 
 func ShowAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) {
+
 	win := fyne.CurrentApp().NewWindow("Remove Album")
+	win.CenterOnScreen()
+
 	dia := container.NewBorder(
 		widget.NewLabel("Remove \""+panelInfo.SelectedAlbumInfo.Title+"\" ?"),
 		nil,

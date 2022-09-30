@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -16,6 +18,8 @@ import (
 
 func main() {
 
+	rand.Seed(time.Now().UnixNano())
+
 	//create necessary directories
 	os.Mkdir(resource.GetMusicBasePath(), os.ModePerm)
 	os.Mkdir(resource.GetAlbumBasePath(), os.ModePerm)
@@ -23,6 +27,7 @@ func main() {
 	//Loading main window
 	log.Println("loading main window...")
 	fyne.SetCurrentApp(app.New())
+
 	mainWin := fyne.CurrentApp().NewWindow("Meowy Player")
 	mainWin.Resize(fyne.NewSize(340.0, 340.0*1.618))
 	mainWin.CenterOnScreen()
