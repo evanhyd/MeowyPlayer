@@ -8,8 +8,8 @@ Supports downloading music from youtube in mp3 format.
 # Note
 To run in Linux/Mac:
 - Open a terminal in the downloaded `MeowyPlayer-Mac` folder
-- run `sudo chmod +x ./meowyplayer.com`
-- run `./meowyplayer.com`
+- Run `sudo chmod +x ./meowyplayer.com`
+- Run `./meowyplayer.com`
 
 To run in Windows:
 - Anti-virus warning will pop up  
