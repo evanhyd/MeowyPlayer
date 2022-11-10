@@ -5,8 +5,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"path"
-	"path/filepath"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -20,21 +18,12 @@ import (
 )
 
 func main() {
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	exPath := filepath.Dir(ex)
-	paramsFilePath := path.Join(exPath, "params.json")
-	println(paramsFilePath)
-
-	rand.Seed(time.Now().UnixNano())
 
 	//create necessary directories
 	os.Mkdir(resource.GetMusicBasePath(), os.ModePerm)
 	os.Mkdir(resource.GetAlbumBasePath(), os.ModePerm)
 
-	//Loading main window
+	//loading main window
 	log.Println("loading main window...")
 	fyne.SetCurrentApp(app.New())
 	fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
@@ -66,6 +55,7 @@ func main() {
 
 	//load seeker
 	log.Println("loading seeker...")
+	rand.Seed(time.Now().UnixNano())
 	seekerUI := seeker.NewSeekerUI()
 
 	//display GUIs
