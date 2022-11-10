@@ -18,6 +18,7 @@ import (
 func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, musicPanel *container.TabItem) *container.TabItem {
 
 	//album search list
+	var albumRemoverWin fyne.Window = nil
 	panelInfo.AlbumSearchList = custom_canvas.NewSearchList(
 		"Enter album's name...",
 
@@ -40,7 +41,13 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 				//remove album
 				func() {
 					panelInfo.SelectedAlbumInfo = data
-					ShowAlbumRemoverWin(panelInfo)
+					if albumRemoverWin == nil {
+						albumRemoverWin = GetAlbumRemoverWin(panelInfo)
+						albumRemoverWin.SetOnClosed(func() { albumRemoverWin = nil })
+						albumRemoverWin.Show()
+					} else {
+						albumRemoverWin.RequestFocus()
+					}
 				},
 			)
 
@@ -56,7 +63,16 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 	if err != nil {
 		log.Println(err)
 	}
-	albumAdder := widget.NewButtonWithIcon("+", albumAdderIcon, func() { ShowAlbumAdderWin(panelInfo) })
+	var albumAdderWin fyne.Window = nil
+	albumAdder := widget.NewButtonWithIcon("+", albumAdderIcon, func() {
+		if albumAdderWin == nil {
+			albumAdderWin = GetAlbumAdderWin(panelInfo)
+			albumAdderWin.SetOnClosed(func() { albumAdderWin = nil })
+			albumAdderWin.Show()
+		} else {
+			albumAdderWin.RequestFocus()
+		}
+	})
 
 	//Create tab
 	tabIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("album_tab.png"))
@@ -67,8 +83,8 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 	return tab
 }
 
-//Display adding album window
-func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
+//Get album adder window
+func GetAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) fyne.Window {
 
 	//album adder window
 	win := fyne.CurrentApp().NewWindow("Add Album")
@@ -90,7 +106,7 @@ func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
 	confirmBtn := widget.NewButton("Create!", func() {
 		if err := AddAlbum(imagePath, title.Text); err != nil {
 			title.SetText("")
-			title.SetPlaceHolder("duplicated name")
+			title.SetPlaceHolder(err.Error())
 		} else {
 			LoadAlbumFromDir(panelInfo)
 			win.Close()
@@ -103,7 +119,7 @@ func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
 			container.NewVBox(uploadBtn, confirmBtn),
 		),
 	)
-	win.Show()
+	return win
 }
 
 //Display uploading image dialog
@@ -139,7 +155,7 @@ func ShowAddImageWin(imagePath *string, image *canvas.Image, parent *fyne.Window
 	win.Show()
 }
 
-func ShowAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) {
+func GetAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) fyne.Window {
 
 	win := fyne.CurrentApp().NewWindow("Remove Album")
 	win.CenterOnScreen()
@@ -171,6 +187,5 @@ func ShowAlbumRemoverWin(panelInfo *custom_canvas.PanelInfo) {
 	)
 
 	win.SetContent(dia)
-	dia.Show()
-	win.Show()
+	return win
 }

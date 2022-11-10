@@ -3,6 +3,7 @@ package panel
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"sort"
@@ -105,6 +106,7 @@ func AddAlbum(imagePath, albumTitle string) error {
 	albumPath := resource.GetAlbumFolderPath(albumTitle)
 
 	if _, err := os.Stat(albumPath); os.IsNotExist(err) {
+
 		//create album folder
 		err := os.Mkdir(albumPath, os.ModePerm)
 		if err != nil {
@@ -127,8 +129,9 @@ func AddAlbum(imagePath, albumTitle string) error {
 			return err
 		}
 		return nil
+
 	} else {
-		return err
+		return errors.New("duplicated album")
 	}
 }
 

@@ -22,9 +22,21 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 	if err != nil {
 		log.Println(err)
 	}
-	musicAdder := widget.NewButtonWithIcon("+", musicAdderIcon, func() { ShowMusicAdderWin(panelInfo) })
+	var musicAdderWin fyne.Window = nil
+	musicAdder := widget.NewButtonWithIcon("+", musicAdderIcon, func() {
+		if panelInfo.SelectedAlbumInfo != nil {
+			if musicAdderWin == nil {
+				musicAdderWin = GetMusicAdderWin(panelInfo)
+				musicAdderWin.SetOnClosed(func() { musicAdderWin = nil })
+				musicAdderWin.Show()
+			} else {
+				musicAdderWin.RequestFocus()
+			}
+		}
+	})
 
 	//music search list
+	var musicRemoverWin fyne.Window = nil
 	panelInfo.MusicSearchList = custom_canvas.NewSearchList(
 		"Enter music's name...",
 
@@ -40,12 +52,18 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 				func() { seeker.TheUniquePlayer.SetPlaylist(panelInfo.MusicSearchList.DataList, data.Index) },
 
 				//remove music
-				func() { ShowMusicRemoverWin(panelInfo, data.Index) },
+				func() {
+					if musicRemoverWin == nil {
+						musicRemoverWin = GetMusicRemoverWin(panelInfo, data.Index)
+						musicRemoverWin.SetOnClosed(func() { musicRemoverWin = nil })
+						musicRemoverWin.Show()
+					}
+				},
 			)
 			if err != nil {
 				log.Println(err)
 			}
-			return &card.Container
+			return card
 		},
 	)
 
@@ -58,7 +76,7 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 }
 
 //Show music removing window
-func ShowMusicRemoverWin(panelInfo *custom_canvas.PanelInfo, musicIndex int) {
+func GetMusicRemoverWin(panelInfo *custom_canvas.PanelInfo, musicIndex int) fyne.Window {
 
 	musicInfo := panelInfo.MusicSearchList.DataList[musicIndex]
 
@@ -89,33 +107,18 @@ func ShowMusicRemoverWin(panelInfo *custom_canvas.PanelInfo, musicIndex int) {
 	)
 
 	win.SetContent(dia)
-	dia.Show()
-	win.Show()
+	return win
 }
 
 //Display adding music window
-func ShowMusicAdderWin(panelInfo *custom_canvas.PanelInfo) {
-
-	if panelInfo.SelectedAlbumInfo == nil {
-		return
-	}
-
-	addLocalMusicBtn := widget.NewButton("From Local", func() {
-		ShowAddLocalMusicWin(panelInfo)
-	})
-
-	addURLMusicBtn := widget.NewButton("From URL", func() {
-		ShowAddURLMusicWin(panelInfo)
-	})
-
-	addYoutubeMusicBtn := widget.NewButton("From Youtube", func() {
-		ShowAddYoutubeMusicWin(panelInfo)
-	})
-
+func GetMusicAdderWin(panelInfo *custom_canvas.PanelInfo) fyne.Window {
+	addLocalMusicBtn := widget.NewButton("From Local", func() { ShowAddLocalMusicWin(panelInfo) })
+	addURLMusicBtn := widget.NewButton("From URL", func() { ShowAddURLMusicWin(panelInfo) })
+	addYoutubeMusicBtn := widget.NewButton("From Youtube", func() { ShowAddYoutubeMusicWin(panelInfo) })
 	win := fyne.CurrentApp().NewWindow("Add Music")
 	win.SetContent(container.NewVBox(addLocalMusicBtn, addURLMusicBtn, addYoutubeMusicBtn))
 	win.CenterOnScreen()
-	win.Show()
+	return win
 }
 
 //Create add local music window
