@@ -13,6 +13,7 @@ To run in Linux/Mac:
 
 To run in Windows:
 - Anti-virus warning will pop up  
+- Click `More Info` on the upper left
 - Click `Run Anyway`  
 
 "From Remote" downloading feature accepts a youtube video url. Make sure the url ends with a video ID, for example,  

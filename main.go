@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"meowyplayer.com/src/custom_canvas"
 	"meowyplayer.com/src/panel"
 	"meowyplayer.com/src/resource"
@@ -27,6 +28,7 @@ func main() {
 	//Loading main window
 	log.Println("loading main window...")
 	fyne.SetCurrentApp(app.New())
+	fyne.CurrentApp().Settings().SetTheme(theme.LightTheme())
 
 	mainWin := fyne.CurrentApp().NewWindow("Meowy Player")
 	mainWin.Resize(fyne.NewSize(340.0, 340.0*1.618))
@@ -57,7 +59,7 @@ func main() {
 	log.Println("loading seeker...")
 	seekerUI := seeker.NewSeekerUI()
 
-	//combine
+	//display GUIs
 	mainWin.SetContent(container.NewBorder(nil, seekerUI, nil, nil, menu))
 	mainWin.ShowAndRun()
 
@@ -67,6 +69,7 @@ func main() {
 	}
 }
 
+//Remove unused music files that have no reference in any album.
 func RemoveUnusedMusic() error {
 
 	//read album directories
