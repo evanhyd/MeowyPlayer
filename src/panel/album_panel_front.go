@@ -52,11 +52,12 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 	)
 
 	//album adder window
+	albumAdderWinOpened := false
 	albumAdderIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("album_adder_icon.png"))
 	if err != nil {
 		log.Println(err)
 	}
-	albumAdder := widget.NewButtonWithIcon("+", albumAdderIcon, func() { ShowAlbumAdderWin(panelInfo) })
+	albumAdder := widget.NewButtonWithIcon("+", albumAdderIcon, func() { ShowAlbumAdderWin(panelInfo, &albumAdderWinOpened) })
 
 	//Create tab
 	tabIcon, err := fyne.LoadResourceFromPath(resource.GetImagePath("album_tab.png"))
@@ -68,7 +69,12 @@ func NewAlbumPanel(panelInfo *custom_canvas.PanelInfo, menu *container.AppTabs, 
 }
 
 //Display adding album window
-func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
+func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo, albumAdderWinOpened *bool) {
+
+	//ignore duplicated window
+	if *albumAdderWinOpened {
+		return
+	}
 
 	//album adder window
 	win := fyne.CurrentApp().NewWindow("Add Album")
@@ -90,7 +96,7 @@ func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
 	confirmBtn := widget.NewButton("Create!", func() {
 		if err := AddAlbum(imagePath, title.Text); err != nil {
 			title.SetText("")
-			title.SetPlaceHolder("duplicated name")
+			title.SetPlaceHolder(err.Error())
 		} else {
 			LoadAlbumFromDir(panelInfo)
 			win.Close()
@@ -103,6 +109,8 @@ func ShowAlbumAdderWin(panelInfo *custom_canvas.PanelInfo) {
 			container.NewVBox(uploadBtn, confirmBtn),
 		),
 	)
+	win.SetOnClosed(func() { *albumAdderWinOpened = false })
+	*albumAdderWinOpened = true
 	win.Show()
 }
 
