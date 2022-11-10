@@ -5,6 +5,8 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path"
+	"path/filepath"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -18,6 +20,13 @@ import (
 )
 
 func main() {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	exPath := filepath.Dir(ex)
+	paramsFilePath := path.Join(exPath, "params.json")
+	println(paramsFilePath)
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -69,7 +78,7 @@ func main() {
 	}
 }
 
-//Remove unused music files that have no reference in any album.
+// Remove unused music files that have no reference in any album.
 func RemoveUnusedMusic() error {
 
 	//read album directories

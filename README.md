@@ -18,3 +18,6 @@ To run in Windows:
 
 "From Remote" downloading feature accepts a youtube video url. Make sure the url ends with a video ID, for example,  
 https://www.youtube.com/watch?v=dQw4w9WgXcQ  is a valid link, since it ends with the video ID "dQw4w9WgXcQ".  
+
+To build native application:
+- Mac: `./scripts/mac-build.sh`
