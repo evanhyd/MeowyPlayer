@@ -63,7 +63,7 @@ func NewMusicPanel(panelInfo *custom_canvas.PanelInfo) *container.TabItem {
 			if err != nil {
 				log.Println(err)
 			}
-			return &card.Container
+			return card
 		},
 	)
 
