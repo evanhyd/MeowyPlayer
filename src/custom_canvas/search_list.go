@@ -8,25 +8,29 @@ import (
 
 type SearchList[T any] struct {
 	fyne.Container
-	SearchBar *widget.Entry   //searching bar
-	items     *fyne.Container //displayed items
-	DataList  []T             //internal data
+	searchEntry *widget.Entry   //searching bar
+	items       *fyne.Container //displayed items
+	DataList    []T             //internal data
 }
 
 func NewSearchList[T any](
-	placeholder string, //search bar
+	placeholder string, //search bar hint
 	satisfyQuery func(string, *T) bool, //true if the data satisfies the condition
 	makeItem func(*T) fyne.CanvasObject, //constructor of the displayed item
 ) *SearchList[T] {
 
 	lst := SearchList[T]{}
 
+	//scrolling wrapper
+	lst.items = container.NewVBox()
+	scroll := container.NewScroll(lst.items)
+
 	//init search bar
-	lst.SearchBar = widget.NewEntry()
-	lst.SearchBar.SetPlaceHolder(placeholder)
+	lst.searchEntry = widget.NewEntry()
+	lst.searchEntry.SetPlaceHolder(placeholder)
 
 	//add to the displayed item list if fits the query
-	lst.SearchBar.OnChanged = func(query string) {
+	lst.searchEntry.OnChanged = func(query string) {
 
 		//clear the old items
 		lst.items.Objects = make([]fyne.CanvasObject, 0)
@@ -37,11 +41,11 @@ func NewSearchList[T any](
 				lst.items.Add(makeItem(&lst.DataList[i]))
 			}
 		}
+		scroll.ScrollToTop()
 	}
 
 	//initialize search list
-	lst.items = container.NewVBox()
-	lst.Container = *container.NewBorder(lst.SearchBar, nil, nil, nil, container.NewScroll(lst.items))
+	lst.Container = *container.NewBorder(lst.searchEntry, nil, nil, nil, scroll)
 	lst.DataList = make([]T, 0)
 	return &lst
 }
@@ -58,6 +62,6 @@ func (s *SearchList[T]) ClearData() {
 }
 
 func (s *SearchList[T]) ResetSearch() {
-	s.SearchBar.SetText("")
-	s.SearchBar.OnChanged("")
+	s.searchEntry.SetText("")
+	s.searchEntry.OnChanged("")
 }
