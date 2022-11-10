@@ -18,3 +18,5 @@ music/
 album/
 music/**
 album/**
+target
+.DS_Store

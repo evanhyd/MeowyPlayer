@@ -1,6 +1,21 @@
 package resource
 
-import "path/filepath"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+)
+
+func GetBasePath() string {
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	if strings.Contains(ex, "var/folders") {
+		return ""
+	}
+	return filepath.Dir(ex)
+}
 
 func GetImageBasePath() string {
 	return "images"
@@ -15,15 +30,15 @@ func GetAlbumBasePath() string {
 }
 
 func GetImagePath(image string) string {
-	return filepath.Join(GetImageBasePath(), image)
+	return filepath.Join(GetBasePath(), GetImageBasePath(), image)
 }
 
 func GetMusicPath(music string) string {
-	return filepath.Join(GetMusicBasePath(), music)
+	return filepath.Join(GetBasePath(), GetMusicBasePath(), music)
 }
 
 func GetAlbumFolderPath(album string) string {
-	return filepath.Join(GetAlbumBasePath(), album)
+	return filepath.Join(GetBasePath(), GetAlbumBasePath(), album)
 }
 
 func GetAlbumIconPath(album string) string {
