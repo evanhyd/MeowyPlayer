@@ -2,7 +2,11 @@ module meowyplayer.com
 
 go 1.18
 
-require fyne.io/fyne/v2 v2.2.3
+require (
+	fyne.io/fyne/v2 v2.2.3
+	github.com/hajimehoshi/go-mp3 v0.3.3
+	github.com/hajimehoshi/oto/v2 v2.2.0
+)
 
 require (
 	fyne.io/systray v1.10.1-0.20220621085403-9a2652634e93 // indirect
@@ -17,9 +21,6 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/goki/freetype v0.0.0-20181231101311-fa8a33aabaff // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
-	github.com/hajimehoshi/go-mp3 v0.3.3 // indirect
-	github.com/hajimehoshi/oto v1.0.1 // indirect
-	github.com/hajimehoshi/oto/v2 v2.2.0 // indirect
 	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/oksvg v0.0.0-20200311192757-870daf9aa564 // indirect
@@ -27,7 +28,6 @@ require (
 	github.com/stretchr/testify v1.7.2 // indirect
 	github.com/tevino/abool v1.2.0 // indirect
 	github.com/yuin/goldmark v1.4.0 // indirect
-	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
 	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd // indirect
 	golang.org/x/mobile v0.0.0-20211207041440-4e6c2922fdee // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect

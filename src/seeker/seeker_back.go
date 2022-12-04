@@ -263,7 +263,6 @@ func (p *MusicPlayer) launch() {
 			}
 
 		} else {
-			log.Println("empty queue...")
 			time.Sleep(1000 * time.Millisecond)
 		}
 	}

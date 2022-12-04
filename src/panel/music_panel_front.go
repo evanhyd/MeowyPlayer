@@ -179,7 +179,7 @@ func ShowAddURLMusicWin(panelInfo *custom_canvas.PanelInfo) {
 	downloadBtn := widget.NewButton("Download", func() {
 
 		//download music
-		if err := addMusicFromURL(urlEntry.Text, titleEntry.Text+`.mp3`, panelInfo.SelectedAlbumInfo.Title); err != nil {
+		if err := addMusicFromURL(urlEntry.Text, strings.Trim(titleEntry.Text, " ")+`.mp3`, panelInfo.SelectedAlbumInfo.Title); err != nil {
 			log.Println(err)
 		}
 

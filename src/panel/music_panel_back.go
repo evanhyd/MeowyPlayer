@@ -26,9 +26,7 @@ func SatisfyMusicInfo(query string, data *custom_canvas.MusicInfo) bool {
 func addMusicConfig(musicTitle, albumTitle string) error {
 
 	//load music config
-	configPath := resource.GetAlbumConfigPath(albumTitle)
-	configFile, err := os.OpenFile(configPath, os.O_RDWR|os.O_APPEND, fs.ModePerm)
-
+	configFile, err := os.OpenFile(resource.GetAlbumConfigPath(albumTitle), os.O_RDWR|os.O_APPEND, fs.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -41,16 +39,13 @@ func addMusicConfig(musicTitle, albumTitle string) error {
 			return nil
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return err
+	if scanner.Err() != nil {
+		return scanner.Err()
 	}
 
 	//append music title to the config
 	_, err = configFile.WriteString(musicTitle + "\n")
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 //Create a music file by copying to the music folder
@@ -87,7 +82,9 @@ func addMusicFromURL(youtubeUrl, musicTitle, albumTitle string) error {
 	}
 
 	//parse video ID
-	videoID := youtubeUrl[strings.LastIndex(youtubeUrl, "=")+1:]
+	videoIDFrom := strings.LastIndex(youtubeUrl, ".com/watch?v=") + len(".com/watch?v=")
+	videoIDTo := videoIDFrom + 11
+	videoID := youtubeUrl[videoIDFrom:videoIDTo]
 	log.Printf("Youtube Video ID: %v\n", videoID)
 
 	//generate server post data
@@ -111,12 +108,10 @@ func addMusicFromURL(youtubeUrl, musicTitle, albumTitle string) error {
 		return err
 	}
 	serverBodyStr := string(serverBody)
-	beginIDStr := `var k__id = \"`
-	endIDStr := `\"; var video_service =`
 	userID := ""
-	if begin := strings.Index(serverBodyStr, beginIDStr); begin != -1 {
-		if end := strings.Index(serverBodyStr, endIDStr); end != -1 {
-			userID = serverBodyStr[begin+len(beginIDStr) : end]
+	if begin := strings.Index(serverBodyStr, `var k__id = \"`); begin != -1 {
+		if end := strings.Index(serverBodyStr, `\"; var video_service =`); end != -1 {
+			userID = serverBodyStr[begin+len(`var k__id = \"`) : end]
 		}
 	}
 	if userID == "" {
@@ -148,12 +143,10 @@ func addMusicFromURL(youtubeUrl, musicTitle, albumTitle string) error {
 		return err
 	}
 	converterBodyStr := string(converterBody)
-	beginConverterStr := `<a href=\"`
-	endConverterStr := `\" rel=\"nofollow\"`
 	fileUrl := ""
-	if begin := strings.Index(converterBodyStr, beginConverterStr); begin != -1 {
-		if end := strings.Index(converterBodyStr, endConverterStr); end != -1 {
-			fileUrl = converterBodyStr[begin+len(beginConverterStr) : end]
+	if begin := strings.Index(converterBodyStr, `<a href=\"`); begin != -1 {
+		if end := strings.Index(converterBodyStr, `\" rel=\"nofollow\"`); end != -1 {
+			fileUrl = converterBodyStr[begin+len(`<a href=\"`) : end]
 		}
 	}
 	if fileUrl == "" {

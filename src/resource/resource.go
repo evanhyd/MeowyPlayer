@@ -1,24 +1,22 @@
 package resource
 
 import (
-	"log"
-	"os"
 	"path/filepath"
-	"strings"
 )
 
 func GetBasePath() string {
 
-	path, err := os.Executable()
-	if err != nil {
-		log.Panic(err)
-	}
-	if strings.Contains(path, filepath.Join("var", "folders")) || strings.Contains(path, filepath.Join("Local", "Temp")) {
-		return ""
-	}
+	return ""
+	// path, err := os.Executable()
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
+	// if strings.Contains(path, filepath.Join("var", "folders")) || strings.Contains(path, filepath.Join("Local", "Temp")) {
+	// 	return ""
+	// }
 
-	//full path is needed for native app
-	return filepath.Dir(path)
+	// //full path is needed for native app
+	// return filepath.Dir(path)
 }
 
 func GetImageBasePath() string {
