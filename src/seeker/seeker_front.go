@@ -30,13 +30,13 @@ func NewSeekerUI() *fyne.Container {
 	if err != nil {
 		log.Println(err)
 	}
-	orderIcons := make([]fyne.Resource, 0, ORDER_LEN)
-	for i := 0; i < ORDER_LEN; i++ {
-		icon, err := fyne.LoadResourceFromPath(resource.GetImagePath(fmt.Sprintf("seeker_order_icon_%v.png", i)))
+	modeIcons := make([]fyne.Resource, 0, MODE_LEN)
+	for i := 0; i < MODE_LEN; i++ {
+		icon, err := fyne.LoadResourceFromPath(resource.GetImagePath(fmt.Sprintf("seeker_mode_icon_%v.png", i)))
 		if err != nil {
 			log.Panic(err)
 		}
-		orderIcons = append(orderIcons, icon)
+		modeIcons = append(modeIcons, icon)
 	}
 
 	title := widget.NewLabel("")
@@ -47,7 +47,7 @@ func NewSeekerUI() *fyne.Container {
 	prevBtn := widget.NewButton("<<", func() { TheUniquePlayer.RequestPrev <- struct{}{} })
 	nextBtn := widget.NewButton(">>", func() { TheUniquePlayer.RequestNext <- struct{}{} })
 	playBtn := widget.NewButtonWithIcon("", pausingIcon, func() { TheUniquePlayer.RequestPlay <- struct{}{} })
-	orderBtn := widget.NewButtonWithIcon("", orderIcons[RANDOM_ORDER], func() { TheUniquePlayer.RequestOrder <- struct{}{} })
+	modeBtn := widget.NewButtonWithIcon("", modeIcons[RANDOM_MODE], func() { TheUniquePlayer.RequestMode <- struct{}{} })
 	volume := widget.NewSlider(0.0, 1.0)
 	volume.SetValue(1.0)
 	volume.Step = 0.01
@@ -57,12 +57,12 @@ func NewSeekerUI() *fyne.Container {
 		for {
 			select {
 			//update music title
-			case musicInfo := <-TheUniquePlayer.UpdateMusicInfo:
+			case musicInfo := <-TheUniquePlayer.UpdateMusicTitle:
 				title.SetText(musicInfo.Title)
 				log.Println("playing: " + musicInfo.Title)
 
 			//update music progress
-			case percent := <-TheUniquePlayer.UpdateProgress:
+			case percent := <-TheUniquePlayer.UpdateProgressBar:
 				progressTitle.SetText(fmt.Sprintf("%05.2f%%", percent*100))
 
 				//avoid SetValue triggering OnChanged()
@@ -70,30 +70,27 @@ func NewSeekerUI() *fyne.Container {
 				progressBar.Refresh()
 
 			//update play button
-			case isPlaying := <-TheUniquePlayer.UpdatePlay:
+			case isPlaying := <-TheUniquePlayer.UpdatePlayIcon:
 				if isPlaying {
 					playBtn.SetIcon(pausingIcon)
 				} else {
 					playBtn.SetIcon(playingIcon)
 				}
 
-			//update play order
-			case order := <-TheUniquePlayer.UpdateOrder:
-				orderBtn.SetIcon(orderIcons[order])
+			//update play mode
+			case mode := <-TheUniquePlayer.UpdateModeIcon:
+				modeBtn.SetIcon(modeIcons[mode])
 			}
 		}
 	}()
 
-	go TheUniquePlayer.launch()
+	go TheUniquePlayer.Launch()
 
 	return container.NewBorder(
-		title,
-		nil,
-		nil,
-		nil,
+		title, nil, nil, nil,
 		container.NewVBox(
 			container.NewBorder(nil, nil, progressTitle, nil, progressBar),
-			container.NewHBox(layout.NewSpacer(), prevBtn, playBtn, nextBtn, orderBtn, volume, layout.NewSpacer()),
+			container.NewHBox(layout.NewSpacer(), prevBtn, playBtn, nextBtn, modeBtn, volume, layout.NewSpacer()),
 		),
 	)
 }

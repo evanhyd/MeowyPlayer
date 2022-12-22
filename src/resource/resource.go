@@ -6,6 +6,7 @@ import (
 
 func GetBasePath() string {
 
+	//need to make it compatiable on different platform
 	return ""
 	// path, err := os.Executable()
 	// if err != nil {
