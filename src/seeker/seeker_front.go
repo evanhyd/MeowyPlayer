@@ -44,8 +44,8 @@ func NewSeekerUI() *fyne.Container {
 	progressBar := widget.NewSlider(0.0, 1.0)
 	progressBar.Step = 0.00000001
 	progressBar.OnChanged = func(val float64) { TheUniquePlayer.RequestProgress <- val }
-	prevBtn := widget.NewButton("<<", func() { TheUniquePlayer.RequestPrev <- struct{}{} })
-	nextBtn := widget.NewButton(">>", func() { TheUniquePlayer.RequestNext <- struct{}{} })
+	prevBtn := widget.NewButton("<<", func() { TheUniquePlayer.RequestRollBack <- struct{}{} })
+	nextBtn := widget.NewButton(">>", func() { TheUniquePlayer.RequestSkip <- struct{}{} })
 	playBtn := widget.NewButtonWithIcon("", pausingIcon, func() { TheUniquePlayer.RequestPlay <- struct{}{} })
 	modeBtn := widget.NewButtonWithIcon("", modeIcons[RANDOM_MODE], func() { TheUniquePlayer.RequestMode <- struct{}{} })
 	volume := widget.NewSlider(0.0, 1.0)
