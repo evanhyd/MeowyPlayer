@@ -1,4 +1,4 @@
-# MeowyPlayer
+# Meowy Player V2
 ![Album Menu](https://i.imgur.com/nsAVTfV.png)  
 ![Music Menu](https://i.imgur.com/ZTg9sHD.png)  
   
