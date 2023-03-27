@@ -102,11 +102,15 @@ func createAblumTab() *container.TabItem {
 		func(album player.Album, canvas fyne.CanvasObject) {
 			//weak design, if the inner border style change, then this code would break easily
 			label := canvas.(*fyne.Container).Objects[0].(*widget.Label)
-			label.SetText(album.Description())
+			if label.Text != album.Description() {
+				label.SetText(album.Description())
+			}
 
 			card := canvas.(*fyne.Container).Objects[1].(*cwidget.Card)
-			card.SetImage(album.CoverIcon())
-			card.Image.SetMinSize(albumCoverIconSize)
+			if card.Image != album.CoverIcon() {
+				card.SetImage(album.CoverIcon())
+				card.Image.SetMinSize(albumCoverIconSize)
+			}
 		},
 	)
 
