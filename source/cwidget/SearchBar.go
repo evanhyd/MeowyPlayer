@@ -1,19 +1,18 @@
 package cwidget
 
-import "fyne.io/fyne/v2/widget"
-
-type SearchBarObserver interface {
-	Notify(text string)
-}
+import (
+	"fyne.io/fyne/v2/widget"
+	"meowyplayer.com/source/pattern"
+)
 
 type SearchBar struct {
 	widget.Entry
-	observers []SearchBarObserver
+	pattern.OneArgSubject[string]
 }
 
 func NewSearchBar() *SearchBar {
 	searchBar := &SearchBar{}
-	searchBar.OnChanged = searchBar.NotifyObservers
+	searchBar.OnChanged = searchBar.NotifyAll
 	searchBar.ExtendBaseWidget(searchBar)
 	return searchBar
 }
@@ -21,16 +20,6 @@ func NewSearchBar() *SearchBar {
 func (searchBar *SearchBar) SetOnChanged(onChanged func(string)) {
 	searchBar.OnChanged = func(text string) {
 		onChanged(text)
-		searchBar.NotifyObservers(text)
-	}
-}
-
-func (searchBar *SearchBar) AddObserver(observer SearchBarObserver) {
-	searchBar.observers = append(searchBar.observers, observer)
-}
-
-func (searchBarthis *SearchBar) NotifyObservers(text string) {
-	for _, observer := range searchBarthis.observers {
-		observer.Notify(text)
+		searchBar.NotifyAll(text)
 	}
 }

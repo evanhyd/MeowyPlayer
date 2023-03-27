@@ -18,13 +18,17 @@ type ItemList[T any] struct {
 
 func NewItemList[T any](createItem func() fyne.CanvasObject, updateItem func(T, fyne.CanvasObject)) *ItemList[T] {
 	itemList := &ItemList[T]{}
+	itemList.Initialize(createItem, updateItem)
+	itemList.ExtendBaseWidget(itemList)
+	return itemList
+}
+
+func (itemList *ItemList[T]) Initialize(createItem func() fyne.CanvasObject, updateItem func(T, fyne.CanvasObject)) {
 	itemList.Length = func() int { return len(itemList.displayedData) }
 	itemList.CreateItem = createItem
 	itemList.UpdateItem = func(id widget.ListItemID, canvas fyne.CanvasObject) { updateItem(itemList.displayedData[id], canvas) }
 	itemList.filter = func(T) bool { return true }
 	itemList.sorter = func(T, T) bool { return true }
-	itemList.ExtendBaseWidget(itemList)
-	return itemList
 }
 
 func (itemList *ItemList[T]) SetItems(items []T) {

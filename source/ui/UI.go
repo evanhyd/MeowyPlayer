@@ -10,8 +10,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/album"
 	"meowyplayer.com/source/cwidget"
+	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 )
 
@@ -93,13 +93,13 @@ func createAblumTab() *container.TabItem {
 	sortByNameButton := cwidget.NewButton("Name")
 	sortByModifiedTimeButton := cwidget.NewButton("Date")
 
-	scroll := cwidget.NewItemList(
+	scroll := cwidget.NewAlbumItemList(
 		func() fyne.CanvasObject {
 			card := cwidget.NewCard("", "", albumCoverIcon)
 			title := widget.NewLabel("")
 			return container.NewBorder(nil, nil, card, nil, title)
 		},
-		func(album album.Album, canvas fyne.CanvasObject) {
+		func(album player.Album, canvas fyne.CanvasObject) {
 			//weak design, if the inner border style change, then this code would break easily
 			label := canvas.(*fyne.Container).Objects[0].(*widget.Label)
 			label.SetText(album.Description())
@@ -110,23 +110,11 @@ func createAblumTab() *container.TabItem {
 		},
 	)
 
-	searchBar.SetOnChanged(func(text string) {
-		lowerCaseText := strings.ToLower(text)
-		scroll.SetFilter(func(album album.Album) bool {
-			return strings.Contains(strings.ToLower(album.Title()), lowerCaseText)
-		})
-		scroll.ScrollToTop()
-	})
-	sortByNameButton.SetOnTapped(func() {
-		scroll.SetSorter(func(album0, album1 album.Album) bool {
-			return strings.Compare(strings.ToLower(album0.Title()), strings.ToLower(album1.Title())) < 0
-		})
-	})
-	sortByModifiedTimeButton.SetOnTapped(func() {
-		scroll.SetSorter(func(album0, album1 album.Album) bool {
-			return album0.ModifiedTime().Compare(album1.ModifiedTime()) > 0
-		})
-	})
+	searchBar.AddObserver(scroll.NameFilter())
+	sortByNameButton.AddObserver(scroll.NameSorter())
+	sortByModifiedTimeButton.AddObserver(scroll.DateFilter())
+	player.GetPlayerState().OnUpdateAllAlbumsAddObserver(scroll.ItemUpdater())
+	sortByModifiedTimeButton.OnTapped()
 
 	canvas := container.NewBorder(
 		container.NewBorder(
@@ -141,12 +129,6 @@ func createAblumTab() *container.TabItem {
 		nil,
 		scroll,
 	)
-
-	defer sortByModifiedTimeButton.OnTapped()
-
-	//move this out of here, it should be set up after finish creating all the UI
-	defer scroll.SetItems(album.GetAlbums())
-
 	return container.NewTabItemWithIcon(albumTabName, albumTabIcon, canvas)
 }
 
@@ -161,7 +143,7 @@ func createMusicTab() *container.TabItem {
 			title := widget.NewLabel("")
 			return container.NewBorder(nil, nil, card, nil, title)
 		},
-		func(album album.Album, canvas fyne.CanvasObject) {
+		func(album player.Album, canvas fyne.CanvasObject) {
 			//weak design, if the inner border style change, then this code would break easily
 			label := canvas.(*fyne.Container).Objects[0].(*widget.Label)
 			label.SetText(album.Description())
@@ -174,18 +156,18 @@ func createMusicTab() *container.TabItem {
 
 	searchBar.SetOnChanged(func(text string) {
 		lowerCaseText := strings.ToLower(text)
-		scroll.SetFilter(func(album album.Album) bool {
+		scroll.SetFilter(func(album player.Album) bool {
 			return strings.Contains(strings.ToLower(album.Title()), lowerCaseText)
 		})
 		scroll.ScrollToTop()
 	})
 	sortByNameButton.SetOnTapped(func() {
-		scroll.SetSorter(func(album0, album1 album.Album) bool {
+		scroll.SetSorter(func(album0, album1 player.Album) bool {
 			return strings.Compare(strings.ToLower(album0.Title()), strings.ToLower(album1.Title())) < 0
 		})
 	})
 	sortByModifiedTimeButton.SetOnTapped(func() {
-		scroll.SetSorter(func(album0, album1 album.Album) bool {
+		scroll.SetSorter(func(album0, album1 player.Album) bool {
 			return album0.ModifiedTime().Compare(album1.ModifiedTime()) > 0
 		})
 	})

@@ -10,10 +10,7 @@ type Card struct {
 }
 
 func NewCard(title string, subtitle string, image *canvas.Image) *Card {
-	card := &Card{}
-	card.Title = title
-	card.Subtitle = subtitle
-	card.Image = image
+	card := &Card{Card: widget.Card{Title: title, Subtitle: subtitle, Image: image}}
 	card.ExtendBaseWidget(card)
 	return card
 }
