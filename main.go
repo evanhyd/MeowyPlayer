@@ -7,6 +7,7 @@ import (
 
 func main() {
 	mainWindow := ui.NewMeowyPlayerWindow()
-	player.GetPlayerState().UpdateAlbums()
+	state := player.GetState()
+	state.OnReadAlbums().NotifyAll(player.ReadAlbumsFromDirectory())
 	mainWindow.ShowAndRun()
 }

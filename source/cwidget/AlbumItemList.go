@@ -39,7 +39,7 @@ type albumDateSorter struct {
 
 func (sorter *albumDateSorter) Notify() {
 	sorter.itemList.SetSorter(func(album0, album1 player.Album) bool {
-		return (album0.ModifiedTime().Compare(album1.ModifiedTime()) < 0) != sorter.reverse
+		return (album0.ModifiedDate().Compare(album1.ModifiedDate()) > 0) != sorter.reverse
 	})
 	sorter.reverse = !sorter.reverse
 }

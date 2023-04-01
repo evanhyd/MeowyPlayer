@@ -1,60 +1,69 @@
 package player
 
 import (
+	"bufio"
 	"bytes"
 	"io"
+	"io/fs"
 	"log"
 	"os"
-	"sync"
+	"time"
 
 	"fyne.io/fyne/v2/canvas"
 	"meowyplayer.com/source/pattern"
 	"meowyplayer.com/source/resource"
 )
 
-var state *playerState
+var state *State
 
 func init() {
-	state = &playerState{}
+	state = &State{}
+	state.info.state = state
 }
 
-func GetPlayerState() *playerState {
+func GetState() *State {
 	return state
 }
 
-type playerState struct {
-	allAlbums     []Album
-	selectedAlbum Album
-	accessLock    sync.Mutex
-
-	onUpdateAllAlbums pattern.OneArgSubject[[]Album]
-	onSelectAlbum     pattern.OneArgSubject[Album]
+type StateInfo struct {
+	state *State
+	album Album
+	music []Music
 }
 
-func (state *playerState) OnUpdateAllAlbumsAddObserver(observer pattern.OneArgObserver[[]Album]) {
-	state.accessLock.Lock()
-	defer state.accessLock.Unlock()
-	state.onUpdateAllAlbums.AddObserver(observer)
+func (info *StateInfo) Notify(album Album) {
+	info.album = album
+	info.music = ReadMusicFromDirectory(album)
+	info.state.onSelectAlbum.NotifyAll(info.album, info.music)
 }
 
-func (state *playerState) onSelectAlbumAddObserver(observer pattern.OneArgObserver[Album]) {
-	state.accessLock.Lock()
-	defer state.accessLock.Unlock()
-	state.onSelectAlbum.AddObserver(observer)
+type State struct {
+	info          StateInfo
+	onReadAlbums  pattern.OneArgSubject[[]Album]
+	onSelectAlbum pattern.TwoArgSubject[Album, []Music]
 }
 
-func (state *playerState) UpdateAlbums() {
-	state.accessLock.Lock()
-	defer state.accessLock.Unlock()
+func (state *State) Info() pattern.OneArgObserver[Album] {
+	return &state.info
+}
 
-	directories, err := os.ReadDir(resource.GetAlbumPath())
+func (state *State) OnReadAlbums() *pattern.OneArgSubject[[]Album] {
+	return &state.onReadAlbums
+}
+
+func (state *State) OnSelectAlbum() *pattern.TwoArgSubject[Album, []Music] {
+	return &state.onSelectAlbum
+}
+
+func ReadAlbumsFromDirectory() []Album {
+	directories, err := os.ReadDir(resource.GetAlbumFolderPath())
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	const bufferSize = 32 * 1024 //arbitrary magic number
 	buffer := make([]byte, bufferSize)
-	state.allAlbums = []Album{}
+	albums := []Album{}
 
 	for _, directory := range directories {
 		if directory.IsDir() {
@@ -82,9 +91,48 @@ func (state *playerState) UpdateAlbums() {
 			//get album cover
 			albumCover := canvas.NewImageFromFile(resource.GetAlbumIconPath(directory.Name()))
 
-			state.allAlbums = append(state.allAlbums, Album{directory.Name(), info.ModTime(), musicNumber, albumCover})
+			albums = append(albums, Album{directory.Name(), info.ModTime(), musicNumber, albumCover})
 		}
 	}
+	return albums
+}
 
-	state.onUpdateAllAlbums.NotifyAll(state.allAlbums)
+func ReadMusicFromDirectory(album Album) []Music {
+	config, err := os.Open(resource.GetAlbumConfigPath(album.title))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer config.Close()
+
+	//read music name from config
+	music := []Music{}
+	scanner := bufio.NewScanner(config)
+	for scanner.Scan() {
+
+		//open music file
+		info, err := os.Stat(resource.GetMusicPath(scanner.Text()))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		music = append(music, Music{scanner.Text(), estimateDuration(info), info.ModTime()})
+	}
+
+	if scanner.Err() != nil {
+		log.Fatal(scanner.Err())
+	}
+
+	return music
+}
+
+func estimateDuration(musicFileInfo fs.FileInfo) time.Duration {
+	const (
+		MAGIC_RATIO     = 11024576435 //pray it doesn't overflow
+		AUDIO_BIT_DEPTH = 2
+		NUM_OF_CHANNELS = 2
+		SAMPLING_RATE   = 44100
+	)
+
+	//a very rough estimation of the music duration in nanoseconds
+	return time.Duration(musicFileInfo.Size() * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
 }
