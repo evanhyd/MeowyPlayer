@@ -40,9 +40,18 @@ func (itemList *ItemList[T]) OnSelected() *pattern.OneArgSubject[T] {
 	return &itemList.onSelected
 }
 
-func (itemList *ItemList[T]) SetItems(items []T) {
+func (itemList *ItemList[T]) SetOnSelected(onSelected func(T)) {
+	itemList.List.OnSelected = func(id widget.ListItemID) {
+		onSelected(itemList.displayedData[id])
+		itemList.onSelected.NotifyAll(itemList.displayedData[id])
+		itemList.UnselectAll()
+	}
+}
+
+func (itemList *ItemList[T]) Notify(items []T) {
 	itemList.internalData = items
 	itemList.refreshDisplayData()
+	itemList.ScrollToTop()
 }
 
 func (itemList *ItemList[T]) SetFilter(filter func(T) bool) {
@@ -58,17 +67,17 @@ func (itemList *ItemList[T]) SetSorter(sorter func(T, T) bool) {
 func (itemList *ItemList[T]) refreshDisplayData() {
 	itemList.displayedData = itemList.displayedData[0:0]
 
+	//sort first, since internal data may affect the playing order
+	sort.SliceStable(itemList.internalData, func(i, j int) bool {
+		return itemList.sorter(itemList.internalData[i], itemList.internalData[j])
+	})
+
 	//filter keeps satisfied data
 	for i := range itemList.internalData {
 		if itemList.filter(itemList.internalData[i]) {
 			itemList.displayedData = append(itemList.displayedData, itemList.internalData[i])
 		}
 	}
-
-	//sort the display data
-	sort.Slice(itemList.displayedData, func(i, j int) bool {
-		return itemList.sorter(itemList.displayedData[i], itemList.displayedData[j])
-	})
 
 	itemList.Refresh()
 }

@@ -1,138 +1,210 @@
 package player
 
 import (
-	"bufio"
-	"bytes"
-	"io"
-	"io/fs"
 	"log"
+	"math/rand"
 	"os"
 	"time"
 
-	"fyne.io/fyne/v2/canvas"
+	"github.com/hajimehoshi/go-mp3"
+	"github.com/hajimehoshi/oto/v2"
 	"meowyplayer.com/source/pattern"
 	"meowyplayer.com/source/resource"
 )
 
-var state *State
+type Signal = struct{}
+type PlayMode int
+
+const (
+	MAGIC_RATIO     = 11024576435 //pray it doesn't overflow
+	AUDIO_BIT_DEPTH = 2
+	NUM_OF_CHANNELS = 2
+	SAMPLING_RATE   = 44100
+)
+
+const (
+	RANDOM PlayMode = iota
+	ORDER
+	LOOP
+)
+
+var player *Player
 
 func init() {
-	state = &State{}
-	state.info.state = state
+	player = NewPlayer()
 }
 
-func GetState() *State {
-	return state
+func GetPlayer() *Player {
+	return player
 }
 
-type StateInfo struct {
-	state *State
-	album Album
-	music []Music
+type Player struct {
+	*oto.Context
+	selectMusicUpdater
+
+	isLoaded  bool
+	loadMusic chan Signal
+
+	album       Album
+	musics      []Music
+	musicIndex  int
+	musicVolume float64
+
+	playMode      PlayMode
+	randomHistory []int
+	randomQueue   []int
 }
 
-func (info *StateInfo) Notify(album Album) {
-	info.album = album
-	info.music = ReadMusicFromDirectory(album)
-	info.state.onSelectAlbum.NotifyAll(info.album, info.music)
-}
-
-type State struct {
-	info          StateInfo
-	onReadAlbums  pattern.OneArgSubject[[]Album]
-	onSelectAlbum pattern.TwoArgSubject[Album, []Music]
-}
-
-func (state *State) Info() pattern.OneArgObserver[Album] {
-	return &state.info
-}
-
-func (state *State) OnReadAlbums() *pattern.OneArgSubject[[]Album] {
-	return &state.onReadAlbums
-}
-
-func (state *State) OnSelectAlbum() *pattern.TwoArgSubject[Album, []Music] {
-	return &state.onSelectAlbum
-}
-
-func ReadAlbumsFromDirectory() []Album {
-	directories, err := os.ReadDir(resource.GetAlbumFolderPath())
+func NewPlayer() *Player {
+	context, ready, err := oto.NewContext(SAMPLING_RATE, NUM_OF_CHANNELS, AUDIO_BIT_DEPTH)
 	if err != nil {
 		log.Fatal(err)
 	}
+	<-ready
 
-	const bufferSize = 32 * 1024 //arbitrary magic number
-	buffer := make([]byte, bufferSize)
-	albums := []Album{}
+	player := &Player{}
+	player.Context = context
+	player.selectMusicUpdater = selectMusicUpdater{player}
+	player.loadMusic = make(chan struct{}, 16)
+	player.musicVolume = 1.0
+	player.playMode = RANDOM
+	return player
+}
 
-	for _, directory := range directories {
-		if directory.IsDir() {
+func (player *Player) PlayerMusicUpdater() pattern.ThreeArgObserver[Album, []Music, Music] {
+	return &player.selectMusicUpdater
+}
 
-			//read album config
-			config, err := os.Open(resource.GetAlbumConfigPath(directory.Name()))
+func (player *Player) ChangePlayMode(playMode PlayMode) {
+	if playMode == RANDOM {
+		player.randomHistory = []int{}
+		player.randomQueue = rand.Perm(player.album.musicNumber)
+	}
+	player.playMode = playMode
+}
+
+func (player *Player) PreviousMusic() {
+	switch player.playMode {
+	case RANDOM:
+		if len(player.randomHistory) > 0 {
+			player.randomQueue = append(player.randomQueue, player.musicIndex)
+			lastIndex := len(player.randomHistory) - 1
+			player.musicIndex = player.randomHistory[lastIndex]
+			player.randomHistory = player.randomHistory[:lastIndex]
+		}
+
+	case ORDER:
+		player.musicIndex = (player.musicIndex - 1 + player.album.musicNumber) % player.album.musicNumber
+
+	case LOOP:
+
+	default:
+		log.Fatal("Invalid music play mode")
+	}
+
+	player.loadMusic <- Signal{}
+}
+
+func (player *Player) NextMusic() {
+	switch player.playMode {
+	case RANDOM:
+		player.randomHistory = append(player.randomHistory, player.musicIndex)
+		if len(player.randomQueue) == 0 {
+			player.randomQueue = rand.Perm(player.album.musicNumber)
+		}
+		lastIndex := len(player.randomQueue) - 1
+		player.musicIndex = player.randomQueue[lastIndex]
+		player.randomQueue = player.randomQueue[:lastIndex]
+
+	case ORDER:
+		player.musicIndex = (player.musicIndex + 1) % player.album.musicNumber
+
+	case LOOP:
+
+	default:
+		log.Fatal("Invalid music play mode")
+	}
+
+	player.loadMusic <- Signal{}
+}
+
+func (player *Player) Launch() {
+	for {
+		if player.isLoaded {
+
+			//open music file
+			mp3File, err := os.Open(resource.GetMusicPath(player.musics[player.musicIndex].title))
 			if err != nil {
 				log.Fatal(err)
 			}
-			defer config.Close()
 
-			//read last modified date
-			info, err := config.Stat()
+			//decode music stream
+			mp3Stream, err := mp3.NewDecoder(mp3File)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			//read number of music
-			bytesRead, err := config.Read(buffer)
-			if err != nil && err != io.EOF {
-				log.Fatal(err)
+			//obtain music player
+			mp3Player := player.Context.NewPlayer(mp3Stream)
+
+			//load current config
+			mp3Player.SetVolume(player.musicVolume)
+
+			interrupted := false
+		MusicLoop:
+			for mp3Player.Play(); mp3Player.IsPlaying(); {
+				select {
+				case <-player.loadMusic:
+					interrupted = true
+					break MusicLoop
+				default:
+					log.Println("idling")
+					time.Sleep(1000 * time.Millisecond)
+				}
 			}
-			musicNumber := bytes.Count(buffer[:bytesRead], []byte{'\n'})
 
-			//get album cover
-			albumCover := canvas.NewImageFromFile(resource.GetAlbumIconPath(directory.Name()))
+			if !interrupted {
+				player.NextMusic()
+			}
 
-			albums = append(albums, Album{directory.Name(), info.ModTime(), musicNumber, albumCover})
+			mp3Player.Close()
+			mp3File.Close()
+
+		} else {
+			log.Println("waiting to load")
+			time.Sleep(1000 * time.Millisecond)
 		}
 	}
-	return albums
 }
 
-func ReadMusicFromDirectory(album Album) []Music {
-	config, err := os.Open(resource.GetAlbumConfigPath(album.title))
-	if err != nil {
-		log.Fatal(err)
+type selectMusicUpdater struct {
+	*Player
+}
+
+func (player *selectMusicUpdater) Notify(album Album, musics []Music, music Music) {
+	if player.album != album {
+		player.album = album
+		player.randomHistory = []int{}
+		player.randomQueue = []int{}
 	}
-	defer config.Close()
+	player.musics = musics //musics sorting order can be different
 
-	//read music name from config
-	music := []Music{}
-	scanner := bufio.NewScanner(config)
-	for scanner.Scan() {
-
-		//open music file
-		info, err := os.Stat(resource.GetMusicPath(scanner.Text()))
-		if err != nil {
-			log.Fatal(err)
+	found := false
+	for i := range musics {
+		if musics[i] == music {
+			player.musicIndex = i
+			found = true
+			break
 		}
-
-		music = append(music, Music{scanner.Text(), estimateDuration(info), info.ModTime()})
 	}
-
-	if scanner.Err() != nil {
-		log.Fatal(scanner.Err())
+	if !found {
+		log.Fatal("Can not find the music from the album")
 	}
+	log.Printf("[%v] %v\n", album.title, music.title)
 
-	return music
-}
-
-func estimateDuration(musicFileInfo fs.FileInfo) time.Duration {
-	const (
-		MAGIC_RATIO     = 11024576435 //pray it doesn't overflow
-		AUDIO_BIT_DEPTH = 2
-		NUM_OF_CHANNELS = 2
-		SAMPLING_RATE   = 44100
-	)
-
-	//a very rough estimation of the music duration in nanoseconds
-	return time.Duration(musicFileInfo.Size() * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
+	if !player.isLoaded {
+		player.isLoaded = true
+	} else {
+		player.loadMusic <- Signal{}
+	}
 }

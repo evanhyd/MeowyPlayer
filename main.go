@@ -7,7 +7,12 @@ import (
 
 func main() {
 	mainWindow := ui.NewMeowyPlayerWindow()
-	state := player.GetState()
-	state.OnReadAlbums().NotifyAll(player.ReadAlbumsFromDirectory())
+
+	meowyPlayerState := player.GetState()
+	meowyPlayer := player.GetPlayer()
+	meowyPlayerState.OnReadAlbumsFromDisk().NotifyAll(player.ReadAlbumsFromDisk())
+	meowyPlayerState.OnSelectMusic().AddObserver(meowyPlayer.PlayerMusicUpdater())
+	go meowyPlayer.Launch()
+
 	mainWindow.ShowAndRun()
 }

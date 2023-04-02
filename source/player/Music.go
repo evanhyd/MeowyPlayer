@@ -24,5 +24,5 @@ func (music *Music) ModifiedDate() time.Time {
 }
 
 func (music *Music) Description() string {
-	return fmt.Sprintf("%02d:%02d", int(music.duration.Minutes())%60, int(music.duration.Seconds())%60) + " | " + music.title
+	return fmt.Sprintf("%02d:%02d", int(music.duration.Minutes())%60, int(music.duration.Seconds())%60) + " | " + music.title[:len(music.title)-4]
 }
