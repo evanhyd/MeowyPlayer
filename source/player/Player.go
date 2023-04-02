@@ -1,6 +1,7 @@
 package player
 
 import (
+	"bytes"
 	"io"
 	"log"
 	"math/rand"
@@ -195,20 +196,20 @@ func (player *Player) Launch() {
 	for {
 		if player.isLoaded {
 
-			//open music file
-			mp3File, err := os.Open(resource.GetMusicPath(player.musics[player.musicIndex].title))
+			//read music file
+			mp3File, err := os.ReadFile(resource.GetMusicPath(player.musics[player.musicIndex].title))
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			//decode music stream
-			mp3Stream, err := mp3.NewDecoder(mp3File)
+			//decode music file
+			mp3Decoder, err := mp3.NewDecoder(bytes.NewReader(mp3File))
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			//obtain music player
-			mp3Player := player.Context.NewPlayer(mp3Stream)
+			mp3Player := player.Context.NewPlayer(mp3Decoder)
 
 			//PLAYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 			paused := false
@@ -235,20 +236,21 @@ func (player *Player) Launch() {
 
 				case percent := <-player.progressChan:
 					mp3Player.Pause()
-					tick := int64(float64(mp3Stream.Length()) * percent)
+					tick := int64(float64(mp3Decoder.Length()) * percent)
 					tick -= tick % 4
-					mp3Stream.Seek(tick, io.SeekStart)
+					time.Sleep(10 * time.Millisecond) //mp3 library has race condition bug
+					mp3Decoder.Seek(tick, io.SeekStart)
 					mp3Player.Play()
 
 				case volume := <-player.musicVolumeChan:
 					mp3Player.SetVolume(volume)
 
 				default:
-					currentTick, err := mp3Stream.Seek(0, io.SeekCurrent)
+					currentTick, err := mp3Decoder.Seek(0, io.SeekCurrent)
 					if err != nil {
 						log.Fatal(err)
 					}
-					percent := float64(currentTick) / float64(mp3Stream.Length())
+					percent := float64(currentTick) / float64(mp3Decoder.Length())
 					player.onMusicPlaying.NotifyAll(player.musics[player.musicIndex], percent)
 					time.Sleep(200 * time.Millisecond)
 				}
@@ -259,7 +261,6 @@ func (player *Player) Launch() {
 			}
 
 			mp3Player.Close()
-			mp3File.Close()
 
 		} else {
 			time.Sleep(1000 * time.Millisecond)
