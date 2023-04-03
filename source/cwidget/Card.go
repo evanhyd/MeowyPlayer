@@ -25,7 +25,7 @@ func (card *Card) Tapped(*fyne.PointEvent) {
 	card.onTapped()
 }
 
-func (card *Card) OnTapped() *pattern.ZeroArgSubject {
+func (card *Card) OnTappedSubject() *pattern.ZeroArgSubject {
 	return &card.ZeroArgSubject
 }
 

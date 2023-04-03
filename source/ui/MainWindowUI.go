@@ -36,6 +36,7 @@ func NewMeowyPlayerWindow() fyne.Window {
 	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
 
 	meowyPlayerWindow := fyne.CurrentApp().NewWindow(mainWindowName)
+	meowyPlayerWindow.SetMaster()
 	meowyPlayerWindow.Resize(mainWindowSize)
 	meowyPlayerWindow.SetIcon(mainWindowIcon)
 	meowyPlayerWindow.CenterOnScreen()
@@ -44,12 +45,12 @@ func NewMeowyPlayerWindow() fyne.Window {
 	musicTab := createMusicTab()
 	albumAdderTab := createAlbumAdderTab()
 	musicAdderTab := createMusicAdderTab()
-	menu := container.NewAppTabs(albumTab, musicTab, albumAdderTab, musicAdderTab)
-	menu.SetTabLocation(container.TabLocationLeading)
+	tabs := container.NewAppTabs(albumTab, musicTab, albumAdderTab, musicAdderTab)
+	tabs.SetTabLocation(container.TabLocationLeading)
 
 	//switch to the music tab after loaded music list
-	player.GetState().OnSelectAlbum().AddCallback(func(player.Album) { menu.SelectIndex(1) })
+	player.GetState().OnSelectAlbumSubject().AddCallback(func(player.Album) { tabs.SelectIndex(1) })
 
-	meowyPlayerWindow.SetContent(container.NewBorder(nil, createSeeker(), nil, nil, menu))
+	meowyPlayerWindow.SetContent(container.NewBorder(nil, createSeeker(), nil, nil, tabs))
 	return meowyPlayerWindow
 }

@@ -41,7 +41,7 @@ func createAblumTab() *container.TabItem {
 	sortByTitleButton := cwidget.NewButton("Title")
 	sortByDateButton := cwidget.NewButton("Date")
 
-	scroll := cwidget.NewAlbumItemList(
+	scroll := cwidget.NewAlbumList(
 		func() fyne.CanvasObject {
 			card := widget.NewCard("", "", nil)
 			card.SetImage(albumCoverIcon)
@@ -66,8 +66,8 @@ func createAblumTab() *container.TabItem {
 	searchBar.SetOnChanged(scroll.SetTitleFilter)
 	sortByTitleButton.SetOnTapped(scroll.SetTitleSorter)
 	sortByDateButton.SetOnTapped(scroll.SetDateSorter)
-	player.GetState().OnReadAlbumsFromDisk().AddObserver(scroll)
-	scroll.SetOnSelected(player.GetState().SetSelectedAlbum)
+	player.GetState().OnReadAlbumsFromDiskSubject().AddObserver(scroll)
+	scroll.SetOnTapped(player.GetState().SetSelectedAlbum)
 
 	defer sortByDateButton.OnTapped()
 

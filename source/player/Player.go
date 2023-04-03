@@ -43,13 +43,13 @@ func GetPlayer() *Player {
 type Player struct {
 	*oto.Context
 
-	isLoaded           bool
-	loadMusicChan      chan Signal
-	playPauseMusicChan chan Signal
-	musicVolumeChan    chan float64
-	progressChan       chan float64
-	onMusicBegin       pattern.OneArgSubject[Music]
-	onMusicPlaying     pattern.TwoArgSubject[Music, float64]
+	isLoaded              bool
+	loadMusicChan         chan Signal
+	playPauseMusicChan    chan Signal
+	musicVolumeChan       chan float64
+	progressChan          chan float64
+	onMusicBeginSubject   pattern.OneArgSubject[Music]
+	onMusicPlayingSubject pattern.TwoArgSubject[Music, float64]
 
 	album       Album
 	musics      []Music
@@ -81,12 +81,12 @@ func NewPlayer() *Player {
 	return player
 }
 
-func (player *Player) OnMusicBegin() *pattern.OneArgSubject[Music] {
-	return &player.onMusicBegin
+func (player *Player) OnMusicBeginSubject() *pattern.OneArgSubject[Music] {
+	return &player.onMusicBeginSubject
 }
 
-func (player *Player) OnMusicPlaying() *pattern.TwoArgSubject[Music, float64] {
-	return &player.onMusicPlaying
+func (player *Player) OnMusicPlayingSubject() *pattern.TwoArgSubject[Music, float64] {
+	return &player.onMusicPlayingSubject
 }
 
 func (player *Player) SetMusic(album Album, musics []Music, music Music) {
@@ -214,7 +214,7 @@ func (player *Player) Launch() {
 			//PLAYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 			paused := false
 			interrupted := false
-			player.onMusicBegin.NotifyAll(player.musics[player.musicIndex])
+			player.onMusicBeginSubject.NotifyAll(player.musics[player.musicIndex])
 			mp3Player.SetVolume(player.musicVolume)
 			mp3Player.Play()
 
@@ -251,7 +251,7 @@ func (player *Player) Launch() {
 						log.Fatal(err)
 					}
 					percent := float64(currentTick) / float64(mp3Decoder.Length())
-					player.onMusicPlaying.NotifyAll(player.musics[player.musicIndex], percent)
+					player.onMusicPlayingSubject.NotifyAll(player.musics[player.musicIndex], percent)
 					time.Sleep(200 * time.Millisecond)
 				}
 			}

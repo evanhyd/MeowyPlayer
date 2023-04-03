@@ -5,6 +5,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/cwidget"
 	"meowyplayer.com/source/resource"
 )
@@ -26,5 +27,17 @@ func init() {
 }
 
 func createAlbumAdderTab() *container.TabItem {
-	return container.NewTabItemWithIcon(albumAdderTabName, albumAdderTabIcon, container.NewVBox(cwidget.NewButton("album adder")))
+	but := cwidget.NewButton("button")
+	box := container.NewVBox(but)
+
+	but.SetOnTapped(func() {
+		menuItem1 := fyne.NewMenuItem("A", func() {})
+		menuItem2 := fyne.NewMenuItem("B", func() {})
+		menuItem3 := fyne.NewMenuItem("C", func() {})
+		menu := fyne.NewMenu("MENUUU", menuItem1, menuItem2, menuItem3)
+		popUpMenu := widget.NewPopUpMenu(menu, fyne.CurrentApp().Driver().CanvasForObject(box))
+		popUpMenu.ShowAtPosition(fyne.NewPos(200.0, 200.0))
+	})
+
+	return container.NewTabItemWithIcon(albumAdderTabName, albumAdderTabIcon, box)
 }

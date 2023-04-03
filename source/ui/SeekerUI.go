@@ -36,16 +36,16 @@ func init() {
 
 func createSeeker() *fyne.Container {
 	albumView := cwidget.NewCardWithImage("", "", albumCoverIcon)
-	player.GetState().OnSelectMusic().AddCallback(func(album player.Album, _ []player.Music, _ player.Music) {
+	player.GetState().OnSelectMusicSubject().AddCallback(func(album player.Album, _ []player.Music, _ player.Music) {
 		albumView.SetImage(album.CoverIcon())
 		albumView.SetOnTapped(func() { player.GetState().SetSelectedAlbum(album) })
 	})
 
 	title := widget.NewLabel("")
-	player.GetPlayer().OnMusicBegin().AddCallback(func(music player.Music) { title.SetText(music.Title()[:len(music.Title())-4]) })
+	player.GetPlayer().OnMusicBeginSubject().AddCallback(func(music player.Music) { title.SetText(music.Title()[:len(music.Title())-4]) })
 
 	progressLabel := widget.NewLabel("00:00")
-	player.GetPlayer().OnMusicPlaying().AddCallback(func(music player.Music, percent float64) {
+	player.GetPlayer().OnMusicPlayingSubject().AddCallback(func(music player.Music, percent float64) {
 		secPassed := int(music.Duration().Seconds() * percent)
 		min, sec := secPassed/60, secPassed%60
 		progressLabel.SetText(fmt.Sprintf("%02d:%02d", min, sec))
@@ -54,7 +54,7 @@ func createSeeker() *fyne.Container {
 	progress := widget.NewSlider(0.0, 1.0)
 	progress.Step = 1.0 / 10000.0
 	progress.OnChanged = func(percent float64) { player.GetPlayer().SetProgress(percent) }
-	player.GetPlayer().OnMusicPlaying().AddCallback(func(music player.Music, percent float64) {
+	player.GetPlayer().OnMusicPlayingSubject().AddCallback(func(music player.Music, percent float64) {
 		progress.Value = percent
 		progress.Refresh()
 	})

@@ -26,6 +26,10 @@ func NewButtonWithIcon(label string, icon fyne.Resource) *Button {
 	return button
 }
 
+func (button *Button) OnTappedSubject() *pattern.ZeroArgSubject {
+	return &button.ZeroArgSubject
+}
+
 func (button *Button) SetOnTapped(onTapped func()) {
 	button.OnTapped = func() {
 		onTapped()

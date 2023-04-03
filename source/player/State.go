@@ -25,45 +25,45 @@ func GetState() *State {
 }
 
 type State struct {
-	album                Album
-	musics               []Music
-	onReadAlbumsFromDisk pattern.OneArgSubject[[]Album]
-	onSelectAlbum        pattern.OneArgSubject[Album]
-	onReadMusicsDisk     pattern.OneArgSubject[[]Music]
-	onSelectMusic        pattern.ThreeArgSubject[Album, []Music, Music]
+	album                       Album
+	musics                      []Music
+	onReadAlbumsFromDiskSubject pattern.OneArgSubject[[]Album]
+	onSelectAlbumSubject        pattern.OneArgSubject[Album]
+	onReadMusicsDiskSubject     pattern.OneArgSubject[[]Music]
+	onSelectMusicSubject        pattern.ThreeArgSubject[Album, []Music, Music]
 }
 
 func NewState() *State {
 	return &State{}
 }
 
-func (state *State) OnReadAlbumsFromDisk() *pattern.OneArgSubject[[]Album] {
-	return &state.onReadAlbumsFromDisk
+func (state *State) OnReadAlbumsFromDiskSubject() *pattern.OneArgSubject[[]Album] {
+	return &state.onReadAlbumsFromDiskSubject
 }
 
-func (state *State) OnSelectAlbum() *pattern.OneArgSubject[Album] {
-	return &state.onSelectAlbum
+func (state *State) OnSelectAlbumSubject() *pattern.OneArgSubject[Album] {
+	return &state.onSelectAlbumSubject
 }
 
-func (state *State) OnReadMusicFromDisk() *pattern.OneArgSubject[[]Music] {
-	return &state.onReadMusicsDisk
+func (state *State) OnReadMusicFromDiskSubject() *pattern.OneArgSubject[[]Music] {
+	return &state.onReadMusicsDiskSubject
 }
 
-func (state *State) OnSelectMusic() *pattern.ThreeArgSubject[Album, []Music, Music] {
-	return &state.onSelectMusic
+func (state *State) OnSelectMusicSubject() *pattern.ThreeArgSubject[Album, []Music, Music] {
+	return &state.onSelectMusicSubject
 }
 
 func (state *State) SetSelectedAlbum(album Album) {
-	state.onSelectAlbum.NotifyAll(album)
+	state.onSelectAlbumSubject.NotifyAll(album)
 	if state.album != album {
 		state.album = album
 		state.musics = ReadMusicFromDisk(album)
-		state.onReadMusicsDisk.NotifyAll(state.musics)
+		state.onReadMusicsDiskSubject.NotifyAll(state.musics)
 	}
 }
 
 func (state *State) SetSelectedMusic(music Music) {
-	state.onSelectMusic.NotifyAll(state.album, state.musics, music)
+	state.onSelectMusicSubject.NotifyAll(state.album, state.musics, music)
 }
 
 func ReadAlbumsFromDisk() []Album {

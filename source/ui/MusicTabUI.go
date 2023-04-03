@@ -33,7 +33,7 @@ func createMusicTab() *container.TabItem {
 	sortByTitleButton := cwidget.NewButton("Title")
 	sortByDateButton := cwidget.NewButton("Date")
 
-	scroll := cwidget.NewMusicItemList(
+	scroll := cwidget.NewMusicList(
 		func() fyne.CanvasObject {
 			return widget.NewLabel("")
 		},
@@ -48,8 +48,8 @@ func createMusicTab() *container.TabItem {
 	searchBar.SetOnChanged(scroll.SetTitleFilter)
 	sortByTitleButton.SetOnTapped(scroll.SetTitleSorter)
 	sortByDateButton.SetOnTapped(scroll.SetDateSorter)
-	player.GetState().OnReadMusicFromDisk().AddObserver(scroll)
-	scroll.SetOnSelected(player.GetState().SetSelectedMusic)
+	player.GetState().OnReadMusicFromDiskSubject().AddObserver(scroll)
+	scroll.SetOnTapped(player.GetState().SetSelectedMusic)
 
 	defer sortByDateButton.OnTapped()
 
