@@ -24,14 +24,14 @@ func NewMusicList(createItem func() fyne.CanvasObject, updateItem func(player.Mu
 
 func (musicList *MusicList) SetTitleFilter(title string) {
 	lowerCaseTitle := strings.ToLower(title)
-	musicList.SetFilter(func(music player.Music) bool {
+	musicList.SetFilter(func(music *player.Music) bool {
 		return strings.Contains(strings.ToLower(music.Title()), lowerCaseTitle)
 	})
 	musicList.ScrollToTop()
 }
 
 func (musicList *MusicList) SetTitleSorter() {
-	musicList.SetSorter(func(music0, music1 player.Music) bool {
+	musicList.SetSorter(func(music0, music1 *player.Music) bool {
 		return (strings.Compare(strings.ToLower(music0.Title()), strings.ToLower(music1.Title())) < 0) != musicList.reverseTitle
 	})
 	musicList.reverseTitle = !musicList.reverseTitle
@@ -39,7 +39,7 @@ func (musicList *MusicList) SetTitleSorter() {
 }
 
 func (musicList *MusicList) SetDateSorter() {
-	musicList.SetSorter(func(music0, music1 player.Music) bool {
+	musicList.SetSorter(func(music0, music1 *player.Music) bool {
 		return (music0.ModifiedDate().Compare(music1.ModifiedDate()) > 0) != musicList.reverseDate
 	})
 	musicList.reverseDate = !musicList.reverseDate

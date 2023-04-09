@@ -3,10 +3,15 @@ package player
 import (
 	"bufio"
 	"bytes"
-	"io"
+	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io/fs"
 	"log"
+	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2/canvas"
@@ -53,55 +58,44 @@ func (state *State) OnSelectMusicSubject() *pattern.ThreeArgSubject[Album, []Mus
 	return &state.onSelectMusicSubject
 }
 
-func (state *State) SetSelectedAlbum(album Album) {
-	state.onSelectAlbumSubject.NotifyAll(album)
-	if state.album != album {
-		state.album = album
-		state.musics = ReadMusicFromDisk(album)
+func (state *State) SetSelectedAlbum(album *Album) {
+	state.onSelectAlbumSubject.NotifyAll(*album)
+	if state.album != *album {
+		state.album = *album
+		state.musics = ReadMusicFromDisk(*album)
 		state.onReadMusicsDiskSubject.NotifyAll(state.musics)
 	}
 }
 
-func (state *State) SetSelectedMusic(music Music) {
-	state.onSelectMusicSubject.NotifyAll(state.album, state.musics, music)
+func (state *State) SetSelectedMusic(music *Music) {
+	state.onSelectMusicSubject.NotifyAll(state.album, state.musics, *music)
 }
 
 func ReadAlbumsFromDisk() []Album {
-	directories, err := os.ReadDir(resource.GetAlbumFolderPath())
+	directories, err := os.ReadDir(resource.GetAlbumRootPath())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	const bufferSize = 32 * 1024 //arbitrary magic number
-	buffer := make([]byte, bufferSize)
 	albums := []Album{}
-
 	for _, directory := range directories {
 		if directory.IsDir() {
 
 			//read album config
-			config, err := os.Open(resource.GetAlbumConfigPath(directory.Name()))
+			configPath := resource.GetAlbumConfigPath(directory.Name())
+			config, err := os.ReadFile(configPath)
 			if err != nil {
 				log.Fatal(err)
 			}
-			defer config.Close()
 
 			//read last modified date
-			info, err := config.Stat()
+			info, err := os.Stat(configPath)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			//read number of music
-			bytesRead, err := config.Read(buffer)
-			if err != nil && err != io.EOF {
-				log.Fatal(err)
-			}
-			musicNumber := bytes.Count(buffer[:bytesRead], []byte{'\n'})
-
-			//get album cover
+			musicNumber := bytes.Count(config, []byte{'\n'})
 			albumCover := canvas.NewImageFromFile(resource.GetAlbumIconPath(directory.Name()))
-
 			albums = append(albums, Album{directory.Name(), info.ModTime(), musicNumber, albumCover})
 		}
 	}
@@ -109,17 +103,20 @@ func ReadAlbumsFromDisk() []Album {
 }
 
 func ReadMusicFromDisk(album Album) []Music {
-	config, err := os.Open(resource.GetAlbumConfigPath(album.title))
+	// a rough estimation of the music duration in nanoseconds
+	estimateDuration := func(musicFileInfo fs.FileInfo) time.Duration {
+		return time.Duration(musicFileInfo.Size() * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
+	}
+
+	config, err := os.ReadFile(resource.GetAlbumConfigPath(album.title))
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer config.Close()
 
 	//read music name from config
 	music := []Music{}
-	scanner := bufio.NewScanner(config)
+	scanner := bufio.NewScanner(bytes.NewReader(config))
 	for scanner.Scan() {
-
 		//open music file
 		info, err := os.Stat(resource.GetMusicPath(scanner.Text()))
 		if err != nil {
@@ -136,7 +133,64 @@ func ReadMusicFromDisk(album Album) []Music {
 	return music
 }
 
-// a very rough estimation of the music duration in nanoseconds
-func estimateDuration(musicFileInfo fs.FileInfo) time.Duration {
-	return time.Duration(musicFileInfo.Size() * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
+func AddNewAlbum() error {
+	title := strconv.FormatInt(rand.Int63(), 10)
+
+	if err := os.Mkdir(resource.GetAlbumFolderPath(title), fs.ModePerm); err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(resource.GetAlbumConfigPath(title), []byte{}, os.ModePerm); err != nil {
+		return err
+	}
+
+	iconFile, err := os.Create(resource.GetAlbumIconPath(title))
+	if err != nil {
+		return err
+	}
+	defer iconFile.Close()
+
+	iconColor := color.NRGBA{uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32())}
+	iconImage := image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	iconImage.SetNRGBA(0, 0, iconColor)
+	if err := png.Encode(iconFile, iconImage); err != nil {
+		return err
+	}
+
+	state.OnReadAlbumsFromDiskSubject().NotifyAll(ReadAlbumsFromDisk())
+	return nil
+}
+
+func RenameAlbum(oldTitle, newTitle string) error {
+	oldPath := resource.GetAlbumFolderPath(oldTitle)
+	newPath := resource.GetAlbumFolderPath(newTitle)
+
+	if _, err := os.Stat(newPath); !os.IsNotExist(err) {
+		return fmt.Errorf("album \"%v\" is already existed", newTitle)
+	}
+	if err := os.Rename(oldPath, newPath); err != nil {
+		return err
+	}
+	state.OnReadAlbumsFromDiskSubject().NotifyAll(ReadAlbumsFromDisk())
+	return nil
+}
+
+func SetAlbumCover(title, coverIconPath string) error {
+	coverIconData, err := os.ReadFile(coverIconPath)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(resource.GetAlbumIconPath(title), coverIconData, os.ModePerm); err != nil {
+		return err
+	}
+	state.OnReadAlbumsFromDiskSubject().NotifyAll(ReadAlbumsFromDisk())
+	return nil
+}
+
+func RemoveAlbum(title string) error {
+	if err := os.RemoveAll(resource.GetAlbumFolderPath(title)); err != nil {
+		return err
+	}
+	state.OnReadAlbumsFromDiskSubject().NotifyAll(ReadAlbumsFromDisk())
+	return nil
 }

@@ -35,10 +35,10 @@ func init() {
 }
 
 func createSeeker() *fyne.Container {
-	albumView := cwidget.NewCardWithImage("", "", albumCoverIcon)
+	albumView := cwidget.NewCardWithImage("", "", nil, albumCoverIcon)
 	player.GetState().OnSelectMusicSubject().AddCallback(func(album player.Album, _ []player.Music, _ player.Music) {
 		albumView.SetImage(album.CoverIcon())
-		albumView.SetOnTapped(func() { player.GetState().SetSelectedAlbum(album) })
+		albumView.OnTapped = func() { player.GetState().SetSelectedAlbum(&album) }
 	})
 
 	title := widget.NewLabel("")
@@ -62,17 +62,17 @@ func createSeeker() *fyne.Container {
 	prevButton := cwidget.NewButton(" << ")
 	playButton := cwidget.NewButton(" O ")
 	nextButton := cwidget.NewButton(" >> ")
-	prevButton.SetOnTapped(player.GetPlayer().PreviousMusic)
-	playButton.SetOnTapped(player.GetPlayer().PlayPauseMusic)
-	nextButton.SetOnTapped(player.GetPlayer().NextMusic)
+	prevButton.OnTapped = player.GetPlayer().PreviousMusic
+	playButton.OnTapped = player.GetPlayer().PlayPauseMusic
+	nextButton.OnTapped = player.GetPlayer().NextMusic
 
 	playMode := player.RANDOM
 	playModeButton := cwidget.NewButtonWithIcon("", seekerPlayModeIcons[playMode])
-	playModeButton.SetOnTapped(func() {
+	playModeButton.OnTapped = func() {
 		playMode = (playMode + 1) % player.PLAYMODE_LEN
 		playModeButton.SetIcon(seekerPlayModeIcons[playMode])
 		player.GetPlayer().SetPlayMode(playMode)
-	})
+	}
 
 	volume := widget.NewSlider(0.0, 1.0)
 	volume.Step = 1.0 / 100.0

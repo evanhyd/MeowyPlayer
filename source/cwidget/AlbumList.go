@@ -22,20 +22,16 @@ func NewAlbumList(createItem func() fyne.CanvasObject, updateItem func(player.Al
 	return albumList
 }
 
-// func (albumItemList *AlbumItemList) Secondary {
-// albumItemList.ItemList.List
-// }
-
 func (albumList *AlbumList) SetTitleFilter(title string) {
 	lowerCaseTitle := strings.ToLower(title)
-	albumList.SetFilter(func(album player.Album) bool {
+	albumList.SetFilter(func(album *player.Album) bool {
 		return strings.Contains(strings.ToLower(album.Title()), lowerCaseTitle)
 	})
 	albumList.ScrollToTop()
 }
 
 func (albumList *AlbumList) SetTitleSorter() {
-	albumList.SetSorter(func(album0, album1 player.Album) bool {
+	albumList.SetSorter(func(album0, album1 *player.Album) bool {
 		return (strings.Compare(strings.ToLower(album0.Title()), strings.ToLower(album1.Title())) < 0) != albumList.reverseTitle
 	})
 	albumList.reverseTitle = !albumList.reverseTitle
@@ -43,7 +39,7 @@ func (albumList *AlbumList) SetTitleSorter() {
 }
 
 func (albumList *AlbumList) SetDateSorter() {
-	albumList.SetSorter(func(album0, album1 player.Album) bool {
+	albumList.SetSorter(func(album0, album1 *player.Album) bool {
 		return (album0.ModifiedDate().Compare(album1.ModifiedDate()) > 0) != albumList.reverseDate
 	})
 	albumList.reverseDate = !albumList.reverseDate

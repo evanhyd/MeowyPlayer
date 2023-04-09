@@ -12,14 +12,11 @@ type SearchBar struct {
 
 func NewSearchBar() *SearchBar {
 	searchBar := &SearchBar{}
-	searchBar.OnChanged = searchBar.NotifyAll
 	searchBar.ExtendBaseWidget(searchBar)
 	return searchBar
 }
 
-func (searchBar *SearchBar) SetOnChanged(onChanged func(string)) {
-	searchBar.OnChanged = func(text string) {
-		onChanged(text)
-		searchBar.NotifyAll(text)
-	}
+func (searchBar *SearchBar) TypedRune(r rune) {
+	searchBar.Entry.TypedRune(r)
+	searchBar.NotifyAll(searchBar.Text)
 }

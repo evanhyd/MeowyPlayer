@@ -43,9 +43,8 @@ func NewMeowyPlayerWindow() fyne.Window {
 
 	albumTab := createAblumTab()
 	musicTab := createMusicTab()
-	albumAdderTab := createAlbumAdderTab()
 	musicAdderTab := createMusicAdderTab()
-	tabs := container.NewAppTabs(albumTab, musicTab, albumAdderTab, musicAdderTab)
+	tabs := container.NewAppTabs(albumTab, musicTab, musicAdderTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
 
 	//switch to the music tab after loaded music list

@@ -7,54 +7,52 @@ import (
 )
 
 const (
-	basePath           = ""
-	resourceFolderPath = "resource"
+	basePath         = ""
+	resourceRootPath = "resource"
 
-	albumFolderPath = "album"
+	albumRootPath   = "album"
 	albumIconName   = "icon.png"
 	albumConfigName = "config.txt"
 
-	musicFolderPath = "music"
+	musicRootPath = "music"
 )
 
 func init() {
-	if _, err := os.Stat(resourceFolderPath); os.IsNotExist(err) {
-		if err = os.Mkdir(resourceFolderPath, os.ModePerm); err != nil {
-			log.Fatal(err)
-		}
+	if err := os.Mkdir(resourceRootPath, os.ModePerm); !os.IsExist(err) {
+		log.Fatal(err)
 	}
-	if _, err := os.Stat(albumFolderPath); os.IsNotExist(err) {
-		if err = os.Mkdir(albumFolderPath, os.ModePerm); err != nil {
-			log.Fatal(err)
-		}
+	if err := os.Mkdir(albumRootPath, os.ModePerm); !os.IsExist(err) {
+		log.Fatal(err)
 	}
-	if _, err := os.Stat(musicFolderPath); os.IsNotExist(err) {
-		if err = os.Mkdir(musicFolderPath, os.ModePerm); err != nil {
-			log.Fatal(err)
-		}
+	if err := os.Mkdir(musicRootPath, os.ModePerm); !os.IsExist(err) {
+		log.Fatal(err)
 	}
 }
 
 func GetResourcePath(resource string) string {
-	return filepath.Join(basePath, resourceFolderPath, resource)
+	return filepath.Join(basePath, resourceRootPath, resource)
 }
 
-func GetAlbumFolderPath() string {
-	return filepath.Join(basePath, albumFolderPath)
+func GetAlbumRootPath() string {
+	return filepath.Join(basePath, albumRootPath)
+}
+
+func GetAlbumFolderPath(album string) string {
+	return filepath.Join(GetAlbumRootPath(), album)
 }
 
 func GetAlbumIconPath(album string) string {
-	return filepath.Join(GetAlbumFolderPath(), album, albumIconName)
+	return filepath.Join(GetAlbumRootPath(), album, albumIconName)
 }
 
 func GetAlbumConfigPath(album string) string {
-	return filepath.Join(GetAlbumFolderPath(), album, albumConfigName)
+	return filepath.Join(GetAlbumRootPath(), album, albumConfigName)
 }
 
-func GetMusicFolderPath() string {
-	return filepath.Join(basePath, musicFolderPath)
+func GetMusicRootPath() string {
+	return filepath.Join(basePath, musicRootPath)
 }
 
 func GetMusicPath(music string) string {
-	return filepath.Join(GetMusicFolderPath(), music)
+	return filepath.Join(GetMusicRootPath(), music)
 }
