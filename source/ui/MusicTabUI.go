@@ -35,12 +35,21 @@ func createMusicTab() *container.TabItem {
 
 	scroll := cwidget.NewMusicList(
 		func() fyne.CanvasObject {
-			return widget.NewLabel("")
+			label := widget.NewLabel("")
+			button := cwidget.NewButton("<")
+			return container.NewBorder(nil, nil, label, button)
 		},
 		func(music player.Music, canvas fyne.CanvasObject) {
-			label := canvas.(*widget.Label)
+			items := canvas.(*fyne.Container).Objects
+			label := items[0].(*widget.Label)
 			if label.Text != music.Description() {
-				label.SetText(music.Description())
+				label.Text = music.Description()
+
+				//update setting menu
+				button := items[1].(*cwidget.Button)
+				button.OnTapped = func() { DisplayErrorIfNotNil(player.RemoveMusicFromAlbum(player.GetState().Album(), music)) }
+
+				canvas.Refresh()
 			}
 		},
 	)

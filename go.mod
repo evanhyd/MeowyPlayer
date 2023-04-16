@@ -6,6 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.3.3
 	github.com/hajimehoshi/go-mp3 v0.3.4
 	github.com/hajimehoshi/oto/v2 v2.4.0
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 )
 
 require (

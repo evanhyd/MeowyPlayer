@@ -19,7 +19,6 @@ const (
 	albumTabName = "Album"
 )
 
-var albumCoverIconSize fyne.Size
 var albumCoverIcon *canvas.Image
 var albumTabIcon fyne.Resource
 var albumAdderTabIcon fyne.Resource
@@ -31,9 +30,7 @@ func init() {
 		albumAdderTabIconName = "album_adder_tab.png"
 	)
 
-	albumCoverIconSize = fyne.NewSize(128.0, 128.0)
 	albumCoverIcon = canvas.NewImageFromFile(resource.GetResourcePath(albumCoverIconName))
-	albumCoverIcon.SetMinSize(albumCoverIconSize)
 
 	var err error
 	if albumTabIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(albumTabIconName)); err != nil {
@@ -50,6 +47,7 @@ func createAblumTab() *container.TabItem {
 	searchBar := cwidget.NewSearchBar()
 	sortByTitleButton := cwidget.NewButton("Title")
 	sortByDateButton := cwidget.NewButton("Date")
+	albumCoverIcon.SetMinSize(resource.GetAlbumCoverSize())
 
 	scroll := cwidget.NewAlbumList(
 		func() fyne.CanvasObject {
@@ -60,19 +58,18 @@ func createAblumTab() *container.TabItem {
 			return container.NewBorder(nil, nil, card, button, title)
 		},
 		func(album player.Album, canvas fyne.CanvasObject) {
-
 			//not a solid design. If the inner border style change, then this code would break
-			label := canvas.(*fyne.Container).Objects[0].(*widget.Label)
+			items := canvas.(*fyne.Container).Objects
+			label := items[0].(*widget.Label)
 			if label.Text != album.Description() {
 				label.Text = album.Description()
 
 				//update album cover
-				card := canvas.(*fyne.Container).Objects[1].(*widget.Card)
+				card := items[1].(*widget.Card)
 				card.Image = album.CoverIcon()
-				card.Image.SetMinSize(albumCoverIconSize)
 
 				//update setting menu
-				button := canvas.(*fyne.Container).Objects[2].(*cwidget.Button)
+				button := items[2].(*cwidget.Button)
 				button.OnTapped = func() {
 					createAlbumPopUpMenu(fyne.CurrentApp().Driver().CanvasForObject(button), album).
 						ShowAtPosition(fyne.CurrentApp().Driver().AbsolutePositionForObject(button))
@@ -109,23 +106,23 @@ func createAblumTab() *container.TabItem {
 }
 
 func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpMenu {
-	rename := fyne.NewMenuItem("rename", func() {
+	rename := fyne.NewMenuItem("Rename", func() {
 		entry := widget.NewEntry()
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(shouldRename bool) {
 			if shouldRename {
-				DisplayErrorIfNotNil(player.RenameAlbum(album.Title(), entry.Text))
+				DisplayErrorIfNotNil(player.RenameAlbum(album, entry.Text))
 			}
 		}, fyne.CurrentApp().Driver().AllWindows()[0])
 	})
 
-	cover := fyne.NewMenuItem("cover", func() {
+	cover := fyne.NewMenuItem("Cover", func() {
 		fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
 				DisplayErrorIfNotNil(err)
 				return
 			}
 			if result != nil {
-				DisplayErrorIfNotNil(player.SetAlbumCover(album.Title(), result.URI().Path()))
+				DisplayErrorIfNotNil(player.SetAlbumCover(album, result.URI().Path()))
 			}
 		}, fyne.CurrentApp().Driver().AllWindows()[0])
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
@@ -133,10 +130,10 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 		fileOpenDialog.Show()
 	})
 
-	delete := fyne.NewMenuItem("delete", func() {
+	delete := fyne.NewMenuItem("Delete", func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title()), func(shouldDelete bool) {
 			if shouldDelete {
-				DisplayErrorIfNotNil(player.RemoveAlbum(album.Title()))
+				DisplayErrorIfNotNil(player.RemoveAlbum(album))
 			}
 		}, fyne.CurrentApp().Driver().AllWindows()[0])
 	})

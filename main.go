@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/ui"
 )
@@ -10,9 +12,14 @@ func main() {
 
 	meowyPlayerState := player.GetState()
 	meowyPlayer := player.GetPlayer()
-	meowyPlayerState.OnReadAlbumsFromDiskSubject().NotifyAll(player.ReadAlbumsFromDisk())
-	meowyPlayerState.OnSelectMusicSubject().AddCallback(meowyPlayer.SetMusic)
-	go meowyPlayer.Launch()
 
+	albums, err := player.ReadAlbumsFromDisk()
+	if err != nil {
+		log.Fatal(err)
+	}
+	meowyPlayerState.OnReadAlbumsFromDiskSubject().NotifyAll(albums)
+	meowyPlayerState.OnSelectMusicSubject().AddCallback(meowyPlayer.SetMusic)
+
+	go meowyPlayer.Launch()
 	mainWindow.ShowAndRun()
 }

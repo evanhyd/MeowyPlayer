@@ -10,6 +10,7 @@ import (
 
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
+	"golang.org/x/exp/slices"
 	"meowyplayer.com/source/pattern"
 	"meowyplayer.com/source/resource"
 )
@@ -30,14 +31,27 @@ const (
 	PLAYMODE_LEN
 )
 
-var player *Player
+var player Player
 
 func init() {
-	player = NewPlayer()
+	context, ready, err := oto.NewContext(SAMPLING_RATE, NUM_OF_CHANNELS, AUDIO_BIT_DEPTH)
+	if err != nil {
+		log.Fatal(err)
+	}
+	<-ready
+
+	player = Player{}
+	player.Context = context
+	player.loadMusicChan = make(chan struct{}, 16)
+	player.playPauseMusicChan = make(chan struct{}, 16)
+	player.musicVolumeChan = make(chan float64, 16)
+	player.progressChan = make(chan float64, 16)
+	player.musicVolume = 1.0
+	player.playMode = RANDOM
 }
 
 func GetPlayer() *Player {
-	return player
+	return &player
 }
 
 type Player struct {
@@ -62,25 +76,6 @@ type Player struct {
 	randomQueue   []int
 }
 
-func NewPlayer() *Player {
-	context, ready, err := oto.NewContext(SAMPLING_RATE, NUM_OF_CHANNELS, AUDIO_BIT_DEPTH)
-	if err != nil {
-		log.Fatal(err)
-	}
-	<-ready
-
-	player := &Player{}
-	player.Context = context
-	player.loadMusicChan = make(chan struct{}, 16)
-	player.playPauseMusicChan = make(chan struct{}, 16)
-	player.musicVolumeChan = make(chan float64, 16)
-	player.progressChan = make(chan float64, 16)
-
-	player.musicVolume = 1.0
-	player.playMode = RANDOM
-	return player
-}
-
 func (player *Player) OnMusicBeginSubject() *pattern.OneArgSubject[Music] {
 	return &player.onMusicBeginSubject
 }
@@ -97,16 +92,10 @@ func (player *Player) SetMusic(album Album, musics []Music, music Music) {
 	}
 	player.musics = musics //musics sorting order can be different
 
-	found := false
-	for i := range musics {
-		if musics[i] == music {
-			player.musicIndex = i
-			found = true
-			break
-		}
-	}
-	if !found {
+	if index := slices.Index(musics, music); index == -1 {
 		log.Fatal("Can not find the music from the album")
+	} else {
+		player.musicIndex = index
 	}
 
 	if !player.isLoaded {

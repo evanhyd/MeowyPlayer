@@ -15,15 +15,12 @@ const (
 	mainWindowName = "Meowy Player"
 )
 
-var mainWindowSize fyne.Size
 var mainWindowIcon fyne.Resource
 
 func init() {
 	const (
 		mainWindowIconName = "icon.png"
 	)
-
-	mainWindowSize = fyne.NewSize(500, 650)
 
 	var err error
 	if mainWindowIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(mainWindowIconName)); err != nil {
@@ -37,7 +34,7 @@ func NewMeowyPlayerWindow() fyne.Window {
 
 	meowyPlayerWindow := fyne.CurrentApp().NewWindow(mainWindowName)
 	meowyPlayerWindow.SetMaster()
-	meowyPlayerWindow.Resize(mainWindowSize)
+	meowyPlayerWindow.Resize(resource.GetMainWindowSize())
 	meowyPlayerWindow.SetIcon(mainWindowIcon)
 	meowyPlayerWindow.CenterOnScreen()
 
