@@ -12,7 +12,7 @@ type List[T any] struct {
 	widget.List
 	internalData      []T
 	displayedData     []T
-	onSelectedSubject pattern.OneArgSubject[*T]
+	onSelectedSubject pattern.OneArgObservable[*T]
 	filter            func(*T) bool
 	sorter            func(*T, *T) bool
 }
@@ -45,7 +45,7 @@ func (list *List[T]) Notify(items []T) {
 	list.ScrollToTop()
 }
 
-func (list *List[T]) OnSelectedSubject() *pattern.OneArgSubject[*T] {
+func (list *List[T]) OnSelectedSubject() pattern.OneArgObservabler[*T] {
 	return &list.onSelectedSubject
 }
 

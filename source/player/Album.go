@@ -30,3 +30,11 @@ func (album *Album) Description() string {
 	year, month, day := album.modifiedDate.Date()
 	return fmt.Sprintf("%v\nMusic: %v\nModified: %v %v %v", album.title, album.musicNumber, year, month, day)
 }
+
+func (album *Album) IsPlaceHolder() bool {
+	return album.title == ""
+}
+
+func GetPlaceHolderAlbum() Album {
+	return Album{}
+}

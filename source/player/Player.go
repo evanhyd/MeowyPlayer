@@ -62,8 +62,8 @@ type Player struct {
 	playPauseMusicChan    chan Signal
 	musicVolumeChan       chan float64
 	progressChan          chan float64
-	onMusicBeginSubject   pattern.OneArgSubject[Music]
-	onMusicPlayingSubject pattern.TwoArgSubject[Music, float64]
+	onMusicBeginSubject   pattern.OneArgObservable[Music]
+	onMusicPlayingSubject pattern.TwoArgObservable[Music, float64]
 
 	album       Album
 	musics      []Music
@@ -76,11 +76,11 @@ type Player struct {
 	randomQueue   []int
 }
 
-func (player *Player) OnMusicBeginSubject() *pattern.OneArgSubject[Music] {
+func (player *Player) OnMusicBeginSubject() pattern.OneArgObservabler[Music] {
 	return &player.onMusicBeginSubject
 }
 
-func (player *Player) OnMusicPlayingSubject() *pattern.TwoArgSubject[Music, float64] {
+func (player *Player) OnMusicPlayingSubject() pattern.TwoArgObservabler[Music, float64] {
 	return &player.onMusicPlayingSubject
 }
 

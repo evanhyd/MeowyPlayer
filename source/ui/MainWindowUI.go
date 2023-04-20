@@ -40,12 +40,12 @@ func NewMeowyPlayerWindow() fyne.Window {
 
 	albumTab := createAblumTab()
 	musicTab := createMusicTab()
-	musicAdderTab := createMusicAdderTab()
-	tabs := container.NewAppTabs(albumTab, musicTab, musicAdderTab)
+	tabs := container.NewAppTabs(albumTab, musicTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
 
 	//switch to the music tab after loaded music list
-	player.GetState().OnSelectAlbumSubject().AddCallback(func(player.Album) { tabs.SelectIndex(1) })
+	player.GetState().OnFocusAlbumTab().AddCallback(func() { tabs.Select(albumTab) })
+	player.GetState().OnFocusMusicTab().AddCallback(func() { tabs.Select(musicTab) })
 
 	meowyPlayerWindow.SetContent(container.NewBorder(nil, createSeeker(), nil, nil, tabs))
 	return meowyPlayerWindow

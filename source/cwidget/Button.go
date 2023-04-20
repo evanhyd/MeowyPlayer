@@ -8,7 +8,7 @@ import (
 
 type Button struct {
 	widget.Button
-	pattern.ZeroArgSubject
+	pattern.ZeroArgObservable
 }
 
 func NewButton(label string) *Button {
@@ -28,6 +28,6 @@ func (button *Button) Tapped(*fyne.PointEvent) {
 	button.NotifyAll()
 }
 
-func (button *Button) OnTappedSubject() *pattern.ZeroArgSubject {
-	return &button.ZeroArgSubject
+func (button *Button) OnTappedSubject() pattern.ZeroArgObservabler {
+	return &button.ZeroArgObservable
 }

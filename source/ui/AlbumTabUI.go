@@ -25,19 +25,22 @@ var albumAdderTabIcon fyne.Resource
 
 func init() {
 	const (
-		albumCoverIconName    = "album_cover.png"
-		albumTabIconName      = "album_tab.png"
-		albumAdderTabIconName = "album_adder_tab.png"
+		albumCoverIconName = "album_cover.png"
+		albumTabIconName   = "album_tab.png"
+		albumAdderIconName = "album_adder.png"
 	)
 
-	albumCoverIcon = canvas.NewImageFromFile(resource.GetResourcePath(albumCoverIconName))
+	coverIcon, err := fyne.LoadResourceFromPath(resource.GetResourcePath(albumCoverIconName))
+	if err != nil {
+		log.Fatal(err)
+	}
+	albumCoverIcon = canvas.NewImageFromResource(coverIcon)
 
-	var err error
 	if albumTabIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(albumTabIconName)); err != nil {
 		log.Fatal(err)
 	}
 
-	if albumAdderTabIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(albumAdderTabIconName)); err != nil {
+	if albumAdderTabIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(albumAdderIconName)); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -84,8 +87,8 @@ func createAblumTab() *container.TabItem {
 	searchBar.OnChanged = scroll.SetTitleFilter
 	sortByTitleButton.OnTapped = scroll.SetTitleSorter
 	sortByDateButton.OnTapped = scroll.SetDateSorter
-	player.GetState().OnReadAlbumsFromDiskSubject().AddObserver(scroll)
-	scroll.SetOnSelected(player.GetState().SetSelectedAlbum)
+	player.GetState().OnUpdateAlbums().AddCallback(scroll.Notify)
+	scroll.SetOnSelected(func(album *player.Album) { player.UserSelectAlbum(*album) })
 
 	defer sortByDateButton.OnTapped()
 
@@ -133,7 +136,7 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 	delete := fyne.NewMenuItem("Delete", func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title()), func(shouldDelete bool) {
 			if shouldDelete {
-				DisplayErrorIfNotNil(player.RemoveAlbum(album))
+				DisplayErrorIfNotNil(player.DeleteAlbum(album))
 			}
 		}, fyne.CurrentApp().Driver().AllWindows()[0])
 	})

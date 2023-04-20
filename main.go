@@ -13,12 +13,10 @@ func main() {
 	meowyPlayerState := player.GetState()
 	meowyPlayer := player.GetPlayer()
 
-	albums, err := player.ReadAlbumsFromDisk()
-	if err != nil {
+	if err := player.RefreshAlbumTab(); err != nil {
 		log.Fatal(err)
 	}
-	meowyPlayerState.OnReadAlbumsFromDiskSubject().NotifyAll(albums)
-	meowyPlayerState.OnSelectMusicSubject().AddCallback(meowyPlayer.SetMusic)
+	meowyPlayerState.OnUpdateSeeker().AddCallback(meowyPlayer.SetMusic)
 
 	go meowyPlayer.Launch()
 	mainWindow.ShowAndRun()

@@ -7,7 +7,7 @@ import (
 
 type SearchBar struct {
 	widget.Entry
-	pattern.OneArgSubject[string]
+	pattern.OneArgObservable[string]
 }
 
 func NewSearchBar() *SearchBar {

@@ -36,9 +36,9 @@ func init() {
 
 func createSeeker() *fyne.Container {
 	albumView := cwidget.NewCardWithImage("", "", nil, albumCoverIcon)
-	player.GetState().OnSelectMusicSubject().AddCallback(func(album player.Album, _ []player.Music, _ player.Music) {
+	player.GetState().OnUpdateSeeker().AddCallback(func(album player.Album, _ []player.Music, _ player.Music) {
 		albumView.SetImage(album.CoverIcon())
-		albumView.OnTapped = func() { player.GetState().SetSelectedAlbum(&album) }
+		albumView.OnTapped = func() { DisplayErrorIfNotNil(player.UserSelectAlbum(album)) }
 	})
 
 	title := widget.NewLabel("")
@@ -47,8 +47,7 @@ func createSeeker() *fyne.Container {
 	progressLabel := widget.NewLabel("00:00")
 	player.GetPlayer().OnMusicPlayingSubject().AddCallback(func(music player.Music, percent float64) {
 		secPassed := int(music.Duration().Seconds() * percent)
-		min, sec := secPassed/60, secPassed%60
-		progressLabel.SetText(fmt.Sprintf("%02d:%02d", min, sec))
+		progressLabel.SetText(fmt.Sprintf("%02d:%02d", secPassed/60, secPassed%60))
 	})
 
 	progress := widget.NewSlider(0.0, 1.0)

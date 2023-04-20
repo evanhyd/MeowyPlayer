@@ -10,7 +10,7 @@ import (
 
 type Card struct {
 	widget.Card
-	pattern.ZeroArgSubject
+	pattern.ZeroArgObservable
 	OnTapped func()
 }
 
@@ -27,8 +27,8 @@ func (card *Card) Tapped(*fyne.PointEvent) {
 	card.NotifyAll()
 }
 
-func (card *Card) OnTappedSubject() *pattern.ZeroArgSubject {
-	return &card.ZeroArgSubject
+func (card *Card) OnTappedSubject() pattern.ZeroArgObservabler {
+	return &card.ZeroArgObservable
 }
 
 func (card *Card) MouseIn(*desktop.MouseEvent) {
