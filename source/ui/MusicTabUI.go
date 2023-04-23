@@ -79,6 +79,7 @@ func createMusicTab() *container.TabItem {
 	sortByTitleButton.OnTapped = scroll.SetTitleSorter
 	sortByDateButton.OnTapped = scroll.SetDateSorter
 	player.GetState().OnUpdateMusics().AddCallback(scroll.SetItems)
+	player.GetState().OnFocusMusicTab().AddCallback(func() { searchBar.SetText("") })
 	scroll.SetOnSelected(func(music *player.Music) { player.UserSelectMusic(*music) })
 
 	defer sortByDateButton.OnTapped()

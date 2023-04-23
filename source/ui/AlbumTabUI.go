@@ -88,6 +88,7 @@ func createAblumTab() *container.TabItem {
 	sortByTitleButton.OnTapped = scroll.SetTitleSorter
 	sortByDateButton.OnTapped = scroll.SetDateSorter
 	player.GetState().OnUpdateAlbums().AddCallback(scroll.SetItems)
+	player.GetState().OnFocusAlbumTab().AddCallback(func() { searchBar.SetText("") })
 	scroll.SetOnSelected(func(album *player.Album) { player.UserSelectAlbum(*album) })
 
 	defer sortByDateButton.OnTapped()
