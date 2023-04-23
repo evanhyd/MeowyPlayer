@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
@@ -35,10 +36,12 @@ func init() {
 }
 
 func createSeeker() *fyne.Container {
-	albumView := cwidget.NewCardWithImage("", "", nil, albumCoverIcon)
+	albumView := cwidget.NewCardWithImage("", "", nil, nil)
+	albumView.Image = canvas.NewImageFromResource(defaultIcon)
+	albumView.Image.SetMinSize(resource.GetAlbumCoverSize())
 	player.GetState().OnUpdateSeeker().AddCallback(func(album player.Album, _ []player.Music, _ player.Music) {
 		albumView.SetImage(album.CoverIcon())
-		albumView.OnTapped = func() { DisplayErrorIfNotNil(player.UserSelectAlbum(album)) }
+		albumView.OnTapped = func() { DisplayError(player.UserSelectAlbum(album)) }
 	})
 
 	title := widget.NewLabel("")

@@ -19,6 +19,10 @@ import (
 	"meowyplayer.com/source/resource"
 )
 
+func GetMainWindow() fyne.Window {
+	return fyne.CurrentApp().Driver().AllWindows()[0]
+}
+
 // Read album name, music config, cover icon from the given directory
 func ReadAlbumsFromDisk() ([]Album, error) {
 	directories, err := os.ReadDir(resource.GetAlbumRootPath())

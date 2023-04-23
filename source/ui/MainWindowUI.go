@@ -19,7 +19,7 @@ var mainWindowIcon fyne.Resource
 
 func init() {
 	const (
-		mainWindowIconName = "icon.png"
+		mainWindowIconName = "icon.ico"
 	)
 
 	var err error

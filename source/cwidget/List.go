@@ -39,7 +39,7 @@ func (list *List[T]) Initialize(createItem func() fyne.CanvasObject, updateItem 
 	list.sorter = func(*T, *T) bool { return true }
 }
 
-func (list *List[T]) Notify(items []T) {
+func (list *List[T]) SetItems(items []T) {
 	list.internalData = items
 	list.refreshDisplayData()
 	list.ScrollToTop()
@@ -47,6 +47,9 @@ func (list *List[T]) Notify(items []T) {
 
 func (list *List[T]) OnSelectedSubject() pattern.OneArgObservabler[*T] {
 	return &list.onSelectedSubject
+}
+
+func (list *List[T]) OnSelected(onSelected func(*T)) {
 }
 
 func (list *List[T]) SetOnSelected(onSelected func(*T)) {

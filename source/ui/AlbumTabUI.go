@@ -19,22 +19,21 @@ const (
 	albumTabName = "Album"
 )
 
-var albumCoverIcon *canvas.Image
+var defaultIcon fyne.Resource
 var albumTabIcon fyne.Resource
 var albumAdderTabIcon fyne.Resource
 
 func init() {
 	const (
-		albumCoverIconName = "album_cover.png"
+		albumCoverIconName = "default.png"
 		albumTabIconName   = "album_tab.png"
 		albumAdderIconName = "album_adder.png"
 	)
 
-	coverIcon, err := fyne.LoadResourceFromPath(resource.GetResourcePath(albumCoverIconName))
-	if err != nil {
+	var err error
+	if defaultIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(albumCoverIconName)); err != nil {
 		log.Fatal(err)
 	}
-	albumCoverIcon = canvas.NewImageFromResource(coverIcon)
 
 	if albumTabIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(albumTabIconName)); err != nil {
 		log.Fatal(err)
@@ -47,20 +46,21 @@ func init() {
 
 func createAblumTab() *container.TabItem {
 	albumAdderButton := cwidget.NewButtonWithIcon("", albumAdderTabIcon)
-	searchBar := cwidget.NewSearchBar()
+	searchBar := widget.NewEntry()
 	sortByTitleButton := cwidget.NewButton("Title")
 	sortByDateButton := cwidget.NewButton("Date")
-	albumCoverIcon.SetMinSize(resource.GetAlbumCoverSize())
 
 	scroll := cwidget.NewAlbumList(
 		func() fyne.CanvasObject {
 			card := widget.NewCard("", "", nil)
-			card.Image = albumCoverIcon
+			card.Image = canvas.NewImageFromResource(defaultIcon)
+			card.Image.SetMinSize(resource.GetAlbumCoverSize())
 			title := widget.NewLabel("")
 			button := cwidget.NewButton("<")
 			return container.NewBorder(nil, nil, card, button, title)
 		},
 		func(album player.Album, canvas fyne.CanvasObject) {
+
 			//not a solid design. If the inner border style change, then this code would break
 			items := canvas.(*fyne.Container).Objects
 			label := items[0].(*widget.Label)
@@ -83,11 +83,11 @@ func createAblumTab() *container.TabItem {
 		},
 	)
 
-	albumAdderButton.OnTapped = func() { DisplayErrorIfNotNil(player.AddNewAlbum()) }
+	albumAdderButton.OnTapped = func() { DisplayError(player.AddNewAlbum()) }
 	searchBar.OnChanged = scroll.SetTitleFilter
 	sortByTitleButton.OnTapped = scroll.SetTitleSorter
 	sortByDateButton.OnTapped = scroll.SetDateSorter
-	player.GetState().OnUpdateAlbums().AddCallback(scroll.Notify)
+	player.GetState().OnUpdateAlbums().AddCallback(scroll.SetItems)
 	scroll.SetOnSelected(func(album *player.Album) { player.UserSelectAlbum(*album) })
 
 	defer sortByDateButton.OnTapped()
@@ -96,8 +96,8 @@ func createAblumTab() *container.TabItem {
 		container.NewBorder(
 			nil,
 			container.NewGridWithRows(1, sortByTitleButton, sortByDateButton),
-			albumAdderButton,
 			nil,
+			albumAdderButton,
 			searchBar,
 		),
 		nil,
@@ -113,21 +113,21 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 		entry := widget.NewEntry()
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(shouldRename bool) {
 			if shouldRename {
-				DisplayErrorIfNotNil(player.RenameAlbum(album, entry.Text))
+				DisplayError(player.RenameAlbum(album, entry.Text))
 			}
-		}, fyne.CurrentApp().Driver().AllWindows()[0])
+		}, player.GetMainWindow())
 	})
 
 	cover := fyne.NewMenuItem("Cover", func() {
 		fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
-				DisplayErrorIfNotNil(err)
+				DisplayError(err)
 				return
 			}
 			if result != nil {
-				DisplayErrorIfNotNil(player.SetAlbumCover(album, result.URI().Path()))
+				DisplayError(player.SetAlbumCover(album, result.URI().Path()))
 			}
-		}, fyne.CurrentApp().Driver().AllWindows()[0])
+		}, player.GetMainWindow())
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
 		fileOpenDialog.SetConfirmText("Upload")
 		fileOpenDialog.Show()
@@ -136,9 +136,9 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 	delete := fyne.NewMenuItem("Delete", func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title()), func(shouldDelete bool) {
 			if shouldDelete {
-				DisplayErrorIfNotNil(player.DeleteAlbum(album))
+				DisplayError(player.DeleteAlbum(album))
 			}
-		}, fyne.CurrentApp().Driver().AllWindows()[0])
+		}, player.GetMainWindow())
 	})
 	return widget.NewPopUpMenu(fyne.NewMenu("", rename, cover, delete), canvas)
 }

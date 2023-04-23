@@ -1,12 +1,12 @@
 package ui
 
 import (
-	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
+	"meowyplayer.com/source/player"
 )
 
-func DisplayErrorIfNotNil(err error) {
+func DisplayError(err error) {
 	if err != nil {
-		dialog.ShowError(err, fyne.CurrentApp().Driver().AllWindows()[0])
+		dialog.ShowError(err, player.GetMainWindow())
 	}
 }

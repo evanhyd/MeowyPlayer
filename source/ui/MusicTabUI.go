@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
@@ -11,6 +12,7 @@ import (
 	"meowyplayer.com/source/cwidget"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
+	"meowyplayer.com/source/scraper"
 )
 
 const (
@@ -20,12 +22,14 @@ const (
 var musicTabIcon fyne.Resource
 var musicAdderLocalIcon fyne.Resource
 var musicAdderOnlineIcon fyne.Resource
+var musicAdderOnlineSearchIcon fyne.Resource
 
 func init() {
 	const (
-		musicTabIconName         = "music_tab.png"
-		musicAdderLocalIconName  = "music_adder_local.png"
-		musicAdderOnlineIconName = "music_adder_online.png"
+		musicTabIconName               = "music_tab.png"
+		musicAdderLocalIconName        = "music_adder_local.png"
+		musicAdderOnlineIconName       = "music_adder_online.png"
+		musicAdderOnlineSearchIconName = "music_adder_online_search.png"
 	)
 
 	var err error
@@ -38,11 +42,15 @@ func init() {
 	if musicAdderOnlineIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(musicAdderOnlineIconName)); err != nil {
 		log.Fatal(err)
 	}
+	if musicAdderOnlineSearchIcon, err = fyne.LoadResourceFromPath(resource.GetResourcePath(musicAdderOnlineSearchIconName)); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func createMusicTab() *container.TabItem {
-	musicAdderButton := cwidget.NewButtonWithIcon("", musicAdderLocalIcon)
-	searchBar := cwidget.NewSearchBar()
+	musicAdderLocalButton := cwidget.NewButtonWithIcon("", musicAdderLocalIcon)
+	musicAdderOnlineButton := cwidget.NewButtonWithIcon("", musicAdderOnlineIcon)
+	searchBar := widget.NewEntry()
 	sortByTitleButton := cwidget.NewButton("Title")
 	sortByDateButton := cwidget.NewButton("Date")
 
@@ -55,23 +63,22 @@ func createMusicTab() *container.TabItem {
 		func(music player.Music, canvas fyne.CanvasObject) {
 			items := canvas.(*fyne.Container).Objects
 			label := items[0].(*widget.Label)
+
 			if label.Text != music.Description() {
 				label.Text = music.Description()
-
-				//update setting menu
 				button := items[1].(*cwidget.Button)
-				button.OnTapped = func() { DisplayErrorIfNotNil(player.RemoveMusicFromAlbum(player.GetState().Album(), music)) }
-
+				button.OnTapped = func() { DisplayError(player.RemoveMusicFromAlbum(player.GetState().Album(), music)) }
 				canvas.Refresh()
 			}
 		},
 	)
 
-	musicAdderButton.OnTapped = func() { createMusicAdderLocal().Show() }
+	musicAdderLocalButton.OnTapped = func() { createAddLocalDialog().Show() }
+	musicAdderOnlineButton.OnTapped = func() { createAddOnlineDialog().Show() }
 	searchBar.OnChanged = scroll.SetTitleFilter
 	sortByTitleButton.OnTapped = scroll.SetTitleSorter
 	sortByDateButton.OnTapped = scroll.SetDateSorter
-	player.GetState().OnUpdateMusics().AddCallback(scroll.Notify)
+	player.GetState().OnUpdateMusics().AddCallback(scroll.SetItems)
 	scroll.SetOnSelected(func(music *player.Music) { player.UserSelectMusic(*music) })
 
 	defer sortByDateButton.OnTapped()
@@ -80,8 +87,8 @@ func createMusicTab() *container.TabItem {
 		container.NewBorder(
 			nil,
 			container.NewGridWithRows(1, sortByTitleButton, sortByDateButton),
-			musicAdderButton,
 			nil,
+			container.NewGridWithRows(1, musicAdderLocalButton, musicAdderOnlineButton),
 			searchBar,
 		),
 		nil,
@@ -92,17 +99,97 @@ func createMusicTab() *container.TabItem {
 	return container.NewTabItemWithIcon(musicTabName, musicTabIcon, canvas)
 }
 
-func createMusicAdderLocal() *dialog.FileDialog {
+func createAddLocalDialog() *dialog.FileDialog {
 	fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 		if err != nil {
-			DisplayErrorIfNotNil(err)
+			DisplayError(err)
 			return
 		}
 		if result != nil {
-			DisplayErrorIfNotNil(player.AddMusicToAlbum(player.GetState().Album(), result.URI()))
+			DisplayError(player.AddMusicToAlbum(player.GetState().Album(), result.URI()))
 		}
-	}, fyne.CurrentApp().Driver().AllWindows()[0])
+	}, player.GetMainWindow())
 	fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
 	fileOpenDialog.SetConfirmText("Add")
 	return fileOpenDialog
+}
+
+func createAddOnlineDialog() dialog.Dialog {
+	searchBar := widget.NewEntry()
+	searchBar.SetPlaceHolder("Search...")
+	searchButton := cwidget.NewButtonWithIcon("", musicAdderOnlineSearchIcon)
+
+	scroll := cwidget.NewList(
+		func() fyne.CanvasObject {
+			card := widget.NewCard("", "", nil)
+			card.Image = canvas.NewImageFromResource(defaultIcon)
+			card.Image.SetMinSize(resource.GetThumbnailIconSize())
+
+			videoTitle := widget.NewLabel("")
+			channelTitle := widget.NewLabel("")
+			stats := widget.NewLabel("")
+			description := widget.NewLabel("")
+
+			return container.NewBorder(
+				nil,
+				nil,
+				card,
+				nil,
+				container.NewGridWithRows(4, videoTitle, channelTitle, stats, description),
+			)
+		},
+
+		func(result scraper.ClipzagResult, canvas fyne.CanvasObject) {
+			borderItems := canvas.(*fyne.Container).Objects
+			gridItems := borderItems[0].(*fyne.Container).Objects
+
+			videoTitle := gridItems[0].(*widget.Label)
+			if videoTitle.Text != result.VideoTitle() {
+				card := borderItems[1].(*widget.Card)
+				card.Image = result.Thumbnail()
+
+				videoTitle.Text = result.VideoTitle()
+
+				channelTitle := gridItems[1].(*widget.Label)
+				channelTitle.Text = result.ChannelTitle()
+
+				stats := gridItems[2].(*widget.Label)
+				stats.Text = result.Stats()
+
+				description := gridItems[3].(*widget.Label)
+				description.Text = result.Description()
+
+				canvas.Refresh()
+			}
+		},
+	)
+
+	searchButton.OnTapped = func() {
+		result, err := scraper.GetQueryResults(searchBar.Text)
+		if err != nil {
+			DisplayError(err)
+			return
+		}
+		scroll.SetItems(result)
+	}
+
+	searchBar.OnSubmitted = func(title string) {
+		searchButton.OnTapped()
+	}
+
+	onlineBrowserDialog := dialog.NewCustom("", "( X )", container.NewBorder(
+		container.NewBorder(
+			nil,
+			nil,
+			nil,
+			searchButton,
+			searchBar,
+		),
+		nil,
+		nil,
+		nil,
+		scroll,
+	), player.GetMainWindow())
+	onlineBrowserDialog.Resize(resource.GetMusicAddOnlineDialogSize())
+	return onlineBrowserDialog
 }

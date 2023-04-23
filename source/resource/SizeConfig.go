@@ -2,18 +2,24 @@ package resource
 
 import "fyne.io/fyne/v2"
 
-var mainWindowSize fyne.Size
-var albumCoverIconSize fyne.Size
-
-func init() {
-	mainWindowSize = fyne.NewSize(460, 650)
-	albumCoverIconSize = fyne.NewSize(128.0, 128.0)
-}
+const goldenRatio = 1.61803398875
 
 func GetMainWindowSize() fyne.Size {
-	return mainWindowSize
+	return fyne.NewSize(460.0, 650.0)
 }
 
 func GetAlbumCoverSize() fyne.Size {
-	return albumCoverIconSize
+	return fyne.NewSize(128.0, 128.0)
+}
+
+func GetAlbumViewIconSize() fyne.Size {
+	return fyne.NewSize(128.0, 128.0)
+}
+
+func GetThumbnailIconSize() fyne.Size {
+	return fyne.NewSize(128.0*goldenRatio, 128.0)
+}
+
+func GetMusicAddOnlineDialogSize() fyne.Size {
+	return fyne.NewSize(7680.0, 4320.0)
 }

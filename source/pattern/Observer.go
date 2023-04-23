@@ -22,7 +22,7 @@ type ZeroArgObservable struct {
 
 func (subject *ZeroArgObservable) NotifyAll() {
 	for _, callback := range subject.callbacks {
-		callback()
+		go callback()
 	}
 }
 
@@ -36,7 +36,7 @@ type OneArgObservable[T0 any] struct {
 
 func (subject *OneArgObservable[T0]) NotifyAll(t0 T0) {
 	for _, callback := range subject.callbacks {
-		callback(t0)
+		go callback(t0)
 	}
 }
 
@@ -50,7 +50,7 @@ type TwoArgObservable[T0, T1 any] struct {
 
 func (subject *TwoArgObservable[T0, T1]) NotifyAll(t0 T0, t1 T1) {
 	for _, callback := range subject.callbacks {
-		callback(t0, t1)
+		go callback(t0, t1)
 	}
 }
 
@@ -64,7 +64,7 @@ type ThreeArgObservable[T0, T1, T2 any] struct {
 
 func (subject *ThreeArgObservable[T0, T1, T2]) NotifyAll(t0 T0, t1 T1, t2 T2) {
 	for _, callback := range subject.callbacks {
-		callback(t0, t1, t2)
+		go callback(t0, t1, t2)
 	}
 }
 
@@ -78,7 +78,7 @@ type FourArgObservable[T0, T1, T2, T3 any] struct {
 
 func (subject *FourArgObservable[T0, T1, T2, T3]) NotifyAll(t0 T0, t1 T1, t2 T2, t3 T3) {
 	for _, callback := range subject.callbacks {
-		callback(t0, t1, t2, t3)
+		go callback(t0, t1, t2, t3)
 	}
 }
 
