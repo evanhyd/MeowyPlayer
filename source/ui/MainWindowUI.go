@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
@@ -48,5 +49,14 @@ func NewMeowyPlayerWindow() fyne.Window {
 	player.GetState().OnFocusMusicTab().AddCallback(func() { tabs.Select(musicTab) })
 
 	meowyPlayerWindow.SetContent(container.NewBorder(nil, createSeeker(), nil, nil, tabs))
+	meowyPlayerWindow.SetCloseIntercept(meowyPlayerWindow.Hide)
+
+	//create system tray
+	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
+		trayMenu := fyne.NewMenu("", fyne.NewMenuItem("Show", meowyPlayerWindow.Show))
+		desktop.SetSystemTrayMenu(trayMenu)
+		desktop.SetSystemTrayIcon(mainWindowIcon)
+	}
+
 	return meowyPlayerWindow
 }
