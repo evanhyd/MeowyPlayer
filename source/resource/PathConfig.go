@@ -18,13 +18,13 @@ const (
 )
 
 func init() {
-	if err := os.Mkdir(resourceRootPath, os.ModePerm); !os.IsExist(err) {
+	if err := os.Mkdir(resourceRootPath, os.ModePerm); err != nil && !os.IsExist(err) {
 		log.Fatal(err)
 	}
-	if err := os.Mkdir(albumRootPath, os.ModePerm); !os.IsExist(err) {
+	if err := os.Mkdir(albumRootPath, os.ModePerm); err != nil && !os.IsExist(err) {
 		log.Fatal(err)
 	}
-	if err := os.Mkdir(musicRootPath, os.ModePerm); !os.IsExist(err) {
+	if err := os.Mkdir(musicRootPath, os.ModePerm); err != nil && !os.IsExist(err) {
 		log.Fatal(err)
 	}
 }
