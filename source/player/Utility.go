@@ -207,8 +207,8 @@ func SetAlbumCover(album Album, coverIconPath string) error {
 	return RefreshAlbumTab()
 }
 
-// Delete album
-func DeleteAlbum(album Album) error {
+// Remove album
+func RemoveAlbum(album Album) error {
 	if err := os.RemoveAll(resource.GetAlbumFolderPath(album.Title())); err != nil {
 		return err
 	}

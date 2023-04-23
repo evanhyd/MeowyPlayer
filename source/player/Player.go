@@ -31,7 +31,7 @@ const (
 	PLAYMODE_LEN
 )
 
-var player Player
+var mp3Player MP3Player
 
 func init() {
 	context, ready, err := oto.NewContext(SAMPLING_RATE, NUM_OF_CHANNELS, AUDIO_BIT_DEPTH)
@@ -40,21 +40,21 @@ func init() {
 	}
 	<-ready
 
-	player = Player{}
-	player.Context = context
-	player.loadMusicChan = make(chan struct{}, 16)
-	player.playPauseMusicChan = make(chan struct{}, 16)
-	player.musicVolumeChan = make(chan float64, 16)
-	player.progressChan = make(chan float64, 16)
-	player.musicVolume = 1.0
-	player.playMode = RANDOM
+	mp3Player = MP3Player{}
+	mp3Player.Context = context
+	mp3Player.loadMusicChan = make(chan struct{}, 16)
+	mp3Player.playPauseMusicChan = make(chan struct{}, 16)
+	mp3Player.musicVolumeChan = make(chan float64, 16)
+	mp3Player.progressChan = make(chan float64, 16)
+	mp3Player.musicVolume = 1.0
+	mp3Player.playMode = RANDOM
 }
 
-func GetPlayer() *Player {
-	return &player
+func GetPlayer() *MP3Player {
+	return &mp3Player
 }
 
-type Player struct {
+type MP3Player struct {
 	*oto.Context
 
 	isLoaded              bool
@@ -65,7 +65,6 @@ type Player struct {
 	onMusicBeginSubject   pattern.OneArgObservable[Music]
 	onMusicPlayingSubject pattern.TwoArgObservable[Music, float64]
 
-	album       Album
 	musics      []Music
 	musicIndex  int
 	musicVolume float64
@@ -76,75 +75,72 @@ type Player struct {
 	randomQueue   []int
 }
 
-func (player *Player) OnMusicBeginSubject() pattern.OneArgObservabler[Music] {
-	return &player.onMusicBeginSubject
+func (p *MP3Player) OnMusicBeginSubject() pattern.OneArgObservabler[Music] {
+	return &p.onMusicBeginSubject
 }
 
-func (player *Player) OnMusicPlayingSubject() pattern.TwoArgObservabler[Music, float64] {
-	return &player.onMusicPlayingSubject
+func (p *MP3Player) OnMusicPlayingSubject() pattern.TwoArgObservabler[Music, float64] {
+	return &p.onMusicPlayingSubject
 }
 
-func (player *Player) SetMusic(album Album, musics []Music, music Music) {
-	if player.album != album {
-		player.album = album
-		player.randomHistory = []int{}
-		player.randomQueue = []int{}
-	}
-	player.musics = musics //musics sorting order can be different
+func (p *MP3Player) SetMusic(album Album, musics []Music, music Music) {
+	p.randomHistory = []int{}
+	p.randomQueue = []int{}
+	p.musics = musics
 
 	if index := slices.Index(musics, music); index == -1 {
 		log.Fatal("Can not find the music from the album")
 	} else {
-		player.musicIndex = index
+		p.musicIndex = index
 	}
 
-	if !player.isLoaded {
-		player.isLoaded = true
+	if !p.isLoaded {
+		p.isLoaded = true
 	} else {
-		player.loadMusicChan <- Signal{}
+		p.loadMusicChan <- Signal{}
 	}
 }
 
-func (player *Player) SetPlayMode(playMode int) {
+func (p *MP3Player) SetPlayMode(playMode int) {
 	if playMode == RANDOM {
-		player.randomHistory = []int{}
-		player.randomQueue = rand.Perm(player.album.musicNumber)
+		p.randomHistory = []int{}
+		p.randomQueue = rand.Perm(len(p.musics))
 	}
-	player.playMode = playMode
+	p.playMode = playMode
 }
 
-func (player *Player) SetProgress(percent float64) {
-	if player.isLoaded {
-		player.progressChan <- percent
-	}
-}
-
-func (player *Player) SetMusicVolume(volume float64) {
-	player.musicVolume = volume
-	if player.isLoaded {
-		player.musicVolumeChan <- volume
+func (p *MP3Player) SetProgress(percent float64) {
+	if p.isLoaded {
+		p.progressChan <- percent
 	}
 }
 
-func (player *Player) PlayPauseMusic() {
-	if player.isLoaded {
-		player.playPauseMusicChan <- Signal{}
+func (p *MP3Player) SetMusicVolume(volume float64) {
+	p.musicVolume = volume
+	if p.isLoaded {
+		p.musicVolumeChan <- volume
 	}
 }
 
-func (player *Player) PreviousMusic() {
-	if player.isLoaded {
-		switch player.playMode {
+func (p *MP3Player) PlayPauseMusic() {
+	if p.isLoaded {
+		p.playPauseMusicChan <- Signal{}
+	}
+}
+
+func (p *MP3Player) PreviousMusic() {
+	if p.isLoaded {
+		switch p.playMode {
 		case RANDOM:
-			if len(player.randomHistory) > 0 {
-				player.randomQueue = append(player.randomQueue, player.musicIndex)
-				lastIndex := len(player.randomHistory) - 1
-				player.musicIndex = player.randomHistory[lastIndex]
-				player.randomHistory = player.randomHistory[:lastIndex]
+			if len(p.randomHistory) > 0 {
+				p.randomQueue = append(p.randomQueue, p.musicIndex)
+				lastIndex := len(p.randomHistory) - 1
+				p.musicIndex = p.randomHistory[lastIndex]
+				p.randomHistory = p.randomHistory[:lastIndex]
 			}
 
 		case ORDERED:
-			player.musicIndex = (player.musicIndex - 1 + player.album.musicNumber) % player.album.musicNumber
+			p.musicIndex = (p.musicIndex - 1 + len(p.musics)) % len(p.musics)
 
 		case REPEAT:
 
@@ -152,24 +148,24 @@ func (player *Player) PreviousMusic() {
 			log.Fatal("Invalid music play mode")
 		}
 
-		player.loadMusicChan <- Signal{}
+		p.loadMusicChan <- Signal{}
 	}
 }
 
-func (player *Player) NextMusic() {
-	if player.isLoaded {
-		switch player.playMode {
+func (p *MP3Player) NextMusic() {
+	if p.isLoaded {
+		switch p.playMode {
 		case RANDOM:
-			player.randomHistory = append(player.randomHistory, player.musicIndex)
-			if len(player.randomQueue) == 0 {
-				player.randomQueue = rand.Perm(player.album.musicNumber)
+			p.randomHistory = append(p.randomHistory, p.musicIndex)
+			if len(p.randomQueue) == 0 {
+				p.randomQueue = rand.Perm(len(p.musics))
 			}
-			lastIndex := len(player.randomQueue) - 1
-			player.musicIndex = player.randomQueue[lastIndex]
-			player.randomQueue = player.randomQueue[:lastIndex]
+			lastIndex := len(p.randomQueue) - 1
+			p.musicIndex = p.randomQueue[lastIndex]
+			p.randomQueue = p.randomQueue[:lastIndex]
 
 		case ORDERED:
-			player.musicIndex = (player.musicIndex + 1) % player.album.musicNumber
+			p.musicIndex = (p.musicIndex + 1) % len(p.musics)
 
 		case REPEAT:
 
@@ -177,16 +173,16 @@ func (player *Player) NextMusic() {
 			log.Fatal("Invalid music play mode")
 		}
 
-		player.loadMusicChan <- Signal{}
+		p.loadMusicChan <- Signal{}
 	}
 }
 
-func (player *Player) Launch() {
+func (p *MP3Player) Launch() {
 	for {
-		if player.isLoaded {
+		if p.isLoaded {
 
 			//read music file
-			mp3File, err := os.ReadFile(resource.GetMusicPath(player.musics[player.musicIndex].title))
+			mp3File, err := os.ReadFile(resource.GetMusicPath(p.musics[p.musicIndex].title))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -198,23 +194,23 @@ func (player *Player) Launch() {
 			}
 
 			//obtain music player
-			mp3Player := player.Context.NewPlayer(mp3Decoder)
+			mp3Player := p.Context.NewPlayer(mp3Decoder)
 
 			//PLAYYYYYYYYYYYYYYYYYYYYYYYYYYYY
 			paused := false
 			interrupted := false
-			player.onMusicBeginSubject.NotifyAll(player.musics[player.musicIndex])
-			mp3Player.SetVolume(player.musicVolume)
+			p.onMusicBeginSubject.NotifyAll(p.musics[p.musicIndex])
+			mp3Player.SetVolume(p.musicVolume)
 			mp3Player.Play()
 
 		MusicLoop:
 			for mp3Player.IsPlaying() || paused {
 				select {
-				case <-player.loadMusicChan:
+				case <-p.loadMusicChan:
 					interrupted = true
 					break MusicLoop
 
-				case <-player.playPauseMusicChan:
+				case <-p.playPauseMusicChan:
 					if mp3Player.IsPlaying() {
 						paused = true
 						mp3Player.Pause()
@@ -223,7 +219,7 @@ func (player *Player) Launch() {
 						mp3Player.Play()
 					}
 
-				case percent := <-player.progressChan:
+				case percent := <-p.progressChan:
 					mp3Player.Pause()
 					tick := int64(float64(mp3Decoder.Length()) * percent)
 					tick -= tick % 4
@@ -231,7 +227,7 @@ func (player *Player) Launch() {
 					mp3Decoder.Seek(tick, io.SeekStart)
 					mp3Player.Play()
 
-				case volume := <-player.musicVolumeChan:
+				case volume := <-p.musicVolumeChan:
 					mp3Player.SetVolume(volume)
 
 				default:
@@ -240,13 +236,13 @@ func (player *Player) Launch() {
 						log.Fatal(err)
 					}
 					percent := float64(currentTick) / float64(mp3Decoder.Length())
-					player.onMusicPlayingSubject.NotifyAll(player.musics[player.musicIndex], percent)
+					p.onMusicPlayingSubject.NotifyAll(p.musics[p.musicIndex], percent)
 					time.Sleep(200 * time.Millisecond)
 				}
 			}
 
 			if !interrupted {
-				player.NextMusic()
+				p.NextMusic()
 			}
 
 			mp3Player.Close()

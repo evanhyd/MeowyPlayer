@@ -136,7 +136,7 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 	delete := fyne.NewMenuItem("Delete", func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title()), func(shouldDelete bool) {
 			if shouldDelete {
-				DisplayErrorIfAny(player.DeleteAlbum(album))
+				DisplayErrorIfAny(player.RemoveAlbum(album))
 			}
 		}, player.GetMainWindow())
 	})
