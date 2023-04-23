@@ -41,7 +41,7 @@ func createSeeker() *fyne.Container {
 	albumView.Image.SetMinSize(resource.GetAlbumCoverSize())
 	player.GetState().OnUpdateSeeker().AddCallback(func(album player.Album, _ []player.Music, _ player.Music) {
 		albumView.SetImage(album.CoverIcon())
-		albumView.OnTapped = func() { DisplayError(player.UserSelectAlbum(album)) }
+		albumView.OnTapped = func() { DisplayErrorIfAny(player.UserSelectAlbum(album)) }
 	})
 
 	title := widget.NewLabel("")

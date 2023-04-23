@@ -225,15 +225,15 @@ func DeleteAlbum(album Album) error {
 }
 
 // Add music to the album
-func AddMusicToAlbum(album Album, uri fyne.URI) error {
+func AddMusicToAlbum(album Album, sourcePath, musicTitle string) error {
 
 	//add to music repository
-	music, err := os.ReadFile(uri.Path())
+	music, err := os.ReadFile(sourcePath)
 	if err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(resource.GetMusicPath(uri.Name()), music, os.ModePerm); err != nil {
+	if err := os.WriteFile(resource.GetMusicPath(musicTitle), music, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -247,14 +247,14 @@ func AddMusicToAlbum(album Album, uri fyne.URI) error {
 	//check for duplicated name
 	scanner := bufio.NewScanner(config)
 	for scanner.Scan() {
-		if scanner.Text() == uri.Name() {
-			return fmt.Errorf("%v is already in the album", uri.Name())
+		if scanner.Text() == musicTitle {
+			return fmt.Errorf("%v is already in the album", musicTitle)
 		}
 	}
 	if scanner.Err() != nil {
 		return scanner.Err()
 	}
-	if _, err := config.WriteString(uri.Name() + "\n"); err != nil {
+	if _, err := config.WriteString(musicTitle + "\n"); err != nil {
 		return err
 	}
 

@@ -13,8 +13,6 @@ import (
 	"meowyplayer.com/source/resource"
 )
 
-const clipzagSearchUrl = `https://clipzag.com/search?`
-
 var clipzagResultRegex *regexp.Regexp
 
 func init() {
@@ -27,9 +25,10 @@ func init() {
 	}
 }
 
-func GetQueryResults(videoTitle string) ([]ClipzagResult, error) {
+func GetSearchResult(videoTitle string) ([]ClipzagResult, error) {
 	//fetch webpage
-	queryUrl := clipzagSearchUrl + url.Values{"q": {videoTitle}}.Encode()
+	const clipzagUrl = `https://clipzag.com/search?`
+	queryUrl := clipzagUrl + url.Values{"q": {videoTitle}}.Encode()
 	log.Printf("Fetching from: %v\n", queryUrl)
 	resp, err := http.Get(queryUrl)
 	if err != nil {
@@ -49,7 +48,7 @@ func GetQueryResults(videoTitle string) ([]ClipzagResult, error) {
 	results := make([]ClipzagResult, len(parsed))
 	completes := make(chan struct{}, len(parsed))
 	for i := range parsed {
-		go parseRequest(parsed[i], &results[len(parsed)-i-1], completes)
+		go parseSearchResult(parsed[i], &results[len(parsed)-i-1], completes)
 	}
 	for i := 0; i < len(parsed); i++ {
 		<-completes
@@ -59,7 +58,7 @@ func GetQueryResults(videoTitle string) ([]ClipzagResult, error) {
 	return results, nil
 }
 
-func parseRequest(parsed []string, result *ClipzagResult, completes chan struct{}) {
+func parseSearchResult(parsed []string, result *ClipzagResult, completes chan struct{}) {
 	staticResource, err := fyne.LoadResourceFromURLString(`https://` + parsed[2])
 	if err != nil {
 		log.Fatal(err)
@@ -68,7 +67,7 @@ func parseRequest(parsed []string, result *ClipzagResult, completes chan struct{
 	staticImage.SetMinSize(resource.GetThumbnailIconSize())
 
 	*result = ClipzagResult{
-		videoID:      parsed[1],
+		videoID:      parsed[1][8:],
 		thumbnail:    staticImage,
 		duration:     parsed[3],
 		videoTitle:   parsed[4],

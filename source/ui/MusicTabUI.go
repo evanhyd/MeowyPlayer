@@ -67,7 +67,7 @@ func createMusicTab() *container.TabItem {
 			if label.Text != music.Description() {
 				label.Text = music.Description()
 				button := items[1].(*cwidget.Button)
-				button.OnTapped = func() { DisplayError(player.RemoveMusicFromAlbum(player.GetState().Album(), music)) }
+				button.OnTapped = func() { DisplayErrorIfAny(player.RemoveMusicFromAlbum(player.GetState().Album(), music)) }
 				canvas.Refresh()
 			}
 		},
@@ -102,11 +102,11 @@ func createMusicTab() *container.TabItem {
 func createAddLocalDialog() *dialog.FileDialog {
 	fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 		if err != nil {
-			DisplayError(err)
+			DisplayErrorIfAny(err)
 			return
 		}
 		if result != nil {
-			DisplayError(player.AddMusicToAlbum(player.GetState().Album(), result.URI()))
+			DisplayErrorIfAny(player.AddMusicToAlbum(player.GetState().Album(), result.URI().Path(), result.URI().Name()))
 		}
 	}, player.GetMainWindow())
 	fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
@@ -116,7 +116,7 @@ func createAddLocalDialog() *dialog.FileDialog {
 
 func createAddOnlineDialog() dialog.Dialog {
 	searchBar := widget.NewEntry()
-	searchBar.SetPlaceHolder("Search...")
+	searchBar.SetPlaceHolder(">>")
 	searchButton := cwidget.NewButtonWithIcon("", musicAdderOnlineSearchIcon)
 
 	scroll := cwidget.NewList(
@@ -126,8 +126,9 @@ func createAddOnlineDialog() dialog.Dialog {
 			card.Image.SetMinSize(resource.GetThumbnailIconSize())
 
 			videoTitle := widget.NewLabel("")
-			channelTitle := widget.NewLabel("")
-			stats := widget.NewLabel("")
+			videoTitle.TextStyle = fyne.TextStyle{Bold: true, Monospace: true, Symbol: true}
+
+			videoInfo := widget.NewLabel("")
 			description := widget.NewLabel("")
 
 			return container.NewBorder(
@@ -135,7 +136,7 @@ func createAddOnlineDialog() dialog.Dialog {
 				nil,
 				card,
 				nil,
-				container.NewGridWithRows(4, videoTitle, channelTitle, stats, description),
+				container.NewGridWithRows(3, videoTitle, videoInfo, description),
 			)
 		},
 
@@ -150,13 +151,10 @@ func createAddOnlineDialog() dialog.Dialog {
 
 				videoTitle.Text = result.VideoTitle()
 
-				channelTitle := gridItems[1].(*widget.Label)
-				channelTitle.Text = result.ChannelTitle()
+				videoInfo := gridItems[1].(*widget.Label)
+				videoInfo.Text = result.ChannelTitle() + " | " + result.Stats()
 
-				stats := gridItems[2].(*widget.Label)
-				stats.Text = result.Stats()
-
-				description := gridItems[3].(*widget.Label)
+				description := gridItems[2].(*widget.Label)
 				description.Text = result.Description()
 
 				canvas.Refresh()
@@ -165,9 +163,9 @@ func createAddOnlineDialog() dialog.Dialog {
 	)
 
 	searchButton.OnTapped = func() {
-		result, err := scraper.GetQueryResults(searchBar.Text)
+		result, err := scraper.GetSearchResult(searchBar.Text)
 		if err != nil {
-			DisplayError(err)
+			DisplayErrorIfAny(err)
 			return
 		}
 		scroll.SetItems(result)
@@ -176,6 +174,10 @@ func createAddOnlineDialog() dialog.Dialog {
 	searchBar.OnSubmitted = func(title string) {
 		searchButton.OnTapped()
 	}
+
+	scroll.SetOnSelected(func(result *scraper.ClipzagResult) {
+		DisplayErrorIfAny(scraper.AddMusicToRepository(result.VideoID(), player.GetState().Album(), result.VideoTitle()))
+	})
 
 	onlineBrowserDialog := dialog.NewCustom("", "( X )", container.NewBorder(
 		container.NewBorder(

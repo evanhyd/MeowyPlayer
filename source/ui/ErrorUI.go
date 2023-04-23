@@ -5,7 +5,7 @@ import (
 	"meowyplayer.com/source/player"
 )
 
-func DisplayError(err error) {
+func DisplayErrorIfAny(err error) {
 	if err != nil {
 		dialog.ShowError(err, player.GetMainWindow())
 	}

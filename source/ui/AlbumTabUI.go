@@ -83,7 +83,7 @@ func createAblumTab() *container.TabItem {
 		},
 	)
 
-	albumAdderButton.OnTapped = func() { DisplayError(player.AddNewAlbum()) }
+	albumAdderButton.OnTapped = func() { DisplayErrorIfAny(player.AddNewAlbum()) }
 	searchBar.OnChanged = scroll.SetTitleFilter
 	sortByTitleButton.OnTapped = scroll.SetTitleSorter
 	sortByDateButton.OnTapped = scroll.SetDateSorter
@@ -113,7 +113,7 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 		entry := widget.NewEntry()
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(shouldRename bool) {
 			if shouldRename {
-				DisplayError(player.RenameAlbum(album, entry.Text))
+				DisplayErrorIfAny(player.RenameAlbum(album, entry.Text))
 			}
 		}, player.GetMainWindow())
 	})
@@ -121,11 +121,11 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 	cover := fyne.NewMenuItem("Cover", func() {
 		fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
-				DisplayError(err)
+				DisplayErrorIfAny(err)
 				return
 			}
 			if result != nil {
-				DisplayError(player.SetAlbumCover(album, result.URI().Path()))
+				DisplayErrorIfAny(player.SetAlbumCover(album, result.URI().Path()))
 			}
 		}, player.GetMainWindow())
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
@@ -136,7 +136,7 @@ func createAlbumPopUpMenu(canvas fyne.Canvas, album player.Album) *widget.PopUpM
 	delete := fyne.NewMenuItem("Delete", func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title()), func(shouldDelete bool) {
 			if shouldDelete {
-				DisplayError(player.DeleteAlbum(album))
+				DisplayErrorIfAny(player.DeleteAlbum(album))
 			}
 		}, player.GetMainWindow())
 	})
