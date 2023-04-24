@@ -28,7 +28,8 @@ func (album *Album) CoverIcon() *canvas.Image {
 
 func (album *Album) Description() string {
 	year, month, day := album.modifiedDate.Date()
-	return fmt.Sprintf("%v\nMusic: %v\nModified: %v %v %v", album.title, album.musicNumber, year, month, day)
+	hour, min, sec := album.modifiedDate.Clock()
+	return fmt.Sprintf("%v\nMusic: %v\nModified: %v %v %v %02v:%02v:%02v", album.title, album.musicNumber, year, month, day, hour, min, sec)
 }
 
 func (album *Album) IsPlaceHolder() bool {

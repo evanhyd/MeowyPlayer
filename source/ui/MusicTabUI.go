@@ -56,16 +56,16 @@ func createMusicTab() *container.TabItem {
 
 	scroll := cwidget.NewMusicList(
 		func() fyne.CanvasObject {
-			label := widget.NewLabel("")
+			title := widget.NewLabel("")
 			button := cwidget.NewButton("<")
-			return container.NewBorder(nil, nil, label, button)
+			return container.NewBorder(nil, nil, title, button)
 		},
 		func(music player.Music, canvas fyne.CanvasObject) {
 			items := canvas.(*fyne.Container).Objects
-			label := items[0].(*widget.Label)
+			title := items[0].(*widget.Label)
 
-			if label.Text != music.Description() {
-				label.Text = music.Description()
+			if title.Text != music.Description() {
+				title.Text = music.Description()
 				button := items[1].(*cwidget.Button)
 				button.OnTapped = func() { DisplayErrorIfAny(player.RemoveMusicFromAlbum(player.GetState().Album(), music)) }
 				canvas.Refresh()
@@ -177,7 +177,10 @@ func createAddOnlineDialog() dialog.Dialog {
 	}
 
 	scroll.SetOnSelected(func(result *scraper.ClipzagResult) {
+		progress := dialog.NewCustom(result.VideoTitle(), "downloading", widget.NewProgressBarInfinite(), player.GetMainWindow())
+		progress.Show()
 		DisplayErrorIfAny(scraper.AddMusicToRepository(result.VideoID(), player.GetState().Album(), result.VideoTitle()))
+		progress.Hide()
 	})
 
 	onlineBrowserDialog := dialog.NewCustom("", "( X )", container.NewBorder(

@@ -33,7 +33,7 @@ func AddMusicToRepository(videoID string, album player.Album, musicTitle string)
 		"?", "",
 		"*", "",
 	)
-	musicTitle = sanitizer.Replace(musicTitle)
+	musicTitle = sanitizer.Replace(musicTitle) + ".mp3"
 
 	//server POST
 	youtubeVideoUrl := youtubeUrl + videoID

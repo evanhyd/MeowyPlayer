@@ -60,12 +60,11 @@ func createAblumTab() *container.TabItem {
 			return container.NewBorder(nil, nil, card, button, title)
 		},
 		func(album player.Album, canvas fyne.CanvasObject) {
-
 			//not a solid design. If the inner border style change, then this code would break
 			items := canvas.(*fyne.Container).Objects
-			label := items[0].(*widget.Label)
-			if label.Text != album.Description() {
-				label.Text = album.Description()
+			description := items[0].(*widget.Label)
+			if description.Text != album.Description() {
+				description.Text = album.Description()
 
 				//update album cover
 				card := items[1].(*widget.Card)

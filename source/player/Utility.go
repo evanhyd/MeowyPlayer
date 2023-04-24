@@ -36,26 +36,51 @@ func ReadAlbumsFromDisk() ([]Album, error) {
 
 			//read album config
 			configPath := resource.GetAlbumConfigPath(directory.Name())
+			iconPath := resource.GetAlbumIconPath(directory.Name())
+
+			//read last modified date
+			var lastModifiedTime time.Time = time.Unix(0, 0)
+
+			if info, err := os.Stat(configPath); err == nil {
+				if lastModifiedTime.Compare(info.ModTime()) < 0 {
+					lastModifiedTime = info.ModTime()
+				}
+			} else {
+				return nil, err
+			}
+
+			if info, err := directory.Info(); err == nil {
+				if lastModifiedTime.Compare(info.ModTime()) < 0 {
+					lastModifiedTime = info.ModTime()
+				}
+			} else {
+				return nil, err
+			}
+
+			if info, err := os.Stat(iconPath); err == nil {
+				if lastModifiedTime.Compare(info.ModTime()) < 0 {
+					lastModifiedTime = info.ModTime()
+				}
+			} else {
+				return nil, err
+			}
+
+			//read the number of music
 			config, err := os.ReadFile(configPath)
 			if err != nil {
 				return nil, err
 			}
-
-			//read last modified date
-			info, err := os.Stat(configPath)
-			if err != nil {
-				return nil, err
-			}
-
 			musicNumber := bytes.Count(config, []byte{'\n'})
 
-			coverIcon, err := fyne.LoadResourceFromPath(resource.GetAlbumIconPath(directory.Name()))
+			//read the album cover
+			coverIcon, err := fyne.LoadResourceFromPath(iconPath)
 			if err != nil {
 				return nil, err
 			}
 			albumCover := canvas.NewImageFromResource(coverIcon)
 			albumCover.SetMinSize(resource.GetAlbumCoverSize())
-			albums = append(albums, Album{directory.Name(), info.ModTime(), musicNumber, albumCover})
+
+			albums = append(albums, Album{directory.Name(), lastModifiedTime, musicNumber, albumCover})
 		}
 	}
 	return albums, nil
@@ -187,9 +212,15 @@ func RenameAlbum(album Album, newTitle string) error {
 		return err
 	}
 
+	//Windows renaming folder does not change time???
+	if err := os.Chtimes(newPath, time.Now(), time.Now()); err != nil {
+		return err
+	}
+
 	if state.album.Title() == album.Title() {
 		state.album.title = newTitle
 	}
+
 	return RefreshAlbumTab()
 }
 
@@ -200,7 +231,8 @@ func SetAlbumCover(album Album, coverIconPath string) error {
 		return err
 	}
 
-	if err := os.WriteFile(resource.GetAlbumIconPath(album.Title()), coverIconData, os.ModePerm); err != nil {
+	albumPath := resource.GetAlbumIconPath(album.Title())
+	if err := os.WriteFile(albumPath, coverIconData, os.ModePerm); err != nil {
 		return err
 	}
 

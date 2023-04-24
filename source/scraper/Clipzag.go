@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"html"
 	"io"
 	"log"
 	"net/http"
@@ -70,7 +71,7 @@ func parseSearchResult(parsed []string, result *ClipzagResult, completes chan st
 		videoID:      parsed[1][8:],
 		thumbnail:    staticImage,
 		duration:     parsed[3],
-		videoTitle:   parsed[4],
+		videoTitle:   html.UnescapeString(parsed[4]),
 		channelTitle: parsed[5],
 		stats:        parsed[6],
 		description:  parsed[7],
