@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"fmt"
 	"html"
 	"io"
 	"log"
@@ -68,13 +69,11 @@ func parseSearchResult(parsed []string, result *ClipzagResult, completes chan st
 	staticImage.SetMinSize(resource.GetThumbnailIconSize())
 
 	*result = ClipzagResult{
-		videoID:      parsed[1][8:],
-		thumbnail:    staticImage,
-		duration:     parsed[3],
-		videoTitle:   html.UnescapeString(parsed[4]),
-		channelTitle: parsed[5],
-		stats:        parsed[6],
-		description:  parsed[7],
+		videoID:     parsed[1][8:],
+		thumbnail:   staticImage,
+		videoTitle:  html.UnescapeString(parsed[4]),
+		stats:       fmt.Sprintf("[%v] %v | %v", parsed[3], parsed[5], parsed[6]),
+		description: parsed[7],
 	}
 	completes <- struct{}{}
 }

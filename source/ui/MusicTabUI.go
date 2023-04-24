@@ -152,8 +152,8 @@ func createAddOnlineDialog() dialog.Dialog {
 
 				videoTitle.Text = result.VideoTitle()
 
-				videoInfo := gridItems[1].(*widget.Label)
-				videoInfo.Text = result.ChannelTitle() + " | " + result.Stats()
+				videoStats := gridItems[1].(*widget.Label)
+				videoStats.Text = result.Stats()
 
 				description := gridItems[2].(*widget.Label)
 				description.Text = result.Description()
