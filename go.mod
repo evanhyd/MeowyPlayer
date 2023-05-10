@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	fyne.io/fyne/v2 v2.3.3
+	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/hajimehoshi/go-mp3 v0.3.4
 	github.com/hajimehoshi/oto/v2 v2.4.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
@@ -11,6 +12,7 @@ require (
 
 require (
 	fyne.io/systray v1.10.1-0.20230312215936-7f71b037e260 // indirect
+	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/benoitkugler/textlayout v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ebitengine/purego v0.3.0 // indirect
@@ -34,9 +36,9 @@ require (
 	github.com/yuin/goldmark v1.4.13 // indirect
 	golang.org/x/image v0.0.0-20220601225756-64ec528b34cd // indirect
 	golang.org/x/mobile v0.0.0-20211207041440-4e6c2922fdee // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/js/dom v0.0.0-20210725211120-f030747120f2 // indirect
 )
