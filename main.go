@@ -7,6 +7,9 @@ import (
 	"meowyplayer.com/source/ui"
 )
 
+func init() {
+}
+
 func main() {
 	mainWindow := ui.NewMeowyPlayerWindow()
 
@@ -20,4 +23,6 @@ func main() {
 
 	go meowyPlayer.Launch()
 	mainWindow.ShowAndRun()
+
+	player.RemoveUnusedMusic()
 }

@@ -18,7 +18,7 @@ import (
 var clipzagResultRegex *regexp.Regexp
 
 func init() {
-	const clipzagResultPattern = `<a class='title-color' href='(.+)'>\n.+\n.+data-thumb='//(.+)' .+<span class='duration'>(.+)</span></div>\n.+title='(.+)'.+\n.+\n.+\n.+<a class='by-user' href='.+'>(.+)</a><br />(.+)</span>\n.+\n<div class='postdiscription'>(.+)</div>`
+	const clipzagResultPattern = `<a class="title-color" href="(.+)">\n.+\n.+data-thumb="//(.+)" .+<span class="duration">(.+)</span></div>\n.+title="(.+)".+\n.+\n.+\n.+<a class="by-user" href=".+">(.+)</a><br/>(.+)</span>\n.+\n<div class="postdiscription">(.+)</div>`
 
 	var err error
 	clipzagResultRegex, err = regexp.Compile(clipzagResultPattern)

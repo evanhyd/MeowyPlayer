@@ -3,6 +3,7 @@ package scraper
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -102,6 +103,9 @@ func AddMusicToRepository(videoID string, album player.Album, musicTitle string)
 	bytesRead, err := io.Copy(file, fileResp.Body)
 	if err != nil {
 		return err
+	}
+	if bytesRead == 0 {
+		return fmt.Errorf("failed to download due to server issue")
 	}
 	log.Printf("File size: %.2v mb\n", float64(bytesRead)/1024.0/1024.0)
 

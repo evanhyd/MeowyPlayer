@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"image/png"
 	"io/fs"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -325,4 +326,48 @@ func RemoveMusicFromAlbum(album Album, music Music) error {
 		return err
 	}
 	return RefreshMusicTab()
+}
+
+// Remove unused music files that have no references in any album.
+func RemoveUnusedMusic() error {
+
+	//read album directories
+	albumDirs, err := os.ReadDir(resource.GetAlbumRootPath())
+	if err != nil {
+		return err
+	}
+
+	//read music config
+	inUse := make(map[string]struct{})
+	for _, albumDir := range albumDirs {
+		if albumDir.IsDir() {
+			config, err := os.ReadFile(resource.GetAlbumConfigPath(albumDir.Name()))
+			if err != nil {
+				return err
+			}
+
+			//read music name from config file
+			scanner := bufio.NewScanner(bytes.NewReader(config))
+			for line := 0; scanner.Scan(); line++ {
+				inUse[scanner.Text()] = struct{}{}
+			}
+		}
+	}
+
+	//remove unused music
+	musicDirs, err := os.ReadDir(resource.GetMusicRootPath())
+	if err != nil {
+		return err
+	}
+	for _, musicDir := range musicDirs {
+		if !musicDir.IsDir() {
+			if _, ok := inUse[musicDir.Name()]; !ok {
+				if err := os.Remove(resource.GetMusicPath(musicDir.Name())); err != nil {
+					return err
+				}
+				log.Printf("removed %v\n", musicDir.Name())
+			}
+		}
+	}
+	return nil
 }
