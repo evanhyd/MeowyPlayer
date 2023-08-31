@@ -2,7 +2,12 @@ package ui
 
 import (
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"log"
+	"math"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -40,7 +45,11 @@ func newAlbumTab() *container.TabItem {
 		view.ScrollToTop()
 	}
 
-	albumAdderButton := widget.NewButtonWithIcon("", resource.GetTexture(albumAdderIconName), func() {})
+	//add new album
+	albumAdderButton := widget.NewButtonWithIcon("", resource.GetTexture(albumAdderIconName), func() {
+		log.Println("create new album")
+		showErrorIfAny(addNewAlbum())
+	})
 	albumAdderButton.Importance = widget.LowImportance
 
 	//sort by title button
@@ -133,6 +142,25 @@ func newAlbumView(data binding.DataList) *widget.List {
 	return view
 }
 
+func makeFilter(title string) func(*player.Album) bool {
+	title = strings.ToLower(title)
+	return func(a *player.Album) bool {
+		return strings.Contains(strings.ToLower(a.Title), title)
+	}
+}
+
+func makeTitleSorter(reverse bool) func(player.Album, player.Album) bool {
+	return func(a1, a2 player.Album) bool {
+		return (strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) < 0) != reverse
+	}
+}
+
+func makeDateSorter(reverse bool) func(player.Album, player.Album) bool {
+	return func(a1, a2 player.Album) bool {
+		return a1.Date.After(a2.Date) != reverse
+	}
+}
+
 func newAlbumMenu(canvas fyne.Canvas, album *player.Album) *widget.PopUpMenu {
 	rename := fyne.NewMenuItem("Rename", makeRenameDialog(album))
 	cover := fyne.NewMenuItem("Cover", makeCoverDialog(album))
@@ -216,33 +244,48 @@ func deleteAlbum(album *player.Album) error {
 	index := slices.IndexFunc(config.Albums, func(a player.Album) bool { return a.Title == album.Title })
 	last := len(config.Albums) - 1
 
-	//remove album
-	config.Albums[index] = config.Albums[last]
-	config.Albums = config.Albums[:last]
-
 	//remove album icon
 	if err := os.Remove(resource.GetIconPath(album)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
+	//remove album
+	config.Albums[index] = config.Albums[last]
+	config.Albums = config.Albums[:last]
+
 	return resource.ReloadCurrentConfig()
 }
 
-func makeFilter(title string) func(*player.Album) bool {
-	title = strings.ToLower(title)
-	return func(a *player.Album) bool {
-		return strings.Contains(strings.ToLower(a.Title), title)
-	}
-}
+func addNewAlbum() error {
+	config := resource.GetCurrentConfig()
 
-func makeTitleSorter(reverse bool) func(player.Album, player.Album) bool {
-	return func(a1, a2 player.Album) bool {
-		return (strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) < 0) != reverse
+	//generate title
+	title := ""
+	for i := 0; i < math.MaxInt; i++ {
+		title = fmt.Sprintf("My Album (%v)", i)
+		index := slices.IndexFunc(config.Albums, func(a player.Album) bool { return a.Title == title })
+		if index == -1 {
+			break
+		}
 	}
-}
 
-func makeDateSorter(reverse bool) func(player.Album, player.Album) bool {
-	return func(a1, a2 player.Album) bool {
-		return a1.Date.After(a2.Date) != reverse
+	//generate album
+	newAlbum := player.Album{Date: time.Now(), Title: title}
+	config.Albums = append(config.Albums, newAlbum)
+
+	//generate album cover
+	iconColor := color.NRGBA{uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32())}
+	iconImage := image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	iconImage.SetNRGBA(0, 0, iconColor)
+
+	file, err := os.Create(resource.GetIconPath(&newAlbum))
+	if err != nil {
+		return err
 	}
+	defer file.Close()
+	if err := png.Encode(file, iconImage); err != nil {
+		return err
+	}
+
+	return resource.ReloadCurrentConfig()
 }

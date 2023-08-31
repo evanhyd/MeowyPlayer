@@ -20373,3 +20373,19 @@ main.main()
 2023/08/31 12:34:46 update Monogatari's cover: C:/Users/evanh/Desktop/test.jpg
 2023/08/31 12:36:53 update Monogatari's cover: C:/Users/evanh/Desktop/test.jpg
 2023/08/31 12:37:48 update Monogatari's cover: C:/Users/evanh/Desktop/test.jpg
+2023/08/31 12:48:17 show error: open My Album (0).png: The system cannot find the file specified.
+2023/08/31 12:51:17 delete My Album (1)
+2023/08/31 12:51:21 delete My Album (0)
+2023/08/31 12:51:26 delete My Album (0)
+2023/08/31 12:51:30 delete My Album (0)
+2023/08/31 12:51:33 delete My Album (1)
+2023/08/31 12:53:01 create new album
+2023/08/31 12:53:04 delete My Album (0)
+2023/08/31 12:53:06 create new album
+2023/08/31 12:53:06 create new album
+2023/08/31 12:53:09 delete My Album (1)
+2023/08/31 12:53:09 show error: remove album\icon\My Album (1).png: The process cannot access the file because it is being used by another process.
+2023/08/31 12:53:15 delete My Album (0)
+2023/08/31 12:53:39 delete My Album (1)
+2023/08/31 12:53:42 create new album
+2023/08/31 12:53:44 delete My Album (0)
