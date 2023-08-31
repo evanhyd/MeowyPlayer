@@ -5,24 +5,33 @@ import (
 	"time"
 )
 
+const (
+	MAGIC_RATIO     = 11024576435 //pray it doesn't overflow
+	AUDIO_BIT_DEPTH = 2
+	NUM_OF_CHANNELS = 2
+	SAMPLING_RATE   = 44100
+)
+
 type Music struct {
-	title        string
-	duration     time.Duration
-	modifiedDate time.Time
+	Date    time.Time `json:"date"`
+	Title   string    `json:"title"`
+	Size    int64     `json:"size"`
+	VideoID string    `json:"videoID"`
 }
 
-func (music *Music) Title() string {
-	return music.title
+func (m *Music) Length() time.Duration {
+	return time.Duration(m.Size * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
 }
 
-func (music *Music) Duration() time.Duration {
-	return music.duration
-}
+func (m *Music) Description() string {
+	const (
+		kConversionFactor = 60
+		kExtensionLength  = 4 // "remove .mp3"
+	)
 
-func (music *Music) ModifiedDate() time.Time {
-	return music.modifiedDate
-}
-
-func (music *Music) Description() string {
-	return fmt.Sprintf("%02d:%02d", int(music.duration.Minutes())%60, int(music.duration.Seconds())%60) + " | " + music.title[:len(music.title)-4]
+	length := m.Length()
+	mins := int(length.Minutes()) % kConversionFactor
+	secs := int(length.Seconds()) % kConversionFactor
+	title := m.Title[:len(m.Title)-kExtensionLength]
+	return fmt.Sprintf("%02v:%02v | %v", mins, secs, title)
 }

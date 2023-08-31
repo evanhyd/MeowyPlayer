@@ -2,27 +2,30 @@ package main
 
 import (
 	"log"
+	"os"
+	"runtime/debug"
 
-	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui"
+	"meowyplayer.com/source/utility"
 )
 
-func init() {
-}
-
 func main() {
-	mainWindow := ui.NewMeowyPlayerWindow()
+	//redirect panic message
+	defer func() {
+		if err := recover(); err != nil {
+			log.Fatalf("%v\n%v", err, string(debug.Stack()))
+		}
+	}()
 
-	meowyPlayerState := player.GetState()
-	meowyPlayer := player.GetPlayer()
+	utility.InitLogger()
 
-	if err := player.RefreshAlbumTab(); err != nil {
-		log.Fatal(err)
+	window := ui.NewMainWindow()
+	if config, err := resource.LoadFromLocalConfig(); err == nil || os.IsNotExist(err) {
+		resource.SetCurrentConfig(&config)
+	} else {
+		log.Panic(err)
 	}
-	meowyPlayerState.OnUpdateSeeker().AddCallback(meowyPlayer.SetMusic)
 
-	go meowyPlayer.Launch()
-	mainWindow.ShowAndRun()
-
-	player.RemoveUnusedMusic()
+	window.ShowAndRun()
 }
