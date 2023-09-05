@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/source/resource/texture"
 )
 
 func NewMainWindow() fyne.Window {
@@ -19,7 +19,7 @@ func NewMainWindow() fyne.Window {
 		windowTitle = "MeowyPlayer"
 	)
 	windowSize := fyne.NewSize(460.0, 650.0)
-	icon := resource.GetTexture(iconName)
+	icon := texture.Get(iconName)
 
 	fyne.SetCurrentApp(app.NewWithID(appID))
 	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())

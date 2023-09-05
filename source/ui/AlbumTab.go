@@ -2,15 +2,8 @@ package ui
 
 import (
 	"fmt"
-	"image"
-	"image/color"
-	"image/png"
 	"log"
-	"math"
-	"math/rand"
-	"os"
 	"strings"
-	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -19,9 +12,10 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
-	"golang.org/x/exp/slices"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/source/resource/album"
+	"meowyplayer.com/source/resource/config"
+	"meowyplayer.com/source/resource/texture"
 	"meowyplayer.com/source/ui/cbinding"
 	"meowyplayer.com/source/utility"
 )
@@ -35,8 +29,8 @@ func newAlbumTab() *container.TabItem {
 
 	// album views
 	data := cbinding.NewConfigList()
-	resource.GetCurrentConfig().Attach(data)
 	view := newAlbumView(data)
+	config.Current().Attach(data)
 
 	//search bar
 	searchBar := widget.NewEntry()
@@ -46,9 +40,9 @@ func newAlbumTab() *container.TabItem {
 	}
 
 	//add new album
-	albumAdderButton := widget.NewButtonWithIcon("", resource.GetTexture(albumAdderIconName), func() {
+	albumAdderButton := widget.NewButtonWithIcon("", texture.Get(albumAdderIconName), func() {
 		log.Println("create new album")
-		showErrorIfAny(addNewAlbum())
+		showErrorIfAny(album.Make())
 	})
 	albumAdderButton.Importance = widget.LowImportance
 
@@ -82,7 +76,7 @@ func newAlbumTab() *container.TabItem {
 		nil,
 		view,
 	)
-	return container.NewTabItemWithIcon(albumTabTitle, resource.GetTexture(albumTabIconName), border)
+	return container.NewTabItemWithIcon(albumTabTitle, texture.Get(albumTabIconName), border)
 }
 
 func newAlbumView(data binding.DataList) *widget.List {
@@ -90,7 +84,7 @@ func newAlbumView(data binding.DataList) *widget.List {
 		albumCoverIconName = "default.png"
 	)
 	albumCoverIconSize := fyne.NewSize(128.0, 128.0)
-	albumCoverIcon := resource.GetTexture(albumCoverIconName)
+	albumCoverIcon := texture.Get(albumCoverIconName)
 
 	view := widget.NewListWithData(
 		data,
@@ -168,26 +162,26 @@ func newAlbumMenu(canvas fyne.Canvas, album *player.Album) *widget.PopUpMenu {
 	return widget.NewPopUpMenu(fyne.NewMenu("", rename, cover, delete), canvas)
 }
 
-func makeRenameDialog(album *player.Album) func() {
+func makeRenameDialog(selectedAlbum *player.Album) func() {
 	entry := widget.NewEntry()
 	return func() {
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(rename bool) {
 			if rename {
-				log.Printf("rename %v to %v\n", album.Title, entry.Text)
-				showErrorIfAny(updateAlbumTitle(album, entry.Text))
+				log.Printf("rename %v to %v\n", selectedAlbum.Title, entry.Text)
+				showErrorIfAny(album.UpdateTitle(selectedAlbum, entry.Text))
 			}
 		}, getMainWindow())
 	}
 }
 
-func makeCoverDialog(album *player.Album) func() {
+func makeCoverDialog(selectedAlbum *player.Album) func() {
 	return func() {
 		fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
 				showErrorIfAny(err)
 			} else if result != nil {
-				log.Printf("update %v's cover: %v\n", album.Title, result.URI().Path())
-				showErrorIfAny(updateAlbumCover(album, result.URI().Path()))
+				log.Printf("update %v's cover: %v\n", selectedAlbum.Title, result.URI().Path())
+				showErrorIfAny(album.UpdateCover(selectedAlbum, result.URI().Path()))
 			}
 		}, getMainWindow())
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
@@ -196,96 +190,13 @@ func makeCoverDialog(album *player.Album) func() {
 	}
 }
 
-func makeDeleteDialog(album *player.Album) func() {
+func makeDeleteDialog(selectedAlbum *player.Album) func() {
 	return func() {
-		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title), func(delete bool) {
+		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", selectedAlbum.Title), func(delete bool) {
 			if delete {
-				log.Printf("delete %v\n", album.Title)
-				showErrorIfAny(deleteAlbum(album))
+				log.Printf("delete %v\n", selectedAlbum.Title)
+				showErrorIfAny(album.Delete(selectedAlbum))
 			}
 		}, getMainWindow())
 	}
-}
-
-func updateAlbumTitle(album *player.Album, title string) error {
-	config := resource.GetCurrentConfig()
-	config.Date = time.Now()
-
-	//rename album
-	oldPath := resource.GetIconPath(album)
-	album.Title = title
-	album.Date = time.Now()
-
-	//rename album icon if name changed
-	if album.Title != title {
-		if err := resource.SetIcon(album, oldPath); err != nil {
-			return err
-		}
-		if err := os.Remove(oldPath); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-	}
-
-	return resource.ReloadCurrentConfig()
-}
-
-func updateAlbumCover(album *player.Album, iconPath string) error {
-	config := resource.GetCurrentConfig()
-	config.Date = time.Now()
-	album.Date = time.Now() //update description -> update album view
-	if err := resource.SetIcon(album, iconPath); err != nil {
-		return err
-	}
-	return resource.ReloadCurrentConfig()
-}
-
-func deleteAlbum(album *player.Album) error {
-	config := resource.GetCurrentConfig()
-	index := slices.IndexFunc(config.Albums, func(a player.Album) bool { return a.Title == album.Title })
-	last := len(config.Albums) - 1
-
-	//remove album icon
-	if err := os.Remove(resource.GetIconPath(album)); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	//remove album
-	config.Albums[index] = config.Albums[last]
-	config.Albums = config.Albums[:last]
-
-	return resource.ReloadCurrentConfig()
-}
-
-func addNewAlbum() error {
-	config := resource.GetCurrentConfig()
-
-	//generate title
-	title := ""
-	for i := 0; i < math.MaxInt; i++ {
-		title = fmt.Sprintf("My Album (%v)", i)
-		index := slices.IndexFunc(config.Albums, func(a player.Album) bool { return a.Title == title })
-		if index == -1 {
-			break
-		}
-	}
-
-	//generate album
-	newAlbum := player.Album{Date: time.Now(), Title: title}
-	config.Albums = append(config.Albums, newAlbum)
-
-	//generate album cover
-	iconColor := color.NRGBA{uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32())}
-	iconImage := image.NewNRGBA(image.Rect(0, 0, 1, 1))
-	iconImage.SetNRGBA(0, 0, iconColor)
-
-	file, err := os.Create(resource.GetIconPath(&newAlbum))
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	if err := png.Encode(file, iconImage); err != nil {
-		return err
-	}
-
-	return resource.ReloadCurrentConfig()
 }

@@ -20389,3 +20389,30 @@ main.main()
 2023/08/31 12:53:39 delete My Album (1)
 2023/08/31 12:53:42 create new album
 2023/08/31 12:53:44 delete My Album (0)
+2023/09/04 23:03:53 rename Anime to Animaid
+2023/09/04 23:04:29 rename Animaid to Anime
+2023/09/05 00:39:35 rename Anime to Animaid
+2023/09/05 00:39:45 rename DDLC to Doki Doki Literature Club
+2023/09/05 00:40:20 rename DDLC to Doki Doki Literature Club
+2023/09/05 00:40:20 show error: rename album\icon\DDLC.png album\icon\Doki Doki Literature Club.png: The system cannot find the file specified.
+2023/09/05 00:49:07 rename DDLC to Doki Doki Literature Club
+2023/09/05 00:49:13 rename Animaid to Animaid
+2023/09/05 00:49:13 show error: album with title: Animaid, is already existed
+2023/09/05 00:50:34 rename Animaid to OwO
+2023/09/05 00:50:34 show error: album "OwO" already exists
+2023/09/05 00:50:41 rename Animaid to Anime
+2023/09/05 00:50:49 rename Anime to Animaid
+2023/09/05 00:51:00 rename Animaid to Waifu
+2023/09/05 00:51:09 rename Monogatari to h
+2023/09/05 00:51:58 rename Monogatari to Monogatari
+2023/09/05 00:51:58 show error: album "Monogatari" already exists
+2023/09/05 00:52:12 rename Monogatari to h
+2023/09/05 00:52:18 rename h to Monogatari
+2023/09/05 01:14:42 rename Monogatari to Ararararagi Kun
+2023/09/05 01:15:19 rename Ararararagi Kun to asdgsadg
+2023/09/05 01:15:26 rename asdgsadg to Monogatari
+2023/09/05 01:15:37 rename Waifu to Anime
+2023/09/05 01:15:51 rename Anime to Anime
+2023/09/05 01:16:01 rename Anime to Waifu
+2023/09/05 01:16:01 show error: album "Waifu" already exists
+2023/09/05 01:16:18 rename Waifu to Anime

@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/source/resource/config"
 	"meowyplayer.com/source/ui"
 	"meowyplayer.com/source/utility"
 )
@@ -21,8 +21,8 @@ func main() {
 	utility.InitLogger()
 
 	window := ui.NewMainWindow()
-	if config, err := resource.LoadFromLocalConfig(); err == nil || os.IsNotExist(err) {
-		resource.SetCurrentConfig(&config)
+	if inuse, err := config.LoadFromLocal(); err == nil || os.IsNotExist(err) {
+		config.Set(&inuse)
 	} else {
 		log.Panic(err)
 	}
