@@ -10,7 +10,7 @@ import (
 type ConfigList struct {
 	binding.UntypedList
 	data   []player.Album
-	filter func(*player.Album) bool
+	filter func(player.Album) bool
 	sorter func(player.Album, player.Album) bool
 }
 
@@ -18,7 +18,7 @@ func NewConfigList() *ConfigList {
 	return &ConfigList{
 		binding.NewUntypedList(),
 		nil,
-		func(*player.Album) bool { return true },
+		func(player.Album) bool { return true },
 		func(player.Album, player.Album) bool { return true },
 	}
 }
@@ -28,7 +28,7 @@ func (c *ConfigList) Notify(config *player.Config) {
 	c.updateBinding()
 }
 
-func (c *ConfigList) SetFilter(filter func(*player.Album) bool) {
+func (c *ConfigList) SetFilter(filter func(player.Album) bool) {
 	c.filter = filter
 	c.updateBinding()
 }
@@ -44,11 +44,11 @@ func (c *ConfigList) updateBinding() {
 
 	//filter keeps the wanted album
 	view := []any{}
-	for i := range c.data {
-		if c.filter(&c.data[i]) {
-			view = append(view, &c.data[i])
+	for _, album := range c.data {
+		if c.filter(album) {
+			view = append(view, album)
 		}
 	}
-	utility.MustOk(c.Set(nil))
+	utility.MustOk(c.Set(nil)) //update when changing the length
 	utility.MustOk(c.Set(view))
 }

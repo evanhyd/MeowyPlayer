@@ -99,7 +99,7 @@ func newAlbumView(data binding.DataList) *widget.List {
 		func(item binding.DataItem, canvasObject fyne.CanvasObject) {
 			data, err := item.(binding.Untyped).Get()
 			utility.MustOk(err)
-			album := data.(*player.Album)
+			album := data.(player.Album)
 
 			objects0 := canvasObject.(*fyne.Container).Objects
 			intro := objects0[0].(*widget.Label)
@@ -120,7 +120,7 @@ func newAlbumView(data binding.DataList) *widget.List {
 				setting := objects1[1].(*widget.Button)
 				utility.MustNotNil(setting)
 				setting.OnTapped = func() {
-					newAlbumMenu(fyne.CurrentApp().Driver().CanvasForObject(canvasObject), album).ShowAtPosition(
+					newAlbumMenu(fyne.CurrentApp().Driver().CanvasForObject(canvasObject), &album).ShowAtPosition(
 						fyne.CurrentApp().Driver().AbsolutePositionForObject(setting))
 				}
 
@@ -130,15 +130,21 @@ func newAlbumView(data binding.DataList) *widget.List {
 
 	//select and load album
 	view.OnSelected = func(id widget.ListItemID) {
+		item, err := data.GetItem(id)
+		utility.MustOk(err)
+		data, err := item.(binding.Untyped).Get()
+		utility.MustOk(err)
+		a := data.(player.Album)
+		album.Set(&a)
 		view.Unselect(id)
 	}
 
 	return view
 }
 
-func makeFilter(title string) func(*player.Album) bool {
+func makeFilter(title string) func(player.Album) bool {
 	title = strings.ToLower(title)
-	return func(a *player.Album) bool {
+	return func(a player.Album) bool {
 		return strings.Contains(strings.ToLower(a.Title), title)
 	}
 }

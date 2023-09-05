@@ -8,8 +8,8 @@ import (
 
 type Config struct {
 	utility.Subject[*Config]
-	Date   time.Time
-	Albums []Album `json:"albums"`
+	Date   time.Time `json:"date"`
+	Albums []Album   `json:"albums"`
 }
 
 func (c *Config) NotifyAll() {

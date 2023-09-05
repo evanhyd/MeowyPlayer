@@ -20416,3 +20416,37 @@ main.main()
 2023/09/05 01:16:01 rename Anime to Waifu
 2023/09/05 01:16:01 show error: album "Waifu" already exists
 2023/09/05 01:16:18 rename Waifu to Anime
+2023/09/05 02:06:31 rename Monogatari to abc
+2023/09/05 02:06:39 rename abc to def
+2023/09/05 02:06:48 rename def to Monogatari
+2023/09/05 02:06:59 rename Anime to abc
+2023/09/05 02:07:32 rename Anime to asdf
+2023/09/05 02:07:42 rename asdf to Abn
+2023/09/05 02:07:47 rename Abn to abc
+2023/09/05 02:07:55 rename abc to asdg
+2023/09/05 02:08:05 rename asdg to Anime
+2023/09/05 02:08:13 rename Doki Doki Literature Club to DDLC
+2023/09/05 02:08:32 rename DDLC to dsf
+2023/09/05 02:08:36 rename dsf to asd
+2023/09/05 02:08:44 rename asd to test
+2023/09/05 02:08:58 rename test to Doki Doki Literature Club
+2023/09/05 02:08:58 show error: album "Doki Doki Literature Club" already exists
+2023/09/05 02:09:41 rename test to test
+2023/09/05 02:09:52 rename test to DDLC
+2023/09/05 02:10:03 rename Doki Doki Literature Club to Doki
+2023/09/05 02:10:16 rename Doki to DDLC
+2023/09/05 02:23:17 rename Anime to Animaid
+2023/09/05 02:23:29 rename DDLC to Doki Doki Literature Club
+2023/09/05 02:23:35 rename Animaid to Waifu
+2023/09/05 02:39:13 rename Undertale to Waifu
+2023/09/05 02:39:13 show error: album "Waifu" already exists
+2023/09/05 02:39:28 rename OwO to Ow
+2023/09/05 02:39:38 rename Ow to OwO
+2023/09/05 02:39:45 rename Waifu to Animaid
+2023/09/05 02:39:53 rename Monogatari to Monogatari
+2023/09/05 02:39:53 show error: album "Monogatari" already exists
+2023/09/05 02:40:00 rename Monogatari to MonogatariMonogatari
+2023/09/05 02:40:03 rename MonogatariMonogatari to Monogatari
+2023/09/05 02:40:07 rename Animaid to Waifu
+2023/09/05 02:40:10 create new album
+2023/09/05 02:40:14 delete My Album (0)

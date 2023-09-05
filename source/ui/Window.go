@@ -39,9 +39,7 @@ func NewMainWindow() fyne.Window {
 	}
 
 	//set up item tabs
-	albumTab := newAlbumTab()
-	// musicTab := createMusicTab()
-	tabs := container.NewAppTabs(albumTab)
+	tabs := container.NewAppTabs(newAlbumTab(), newMusicTab())
 	tabs.SetTabLocation(container.TabLocationLeading)
 	window.SetContent(container.NewBorder(nil, nil, nil, nil, tabs))
 	return window
