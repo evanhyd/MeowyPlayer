@@ -22,51 +22,25 @@ import (
 
 func newAlbumTab() *container.TabItem {
 	const (
-		albumTabTitle      = "Album"
-		albumTabIconName   = "album_tab.png"
-		albumAdderIconName = "album_adder.png"
+		albumTabTitle    = "Album"
+		albumTabIconName = "album_tab.png"
 	)
 
-	// album views
-	data := cbinding.NewConfigList()
+	//album views
+	data := cbinding.NewAlbumList()
 	view := newAlbumView(data)
-	config.Current().Attach(data)
+	config.Get().Attach(data)
 
-	//search bar
-	searchBar := widget.NewEntry()
-	searchBar.OnChanged = func(title string) {
-		data.SetFilter(makeFilter(title))
-		view.ScrollToTop()
-	}
-
-	//add new album
-	albumAdderButton := widget.NewButtonWithIcon("", texture.Get(albumAdderIconName), func() {
-		log.Println("create new album")
-		showErrorIfAny(album.Make())
-	})
-	albumAdderButton.Importance = widget.LowImportance
-
-	//sort by title button
-	reverseTitle := false
-	sortByTitleButton := widget.NewButton("Title", func() {
-		reverseTitle = !reverseTitle
-		data.SetSorter(makeTitleSorter(reverseTitle))
-	})
-	sortByTitleButton.Importance = widget.LowImportance
-
-	//sort by date button
-	reverseDate := true
-	sortByDateButton := widget.NewButton("Date", func() {
-		reverseDate = !reverseDate
-		data.SetSorter(makeDateSorter(reverseDate))
-	})
-	sortByDateButton.Importance = widget.LowImportance
-	sortByDateButton.OnTapped()
+	searchBar := newAlbumSearchBar(data, view)
+	albumAdderButton := newAlbumAdderButton(data, view)
+	titleButton := newAlbumTitleButton(data, view)
+	dateButton := newAlbumDateButton(data, view)
+	dateButton.OnTapped()
 
 	border := container.NewBorder(
 		container.NewBorder(
 			nil,
-			container.NewGridWithRows(1, sortByTitleButton, sortByDateButton),
+			container.NewGridWithRows(1, titleButton, dateButton),
 			nil,
 			albumAdderButton,
 			searchBar,
@@ -80,9 +54,7 @@ func newAlbumTab() *container.TabItem {
 }
 
 func newAlbumView(data binding.DataList) *widget.List {
-	const (
-		albumCoverIconName = "default.png"
-	)
+	const albumCoverIconName = "default.png"
 	albumCoverIconSize := fyne.NewSize(128.0, 128.0)
 	albumCoverIcon := texture.Get(albumCoverIconName)
 
@@ -135,30 +107,55 @@ func newAlbumView(data binding.DataList) *widget.List {
 		data, err := item.(binding.Untyped).Get()
 		utility.MustOk(err)
 		a := data.(player.Album)
-		album.Set(&a)
+		album.Get().Set(&a)
 		view.Unselect(id)
 	}
 
 	return view
 }
 
-func makeFilter(title string) func(player.Album) bool {
-	title = strings.ToLower(title)
-	return func(a player.Album) bool {
-		return strings.Contains(strings.ToLower(a.Title), title)
+func newAlbumSearchBar(data *cbinding.AlbumList, view *widget.List) *widget.Entry {
+	entry := widget.NewEntry()
+	entry.OnChanged = func(title string) {
+		title = strings.ToLower(title)
+		filter := func(a player.Album) bool {
+			return strings.Contains(strings.ToLower(a.Title), title)
+		}
+		data.SetFilter(filter)
+		view.ScrollToTop()
 	}
+	return entry
 }
 
-func makeTitleSorter(reverse bool) func(player.Album, player.Album) bool {
-	return func(a1, a2 player.Album) bool {
-		return (strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) < 0) != reverse
-	}
+func newAlbumAdderButton(data *cbinding.AlbumList, view *widget.List) *widget.Button {
+	const albumAdderIconName = "album_adder.png"
+	button := widget.NewButtonWithIcon("", texture.Get(albumAdderIconName), func() { showErrorIfAny(album.Make()) })
+	button.Importance = widget.LowImportance
+	return button
 }
 
-func makeDateSorter(reverse bool) func(player.Album, player.Album) bool {
-	return func(a1, a2 player.Album) bool {
-		return a1.Date.After(a2.Date) != reverse
-	}
+func newAlbumTitleButton(data *cbinding.AlbumList, view *widget.List) *widget.Button {
+	reverse := false
+	button := widget.NewButton("Title", func() {
+		reverse = !reverse
+		data.SetSorter(func(a1, a2 player.Album) bool {
+			return (strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) < 0) != reverse
+		})
+	})
+	button.Importance = widget.LowImportance
+	return button
+}
+
+func newAlbumDateButton(data *cbinding.AlbumList, view *widget.List) *widget.Button {
+	reverse := true
+	button := widget.NewButton("Date", func() {
+		reverse = !reverse
+		data.SetSorter(func(a1, a2 player.Album) bool {
+			return a1.Date.After(a2.Date) != reverse
+		})
+	})
+	button.Importance = widget.LowImportance
+	return button
 }
 
 func newAlbumMenu(canvas fyne.Canvas, album *player.Album) *widget.PopUpMenu {

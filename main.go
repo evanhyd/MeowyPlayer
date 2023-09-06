@@ -21,8 +21,8 @@ func main() {
 	utility.InitLogger()
 
 	window := ui.NewMainWindow()
-	if inuse, err := config.LoadFromLocal(); err == nil || os.IsNotExist(err) {
-		config.Set(&inuse)
+	if inUse, err := config.LoadFromLocal(); err == nil || os.IsNotExist(err) {
+		config.Get().Set(&inUse)
 	} else {
 		log.Panic(err)
 	}

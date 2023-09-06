@@ -11,20 +11,14 @@ import (
 	"meowyplayer.com/source/utility"
 )
 
-var currentConfig player.Config
+var configData utility.Data[player.Config]
 
-func Current() *player.Config {
-	return &currentConfig
-}
-
-func Set(config *player.Config) {
-	currentConfig.Date = config.Date
-	currentConfig.Albums = config.Albums
-	currentConfig.NotifyAll()
+func Get() *utility.Data[player.Config] {
+	return &configData
 }
 
 func Reload() error {
-	if err := SaveToLocal(&currentConfig); err != nil {
+	if err := SaveToLocal(configData.Get()); err != nil {
 		return err
 	}
 
@@ -33,18 +27,18 @@ func Reload() error {
 		return err
 	}
 
-	Set(&config)
+	configData.Set(&config)
 	return err
 }
 
 func LoadFromLocal() (player.Config, error) {
-	config := player.Config{}
-	if err := utility.ReadJson(path.Config(), &config); err != nil {
-		return config, err
+	inUse := player.Config{}
+	if err := utility.ReadJson(path.Config(), &inUse); err != nil {
+		return inUse, err
 	}
 
 	//load icons
-	getIcon := func(album *player.Album) fyne.Resource {
+	getCover := func(album *player.Album) fyne.Resource {
 		const missingTexturePath = "missing_texture.png"
 
 		//if fail, then load the placeholder texture
@@ -56,12 +50,11 @@ func LoadFromLocal() (player.Config, error) {
 		return icon
 	}
 
-	for i := range config.Albums {
-		config.Albums[i].Cover = canvas.NewImageFromResource(getIcon(&config.Albums[i]))
+	for i := range inUse.Albums {
+		inUse.Albums[i].Cover = canvas.NewImageFromResource(getCover(&inUse.Albums[i]))
 	}
 
-	config.NotifyAll()
-	return config, nil
+	return inUse, nil
 }
 
 func SaveToLocal(config *player.Config) error {

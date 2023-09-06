@@ -26,3 +26,34 @@ func (s *Subject[T]) NotifyAll(t T) {
 		go observer.Notify(t)
 	}
 }
+
+type Data[T any] struct {
+	Subject[*T]
+	value T
+}
+
+func (d *Data[T]) NotifyAll() {
+	d.Subject.NotifyAll(&d.value)
+}
+
+func (d *Data[T]) Set(v *T) {
+	d.value = *v
+	d.NotifyAll()
+}
+
+func (d *Data[T]) Get() *T {
+	return &d.value
+}
+
+type callbackWrapper[T any] struct {
+	function func(T)
+}
+
+func (c *callbackWrapper[T]) Notify(data T) {
+	c.function(data)
+}
+
+func MakeCallback[T any](function func(T)) Observer[T] {
+	call := callbackWrapper[T]{function}
+	return &call
+}

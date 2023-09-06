@@ -9,7 +9,10 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
+	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/resource/album"
 	"meowyplayer.com/source/resource/texture"
+	"meowyplayer.com/source/utility"
 )
 
 func NewMainWindow() fyne.Window {
@@ -39,15 +42,19 @@ func NewMainWindow() fyne.Window {
 	}
 
 	//set up item tabs
-	tabs := container.NewAppTabs(newAlbumTab(), newMusicTab())
+	albumTab := newAlbumTab()
+	musicTab := newMusicTab()
+	tabs := container.NewAppTabs(albumTab, musicTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
+	album.Get().Attach(utility.MakeCallback(func(_ *player.Album) { tabs.Select(musicTab) }))
+
 	window.SetContent(container.NewBorder(nil, nil, nil, nil, tabs))
 	return window
 }
 
 func showErrorIfAny(err error) {
 	if err != nil {
-		log.Printf("show error: %v\n", err)
+		log.Printf("gui error: %v\n", err)
 		dialog.ShowError(err, getMainWindow())
 	}
 }
