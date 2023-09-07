@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/resource/album"
+	"meowyplayer.com/source/resource/manager"
 	"meowyplayer.com/source/resource/texture"
 	"meowyplayer.com/source/ui/cbinding"
 	"meowyplayer.com/source/utility"
@@ -27,7 +27,7 @@ func newMusicTab() *container.TabItem {
 	//music views
 	data := cbinding.NewMusicList()
 	view := newMusicView(data)
-	album.Get().Attach(data)
+	manager.GetCurrentAlbum().Attach(data)
 
 	searchBar := newMusicSearchBar(data, view)
 	musicAdderLocalButton := newMusicAdderLocalButton(data, view)
@@ -78,6 +78,8 @@ func newMusicView(data binding.DataList) *widget.List {
 				setting := objects[1].(*widget.Button)
 				utility.MustNotNil(setting)
 				setting.OnTapped = func() {
+					log.Printf("delete %vfrom the album %v \n", music.Title, manager.GetCurrentAlbum().Get().Title)
+					showErrorIfAny(manager.DeleteMusic(&music))
 				}
 
 				canvasObject.Refresh()
@@ -111,8 +113,8 @@ func newMusicSearchBar(data *cbinding.MusicList, view *widget.List) *widget.Entr
 }
 
 func newMusicAdderLocalButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
-	const musicAdderLocalIconName = "music_adder_local.png"
-	button := widget.NewButtonWithIcon("", texture.Get(musicAdderLocalIconName), func() {
+	const iconName = "music_adder_local.png"
+	button := widget.NewButtonWithIcon("", texture.Get(iconName), func() {
 		log.Println("add music from local")
 		//to do
 	})
@@ -121,8 +123,8 @@ func newMusicAdderLocalButton(data *cbinding.MusicList, view *widget.List) *widg
 }
 
 func newMusicAdderOnlineButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
-	const musicAdderOnlineIconName = "music_adder_online.png"
-	button := widget.NewButtonWithIcon("", texture.Get(musicAdderOnlineIconName), func() {
+	const iconName = "music_adder_online.png"
+	button := widget.NewButtonWithIcon("", texture.Get(iconName), func() {
 		log.Println("add music from online")
 		//to do
 	})

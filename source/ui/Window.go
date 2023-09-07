@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/resource/album"
+	"meowyplayer.com/source/resource/manager"
 	"meowyplayer.com/source/resource/texture"
 	"meowyplayer.com/source/utility"
 )
@@ -46,7 +46,7 @@ func NewMainWindow() fyne.Window {
 	musicTab := newMusicTab()
 	tabs := container.NewAppTabs(albumTab, musicTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
-	album.Get().Attach(utility.MakeCallback(func(_ *player.Album) { tabs.Select(musicTab) }))
+	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(_ *player.Album) { tabs.Select(musicTab) }))
 
 	window.SetContent(container.NewBorder(nil, nil, nil, nil, tabs))
 	return window
