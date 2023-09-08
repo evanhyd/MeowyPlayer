@@ -47,7 +47,8 @@ func NewMainWindow() fyne.Window {
 	tabs.SetTabLocation(container.TabLocationLeading)
 	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(_ *player.Album) { tabs.Select(musicTab) }))
 
-	window.SetContent(container.NewBorder(nil, nil, nil, nil, tabs))
+	controller := newController()
+	window.SetContent(container.NewBorder(nil, controller, nil, nil, tabs))
 	return window
 }
 

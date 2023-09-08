@@ -28,3 +28,23 @@ func InitLogger() {
 
 	log.SetOutput(io.MultiWriter(loggers...))
 }
+
+// Error must not occur, for pre/post conditions checking
+func MustOk(err error) {
+	if err != nil {
+		log.Panicln(err)
+	}
+}
+
+// Error may occur, ex: IO fails due to unavoidable network error
+func ShouldOk(err error) {
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func MustNotNil(object any) {
+	if object == nil {
+		log.Panicf("%v is nil\n", object)
+	}
+}
