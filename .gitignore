@@ -14,8 +14,8 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-album/
-!album/cover
+album/config.json
+album/cover/
 music/
 target
 .DS_Store
