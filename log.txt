@@ -27,3 +27,142 @@
 2023/09/08 00:24:20 delete 000000.mp3from the album My Album (0) 
 2023/09/08 00:24:42 rename My Album (0) to Test Album
 2023/09/08 00:24:53 add 000000.mp3 from local
+2023/09/08 01:13:36 gui error: open album\cover\My Album (0).png: The system cannot find the path specified.
+2023/09/08 01:13:45 gui error: open album\cover\My Album (1).png: The system cannot find the path specified.
+2023/09/08 01:14:42 gui error: open album\cover\My Album (2).png: The system cannot find the path specified.
+2023/09/08 01:19:07 gui error: open album\cover\My Album (0).png: The system cannot find the path specified.
+2023/09/08 01:19:20 gui error: open album\cover\My Album (1).png: The system cannot find the path specified.
+2023/09/08 01:19:22 gui error: open album\cover\My Album (2).png: The system cannot find the path specified.
+2023/09/08 01:19:37 gui error: open album\cover\My Album (3).png: The system cannot find the path specified.
+2023/09/08 01:19:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/08 01:19:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/08 01:19:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/08 01:19:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/08 01:19:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/08 01:19:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/08 01:19:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/08 01:19:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/08 01:19:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/08 01:19:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/08 01:19:56 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/08 01:19:56   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/08 01:21:31 gui error: open album\cover\My Album (0).png: The system cannot find the path specified.
+2023/09/08 01:23:24 gui error: open album\cover\My Album (0).png: The system cannot find the path specified.
+2023/09/08 01:23:50 gui error: open album\cover\My Album (0).png: The system cannot find the path specified.
+2023/09/08 01:24:38 runtime error: invalid memory address or nil pointer dereference
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
+main.main.func1()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:20 +0x39
+panic({0x7ff6a7bd7780, 0x7ff6a7b413e0})
+	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
+meowyplayer.com/source/resource.get({0xc000378130?, 0x2?})
+	C:/Users/evanh/Desktop/MeowyPlayer/source/resource/Resource.go:26 +0x47
+meowyplayer.com/source/resource.GetAsset({0x7ff6a7c791e1?, 0x7ff6a757db87?})
+	C:/Users/evanh/Desktop/MeowyPlayer/source/resource/Resource.go:19 +0x5b
+meowyplayer.com/source/ui.NewMainWindow()
+	C:/Users/evanh/Desktop/MeowyPlayer/source/ui/Window.go:24 +0x37
+main.main()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:26 +0x58
+2023/09/08 01:25:04 gui error: open album\cover\My Album (0).png: The system cannot find the path specified.
+2023/09/08 01:34:35 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:34:41 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:34:50 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:35:52 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:36:35 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:40:29 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:42:23 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:45:22 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:48:16 gui error: open album\config.json: The system cannot find the path specified.
+2023/09/08 01:59:02 read album\config.json: Incorrect function.
+2023/09/08 01:59:02 read album\config.json: Incorrect function.
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
+main.main.func1()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:22 +0x39
+panic({0x7ff6a59f72e0, 0xc000543940})
+	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
+log.Panic({0xc000575e88?, 0xc0003761b0?, 0x7ff6a5bcbc40?})
+	C:/Users/evanh/works/coding/go/src/log/log.go:384 +0x65
+main.main()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:34 +0x2d6
+2023/09/08 02:09:23 unexpected end of JSON input
+2023/09/08 02:09:23 unexpected end of JSON input
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
+main.main.func1()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:17 +0x39
+panic({0x7ff76b8972e0, 0xc0013f22c0})
+	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
+log.Panic({0xc000183ef8?, 0xc000064000?, 0x7ff76afee107?})
+	C:/Users/evanh/works/coding/go/src/log/log.go:384 +0x65
+meowyplayer.com/source/utility.MustOk(...)
+	C:/Users/evanh/Desktop/MeowyPlayer/source/utility/Assert.go:10
+main.main()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:26 +0xed
+2023/09/08 02:09:34 unexpected end of JSON input
+2023/09/08 02:09:34 unexpected end of JSON input
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
+main.main.func1()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:17 +0x39
+panic({0x7ff642a572e0, 0xc00176ee50})
+	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
+log.Panic({0xc0000b9ef8?, 0xc000064000?, 0x7ff6421ae107?})
+	C:/Users/evanh/works/coding/go/src/log/log.go:384 +0x65
+meowyplayer.com/source/utility.MustOk(...)
+	C:/Users/evanh/Desktop/MeowyPlayer/source/utility/Assert.go:10
+main.main()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:26 +0xed
+2023/09/08 02:10:31 unexpected end of JSON input
+2023/09/08 02:10:31 unexpected end of JSON input
+
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
+main.main.func1()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:18 +0x39
+panic({0x7ff7231f72e0, 0xc0012994e0})
+	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
+log.Panicln({0xc000019ef8?, 0xc0012d3a10?, 0x7ff7233cbc60?})
+	C:/Users/evanh/works/coding/go/src/log/log.go:398 +0x65
+main.main()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:28 +0x12f
+2023/09/08 02:10:48 unexpected end of JSON input
+2023/09/08 02:10:48 unexpected end of JSON input
+
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
+main.main.func1()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:18 +0x39
+panic({0x7ff73fba72e0, 0xc00030eff0})
+	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
+log.Panicln({0xc000135ef8?, 0xc0004d3b60?, 0x7ff73fd7bc60?})
+	C:/Users/evanh/works/coding/go/src/log/log.go:398 +0x65
+main.main()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:28 +0x12f
+2023/09/08 02:24:30 <nil>
+2023/09/08 02:24:30 <nil>
+
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
+main.main.func1()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:17 +0x39
+panic({0x7ff724c272e0, 0xc0003526e0})
+	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
+log.Panicln({0xc00021fe48?, 0x0?, 0x7ff724dfbcc0?})
+	C:/Users/evanh/works/coding/go/src/log/log.go:398 +0x65
+meowyplayer.com/source/path.MakeNecessaryPath()
+	C:/Users/evanh/Desktop/MeowyPlayer/source/path/Path.go:47 +0x1f1
+main.main()
+	C:/Users/evanh/Desktop/MeowyPlayer/main.go:22 +0x58
+2023/09/08 02:27:13 rename My Album (1) to Test
+2023/09/08 02:27:24 update Test's cover: C:/Users/evanh/Desktop/Schedule.PNG
+2023/09/08 02:27:44 add music from online
+2023/09/08 02:28:13 add Alec Benjamin - Let Me Down Slowly (Lyrics).mp3 from local to Test

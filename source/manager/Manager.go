@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -62,12 +63,8 @@ func LoadFromLocalConfig() (player.Config, error) {
 	return inUse, nil
 }
 
-func SaveToLocalConfig(config *player.Config) error {
-	return utility.WriteJson(path.Config(), config)
-}
-
 func reloadConfig() error {
-	if err := SaveToLocalConfig(configData.Get()); err != nil {
+	if err := utility.WriteJson(path.Config(), configData.Get()); err != nil {
 		return err
 	}
 
@@ -77,7 +74,7 @@ func reloadConfig() error {
 	}
 
 	configData.Set(&config)
-	return err
+	return nil
 }
 
 func reloadAlbum() error {
@@ -107,13 +104,12 @@ func AddAlbum() error {
 	iconImage := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	iconImage.SetNRGBA(0, 0, iconColor)
 
-	file, err := os.Create(path.Cover(&album))
-	if err != nil {
+	imageData := bytes.Buffer{}
+	if err := png.Encode(&imageData, iconImage); err != nil {
 		return err
 	}
-	defer file.Close()
 
-	if err := png.Encode(file, iconImage); err != nil {
+	if err := os.WriteFile(path.Cover(&album), imageData.Bytes(), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -130,8 +126,8 @@ func AddMusic(musicInfo fyne.URIReadCloser) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(path.Music(&music), musicFile, os.ModePerm)
-	if err != nil {
+
+	if err = os.WriteFile(path.Music(&music), musicFile, os.ModePerm); err != nil {
 		return err
 	}
 
@@ -201,8 +197,7 @@ func UpdateCover(album *player.Album, iconPath string) error {
 		return err
 	}
 
-	err = os.WriteFile(path.Cover(source), icon, os.ModePerm)
-	if err != nil {
+	if err = os.WriteFile(path.Cover(source), icon, os.ModePerm); err != nil {
 		return err
 	}
 

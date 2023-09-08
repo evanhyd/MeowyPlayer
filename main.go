@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"os"
 	"runtime/debug"
 
 	"meowyplayer.com/source/manager"
+	"meowyplayer.com/source/path"
 	"meowyplayer.com/source/ui"
 	"meowyplayer.com/source/utility"
 )
@@ -19,13 +19,12 @@ func main() {
 	}()
 
 	utility.InitLogger()
+	path.MakeNecessaryPath()
 
 	window := ui.NewMainWindow()
-	if inUse, err := manager.LoadFromLocalConfig(); err == nil || os.IsNotExist(err) {
-		manager.GetCurrentConfig().Set(&inUse)
-	} else {
-		log.Panic(err)
-	}
+	inUse, err := manager.LoadFromLocalConfig()
+	utility.MustOk(err)
+	manager.GetCurrentConfig().Set(&inUse)
 
 	window.ShowAndRun()
 }

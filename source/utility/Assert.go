@@ -7,7 +7,7 @@ import (
 // Error must not occur, used in type asserting or asset reading
 func MustOk(err error) {
 	if err != nil {
-		log.Panic(err)
+		log.Panicln(err)
 	}
 }
 
@@ -20,6 +20,6 @@ func ShouldOk(err error) {
 
 func MustNotNil(object any) {
 	if object == nil {
-		log.Panicf("%v is nil", object)
+		log.Panicf("%v is nil\n", object)
 	}
 }
