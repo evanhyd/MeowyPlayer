@@ -13,14 +13,13 @@ const (
 )
 
 type Music struct {
-	Date    time.Time `json:"date"`
-	Title   string    `json:"title"`
-	Size    int64     `json:"size"`
-	VideoID string    `json:"videoID"`
+	Date     time.Time `json:"date"`
+	Title    string    `json:"title"`
+	FileSize int64     `json:"-"`
 }
 
 func (m *Music) Length() time.Duration {
-	return time.Duration(m.Size * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
+	return time.Duration(m.FileSize * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
 }
 
 func (m *Music) Description() string {

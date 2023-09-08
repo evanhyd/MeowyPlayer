@@ -4,9 +4,17 @@ import (
 	"log"
 )
 
+// Error must not occur, used in type asserting or asset reading
 func MustOk(err error) {
 	if err != nil {
 		log.Panic(err)
+	}
+}
+
+// Error may occur, used in checking if IO fails due to unknown reasons (network error)
+func ShouldOk(err error) {
+	if err != nil {
+		log.Println(err)
 	}
 }
 

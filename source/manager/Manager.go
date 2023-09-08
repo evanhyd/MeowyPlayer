@@ -13,9 +13,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"golang.org/x/exp/slices"
+	"meowyplayer.com/source/path"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/resource/path"
-	"meowyplayer.com/source/resource/texture"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/utility"
 )
 
@@ -44,21 +44,19 @@ func LoadFromLocalConfig() (player.Config, error) {
 		return inUse, err
 	}
 
-	//load icons
-	getCover := func(album *player.Album) fyne.Resource {
-		const missingTexturePath = "missing_texture.png"
-
-		//if fail, then load the placeholder texture
-		icon, err := fyne.LoadResourceFromPath(path.Icon(album))
-		if os.IsNotExist(err) {
-			return texture.Get(missingTexturePath)
-		}
-		utility.MustOk(err)
-		return icon
-	}
-
 	for i := range inUse.Albums {
-		inUse.Albums[i].Cover = canvas.NewImageFromResource(getCover(&inUse.Albums[i]))
+		album := &inUse.Albums[i]
+
+		//read icon
+		album.Cover = canvas.NewImageFromResource(resource.GetCover(album))
+
+		//read music file size
+		for j := range album.MusicList {
+			music := &album.MusicList[j]
+			fileInfo, err := os.Stat(path.Music(music))
+			utility.ShouldOk(err)
+			music.FileSize = fileInfo.Size()
+		}
 	}
 
 	return inUse, nil
@@ -68,7 +66,7 @@ func SaveToLocalConfig(config *player.Config) error {
 	return utility.WriteJson(path.Config(), config)
 }
 
-func ReloadConfig() error {
+func reloadConfig() error {
 	if err := SaveToLocalConfig(configData.Get()); err != nil {
 		return err
 	}
@@ -82,7 +80,7 @@ func ReloadConfig() error {
 	return err
 }
 
-func ReloadAlbum() error {
+func reloadAlbum() error {
 	source := getSourceAlbum(albumData.Get())
 	albumData.Set(source)
 	return nil
@@ -109,7 +107,7 @@ func AddAlbum() error {
 	iconImage := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	iconImage.SetNRGBA(0, 0, iconColor)
 
-	file, err := os.Create(path.Icon(&album))
+	file, err := os.Create(path.Cover(&album))
 	if err != nil {
 		return err
 	}
@@ -119,7 +117,28 @@ func AddAlbum() error {
 		return err
 	}
 
-	return ReloadConfig()
+	return reloadConfig()
+}
+
+func AddMusic(musicInfo fyne.URIReadCloser) error {
+	music := player.Music{Date: time.Now(), Title: musicInfo.URI().Name()}
+	source := getSourceAlbum(albumData.Get())
+	source.MusicList = append(source.MusicList, music)
+
+	//copy the file to the music directory
+	musicFile, err := os.ReadFile(musicInfo.URI().Path())
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(path.Music(&music), musicFile, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	if err := reloadConfig(); err != nil {
+		return err
+	}
+	return reloadAlbum()
 }
 
 func DeleteAlbum(album *player.Album) error {
@@ -129,14 +148,14 @@ func DeleteAlbum(album *player.Album) error {
 	last := len(inUse.Albums) - 1
 
 	//remove album icon
-	if err := os.Remove(path.Icon(source)); err != nil && !os.IsNotExist(err) {
+	if err := os.Remove(path.Cover(source)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
 	inUse.Albums[index] = inUse.Albums[last]
 	inUse.Albums = inUse.Albums[:last]
 
-	return ReloadConfig()
+	return reloadConfig()
 }
 
 func DeleteMusic(music *player.Music) error {
@@ -147,11 +166,10 @@ func DeleteMusic(music *player.Music) error {
 	source.MusicList[index] = source.MusicList[last]
 	source.MusicList = source.MusicList[:last]
 
-	if err := ReloadConfig(); err != nil {
+	if err := reloadConfig(); err != nil {
 		return err
 	}
-
-	return ReloadAlbum()
+	return reloadAlbum()
 }
 
 func UpdateTitle(album *player.Album, title string) error {
@@ -164,13 +182,13 @@ func UpdateTitle(album *player.Album, title string) error {
 	source.Date = time.Now()
 	inUse.Date = time.Now()
 
-	oldPath := path.Icon(source)
+	oldPath := path.Cover(source)
 	source.Title = title
-	if err := os.Rename(oldPath, path.Icon(source)); err != nil && !os.IsNotExist(err) {
+	if err := os.Rename(oldPath, path.Cover(source)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	return ReloadConfig()
+	return reloadConfig()
 }
 
 func UpdateCover(album *player.Album, iconPath string) error {
@@ -183,10 +201,10 @@ func UpdateCover(album *player.Album, iconPath string) error {
 		return err
 	}
 
-	err = os.WriteFile(path.Icon(source), icon, os.ModePerm)
+	err = os.WriteFile(path.Cover(source), icon, os.ModePerm)
 	if err != nil {
 		return err
 	}
 
-	return ReloadConfig()
+	return reloadConfig()
 }

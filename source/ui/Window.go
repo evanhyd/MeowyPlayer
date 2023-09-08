@@ -9,22 +9,21 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
+	"meowyplayer.com/source/manager"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/resource/manager"
-	"meowyplayer.com/source/resource/texture"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/utility"
 )
 
 func NewMainWindow() fyne.Window {
 	const (
 		iconName    = "icon.ico"
-		appID       = "MeowyPlayer"
 		windowTitle = "MeowyPlayer"
 	)
 	windowSize := fyne.NewSize(460.0, 650.0)
-	icon := texture.Get(iconName)
+	icon := resource.GetAsset(iconName)
 
-	fyne.SetCurrentApp(app.NewWithID(appID))
+	fyne.SetCurrentApp(app.NewWithID(windowTitle))
 	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
 
 	//set up windows orientation

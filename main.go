@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"meowyplayer.com/source/resource/manager"
+	"meowyplayer.com/source/manager"
 	"meowyplayer.com/source/ui"
 	"meowyplayer.com/source/utility"
 )

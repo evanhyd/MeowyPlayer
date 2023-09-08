@@ -8,10 +8,12 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
+	"meowyplayer.com/source/manager"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/resource/manager"
-	"meowyplayer.com/source/resource/texture"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
 	"meowyplayer.com/source/utility"
 )
@@ -50,7 +52,7 @@ func newMusicTab() *container.TabItem {
 		view,
 	)
 
-	return container.NewTabItemWithIcon(musicTabName, texture.Get(musicTabIconName), border)
+	return container.NewTabItemWithIcon(musicTabName, resource.GetAsset(musicTabIconName), border)
 }
 
 func newMusicView(data binding.DataList) *widget.List {
@@ -77,10 +79,7 @@ func newMusicView(data binding.DataList) *widget.List {
 				//update setting functionality
 				setting := objects[1].(*widget.Button)
 				utility.MustNotNil(setting)
-				setting.OnTapped = func() {
-					log.Printf("delete %vfrom the album %v \n", music.Title, manager.GetCurrentAlbum().Get().Title)
-					showErrorIfAny(manager.DeleteMusic(&music))
-				}
+				setting.OnTapped = makeDeleteMusicDialog(&music)
 
 				canvasObject.Refresh()
 			}
@@ -99,6 +98,7 @@ func newMusicView(data binding.DataList) *widget.List {
 
 	return view
 }
+
 func newMusicSearchBar(data *cbinding.MusicList, view *widget.List) *widget.Entry {
 	entry := widget.NewEntry()
 	entry.OnChanged = func(title string) {
@@ -114,17 +114,27 @@ func newMusicSearchBar(data *cbinding.MusicList, view *widget.List) *widget.Entr
 
 func newMusicAdderLocalButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
 	const iconName = "music_adder_local.png"
-	button := widget.NewButtonWithIcon("", texture.Get(iconName), func() {
-		log.Println("add music from local")
-		//to do
+	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {
+		fileReader := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
+			if err != nil {
+				showErrorIfAny(err)
+			} else if result != nil {
+				log.Printf("add %v from local to %v\n", result.URI().Name(), manager.GetCurrentAlbum().Get().Title)
+				showErrorIfAny(manager.AddMusic(result))
+			}
+		}, getMainWindow())
+		fileReader.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
+		fileReader.SetConfirmText("Add")
+		fileReader.Show()
 	})
 	button.Importance = widget.LowImportance
+
 	return button
 }
 
 func newMusicAdderOnlineButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
 	const iconName = "music_adder_online.png"
-	button := widget.NewButtonWithIcon("", texture.Get(iconName), func() {
+	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {
 		log.Println("add music from online")
 		//to do
 	})
@@ -154,4 +164,15 @@ func newMusicDateButton(data *cbinding.MusicList, view *widget.List) *widget.But
 	})
 	button.Importance = widget.LowImportance
 	return button
+}
+
+func makeDeleteMusicDialog(music *player.Music) func() {
+	return func() {
+		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", music.Title), func(delete bool) {
+			if delete {
+				log.Printf("delete %vfrom the album %v \n", music.Title, manager.GetCurrentAlbum().Get().Title)
+				showErrorIfAny(manager.DeleteMusic(music))
+			}
+		}, getMainWindow())
+	}
 }

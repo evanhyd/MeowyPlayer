@@ -1,35 +1,29 @@
-2023/09/07 00:04:44 add music from online
-2023/09/07 00:04:45 add music from local
-2023/09/07 00:04:45 add music from local
-2023/09/07 00:04:46 add music from online
-2023/09/07 00:40:57 add music from online
-2023/09/07 00:52:43 delete My Album (0)
-2023/09/07 01:13:02 open texture\album_online_local.png: The system cannot find the file specified.
-2023/09/07 01:13:02 open texture\album_online_local.png: The system cannot find the file specified.
-goroutine 1 [running, locked to thread]:
-runtime/debug.Stack()
-	C:/Users/evanh/works/coding/go/src/runtime/debug/stack.go:24 +0x65
-main.main.func1()
-	C:/Users/evanh/Desktop/MeowyPlayer/main.go:17 +0x39
-panic({0x7ff7253082c0, 0xc0005001d0})
-	C:/Users/evanh/works/coding/go/src/runtime/panic.go:884 +0x213
-log.Panic({0xc000189c48?, 0x1e?, 0x1fd24859358?})
-	C:/Users/evanh/works/coding/go/src/log/log.go:384 +0x65
-meowyplayer.com/source/utility.MustOk(...)
-	C:/Users/evanh/Desktop/MeowyPlayer/source/utility/Assert.go:9
-meowyplayer.com/source/resource/texture.Get({0x7ff7253d9cef?, 0x7ff724f61659?})
-	C:/Users/evanh/Desktop/MeowyPlayer/source/resource/texture/Manager.go:16 +0x97
-meowyplayer.com/source/ui.newAlbumAdderLocalButton(0xc00032f740?, 0xc0004182c0?)
-	C:/Users/evanh/Desktop/MeowyPlayer/source/ui/AlbumTab.go:133 +0x29
-meowyplayer.com/source/ui.newAlbumTab()
-	C:/Users/evanh/Desktop/MeowyPlayer/source/ui/AlbumTab.go:35 +0x1bd
-meowyplayer.com/source/ui.NewMainWindow()
-	C:/Users/evanh/Desktop/MeowyPlayer/source/ui/Window.go:45 +0x374
-main.main()
-	C:/Users/evanh/Desktop/MeowyPlayer/main.go:23 +0x58
-2023/09/07 01:14:35 delete My Album (0)
-2023/09/07 02:08:29 delete My Album (0)
-2023/09/07 02:34:52 delete My Album (0)
-2023/09/07 02:39:55 delete music from the album [OwO]Mr.Kitty - After Dark.mp3 
-2023/09/07 02:40:03 delete music from the album [OwO]MGMT - Little Dark Age (Lyrics).mp3 
-2023/09/07 02:40:07 delete music from the album [OwO]Blank Space - Taylor Swift.mp3 
+2023/09/08 00:20:58 add music from online
+2023/09/08 00:21:05 Fyne error:  Error getting file attributes
+2023/09/08 00:21:05   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:05   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:05 Fyne error:  Error getting file attributes
+2023/09/08 00:21:05   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:05   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:05 Fyne error:  Error getting file attributes
+2023/09/08 00:21:05   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:05   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:05 Fyne error:  Error getting file attributes
+2023/09/08 00:21:05   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:05   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:08 Fyne error:  Error getting file attributes
+2023/09/08 00:21:08   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:08   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:08 Fyne error:  Error getting file attributes
+2023/09/08 00:21:08   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:08   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:08 Fyne error:  Error getting file attributes
+2023/09/08 00:21:08   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:08   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:08 Fyne error:  Error getting file attributes
+2023/09/08 00:21:08   Cause: The process cannot access the file because it is being used by another process.
+2023/09/08 00:21:08   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/dialog/file_windows.go:78
+2023/09/08 00:21:39 add music from local
+2023/09/08 00:24:20 delete 000000.mp3from the album My Album (0) 
+2023/09/08 00:24:42 rename My Album (0) to Test Album
+2023/09/08 00:24:53 add 000000.mp3 from local

@@ -12,9 +12,9 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
+	"meowyplayer.com/source/manager"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/resource/manager"
-	"meowyplayer.com/source/resource/texture"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
 	"meowyplayer.com/source/utility"
 )
@@ -50,13 +50,13 @@ func newAlbumTab() *container.TabItem {
 		nil,
 		view,
 	)
-	return container.NewTabItemWithIcon(albumTabTitle, texture.Get(albumTabIconName), border)
+	return container.NewTabItemWithIcon(albumTabTitle, resource.GetAsset(albumTabIconName), border)
 }
 
 func newAlbumView(data binding.DataList) *widget.List {
 	const albumCoverIconName = "default.png"
 	albumCoverIconSize := fyne.NewSize(128.0, 128.0)
-	albumCoverIcon := texture.Get(albumCoverIconName)
+	albumCoverIcon := resource.GetAsset(albumCoverIconName)
 
 	view := widget.NewListWithData(
 		data,
@@ -129,14 +129,14 @@ func newAlbumSearchBar(data *cbinding.AlbumList, view *widget.List) *widget.Entr
 
 func newAlbumAdderLocalButton(data *cbinding.AlbumList, view *widget.List) *widget.Button {
 	const iconName = "album_adder_local.png"
-	button := widget.NewButtonWithIcon("", texture.Get(iconName), func() { showErrorIfAny(manager.AddAlbum()) })
+	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() { showErrorIfAny(manager.AddAlbum()) })
 	button.Importance = widget.LowImportance
 	return button
 }
 
 func newAlbumAdderOnlineButton(data *cbinding.AlbumList, view *widget.List) *widget.Button {
 	const iconName = "album_adder_online.png"
-	button := widget.NewButtonWithIcon("", texture.Get(iconName), func() {})
+	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {})
 	button.Importance = widget.LowImportance
 	return button
 }
@@ -168,30 +168,30 @@ func newAlbumDateButton(data *cbinding.AlbumList, view *widget.List) *widget.But
 func newAlbumMenu(canvas fyne.Canvas, album *player.Album) *widget.PopUpMenu {
 	rename := fyne.NewMenuItem("Rename", makeRenameDialog(album))
 	cover := fyne.NewMenuItem("Cover", makeCoverDialog(album))
-	delete := fyne.NewMenuItem("Delete", makeDeleteDialog(album))
+	delete := fyne.NewMenuItem("Delete", makeDeleteAlbumDialog(album))
 	return widget.NewPopUpMenu(fyne.NewMenu("", rename, cover, delete), canvas)
 }
 
-func makeRenameDialog(selectedAlbum *player.Album) func() {
+func makeRenameDialog(album *player.Album) func() {
 	entry := widget.NewEntry()
 	return func() {
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(rename bool) {
 			if rename {
-				log.Printf("rename %v to %v\n", selectedAlbum.Title, entry.Text)
-				showErrorIfAny(manager.UpdateTitle(selectedAlbum, entry.Text))
+				log.Printf("rename %v to %v\n", album.Title, entry.Text)
+				showErrorIfAny(manager.UpdateTitle(album, entry.Text))
 			}
 		}, getMainWindow())
 	}
 }
 
-func makeCoverDialog(selectedAlbum *player.Album) func() {
+func makeCoverDialog(album *player.Album) func() {
 	return func() {
 		fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
 				showErrorIfAny(err)
 			} else if result != nil {
-				log.Printf("update %v's cover: %v\n", selectedAlbum.Title, result.URI().Path())
-				showErrorIfAny(manager.UpdateCover(selectedAlbum, result.URI().Path()))
+				log.Printf("update %v's cover: %v\n", album.Title, result.URI().Path())
+				showErrorIfAny(manager.UpdateCover(album, result.URI().Path()))
 			}
 		}, getMainWindow())
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
@@ -200,12 +200,12 @@ func makeCoverDialog(selectedAlbum *player.Album) func() {
 	}
 }
 
-func makeDeleteDialog(selectedAlbum *player.Album) func() {
+func makeDeleteAlbumDialog(album *player.Album) func() {
 	return func() {
-		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", selectedAlbum.Title), func(delete bool) {
+		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title), func(delete bool) {
 			if delete {
-				log.Printf("delete %v\n", selectedAlbum.Title)
-				showErrorIfAny(manager.DeleteAlbum(selectedAlbum))
+				log.Printf("delete %v\n", album.Title)
+				showErrorIfAny(manager.DeleteAlbum(album))
 			}
 		}, getMainWindow())
 	}
