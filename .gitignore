@@ -14,9 +14,8 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-music/
-album/
-music/**
 album/**
+!album/cover
+music/**
 target
 .DS_Store

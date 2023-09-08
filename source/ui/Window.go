@@ -51,13 +51,13 @@ func NewMainWindow() fyne.Window {
 	return window
 }
 
+func getMainWindow() fyne.Window {
+	return fyne.CurrentApp().Driver().AllWindows()[0]
+}
+
 func showErrorIfAny(err error) {
 	if err != nil {
 		log.Printf("gui error: %v\n", err)
 		dialog.ShowError(err, getMainWindow())
 	}
-}
-
-func getMainWindow() fyne.Window {
-	return fyne.CurrentApp().Driver().AllWindows()[0]
 }
