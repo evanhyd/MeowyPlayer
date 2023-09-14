@@ -49,6 +49,7 @@ func NewMainWindow() fyne.Window {
 
 	controller := newController()
 	window.SetContent(container.NewBorder(nil, controller, nil, nil, tabs))
+	window.Canvas().Scale()
 	return window
 }
 

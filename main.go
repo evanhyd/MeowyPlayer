@@ -23,7 +23,7 @@ func main() {
 
 	window := ui.NewMainWindow()
 	inUse, err := manager.LoadFromLocalConfig()
-	utility.MustOk(err)
+	utility.MustNil(err)
 	manager.GetCurrentConfig().Set(&inUse)
 
 	window.ShowAndRun()

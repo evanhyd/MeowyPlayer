@@ -7,7 +7,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
@@ -15,6 +14,7 @@ import (
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
+	"meowyplayer.com/source/ui/cwidget"
 	"meowyplayer.com/source/utility"
 )
 
@@ -22,20 +22,18 @@ func newMusicTab() *container.TabItem {
 	const (
 		musicTabName     = "Music"
 		musicTabIconName = "music_tab.png"
-
-		musicAdderOnlineSearchIconName = "music_adder_online_search.png" //move to other place
 	)
 
 	//music views
-	data := cbinding.NewMusicList()
-	view := newMusicView(data)
-	manager.GetCurrentAlbum().Attach(data)
+	data := cbinding.MakeDataList[player.Music]()
+	view := newMusicViewList(&data)
+	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(a *player.Album) { data.Notify(a.MusicList) }))
 
-	searchBar := newMusicSearchBar(data, view)
-	musicAdderLocalButton := newMusicAdderLocalButton(data, view)
-	musicAdderOnlineButton := newMusicAdderOnlineButton(data, view)
-	titleButton := newMusicTitleButton(data, view)
-	dateButton := newMusicDateButton(data, view)
+	searchBar := newMusicSearchBar(&data, view)
+	musicAdderLocalButton := newMusicAdderLocalButton(&data, view)
+	musicAdderOnlineButton := newMusicAdderOnlineButton(&data, view)
+	titleButton := newMusicTitleButton(&data, view)
+	dateButton := newMusicDateButton(&data, view)
 	dateButton.OnTapped()
 
 	border := container.NewBorder(
@@ -55,64 +53,30 @@ func newMusicTab() *container.TabItem {
 	return container.NewTabItemWithIcon(musicTabName, resource.GetAsset(musicTabIconName), border)
 }
 
-func newMusicView(data binding.DataList) *widget.List {
-	view := widget.NewListWithData(
-		data,
-		func() fyne.CanvasObject {
-			setting := widget.NewButton("x", func() {})
-			setting.Importance = widget.LowImportance
-			intro := widget.NewLabel("")
-			return container.NewBorder(nil, nil, setting, nil, intro)
-		},
-		func(item binding.DataItem, canvasObject fyne.CanvasObject) {
-			data, err := item.(binding.Untyped).Get()
-			utility.MustOk(err)
-			music := data.(player.Music)
+func newMusicViewList(data *cbinding.DataList[player.Music]) *cwidget.MusicViewList {
+	list := cwidget.NewMusicViewList(func(m *player.Music) fyne.CanvasObject {
+		view := cwidget.NewMusicView(m)
+		view.OnTapped = func(*fyne.PointEvent) { fmt.Println(m.Title) }
+		view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(m) }
+		return view
+	})
 
-			objects := canvasObject.(*fyne.Container).Objects
-			intro := objects[0].(*widget.Label)
+	data.Attach(list)
 
-			//optionally update
-			if description := music.Description(); intro.Text != description {
-				intro.Text = description
-
-				//update setting functionality
-				setting := objects[1].(*widget.Button)
-				utility.MustNotNil(setting)
-				setting.OnTapped = makeDeleteMusicDialog(&music)
-
-				canvasObject.Refresh()
-			}
-		})
-
-	//select and load album
-	view.OnSelected = func(id widget.ListItemID) {
-		item, err := data.GetItem(id)
-		utility.MustOk(err)
-		data, err := item.(binding.Untyped).Get()
-		utility.MustOk(err)
-		a := data.(player.Music)
-		fmt.Println(a.Title)
-		view.Unselect(id)
-	}
-
-	return view
+	return list
 }
 
-func newMusicSearchBar(data *cbinding.MusicList, view *widget.List) *widget.Entry {
+func newMusicSearchBar(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Entry {
 	entry := widget.NewEntry()
 	entry.OnChanged = func(title string) {
 		title = strings.ToLower(title)
-		filter := func(a player.Music) bool {
-			return strings.Contains(strings.ToLower(a.Title), title)
-		}
+		filter := func(a player.Music) bool { return strings.Contains(strings.ToLower(a.Title), title) }
 		data.SetFilter(filter)
-		view.ScrollToTop()
 	}
 	return entry
 }
 
-func newMusicAdderLocalButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
+func newMusicAdderLocalButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
 	const iconName = "music_adder_local.png"
 	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {
 		fileReader := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
@@ -132,8 +96,9 @@ func newMusicAdderLocalButton(data *cbinding.MusicList, view *widget.List) *widg
 	return button
 }
 
-func newMusicAdderOnlineButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
+func newMusicAdderOnlineButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
 	const iconName = "music_adder_online.png"
+	const musicAdderOnlineSearchIconName = "music_adder_online_search.png" //move to other place
 	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {
 		log.Println("add music from online")
 		//to do
@@ -142,7 +107,7 @@ func newMusicAdderOnlineButton(data *cbinding.MusicList, view *widget.List) *wid
 	return button
 }
 
-func newMusicTitleButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
+func newMusicTitleButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
 	reverse := false
 	button := widget.NewButton("Title", func() {
 		reverse = !reverse
@@ -154,25 +119,21 @@ func newMusicTitleButton(data *cbinding.MusicList, view *widget.List) *widget.Bu
 	return button
 }
 
-func newMusicDateButton(data *cbinding.MusicList, view *widget.List) *widget.Button {
+func newMusicDateButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
 	reverse := true
 	button := widget.NewButton("Date", func() {
 		reverse = !reverse
-		data.SetSorter(func(a1, a2 player.Music) bool {
-			return a1.Date.After(a2.Date) != reverse
-		})
+		data.SetSorter(func(a1, a2 player.Music) bool { return a1.Date.After(a2.Date) != reverse })
 	})
 	button.Importance = widget.LowImportance
 	return button
 }
 
-func makeDeleteMusicDialog(music *player.Music) func() {
-	return func() {
-		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", music.Title), func(delete bool) {
-			if delete {
-				log.Printf("delete %vfrom the album %v \n", music.Title, manager.GetCurrentAlbum().Get().Title)
-				showErrorIfAny(manager.DeleteMusic(music))
-			}
-		}, getMainWindow())
-	}
+func showDeleteMusicDialog(music *player.Music) {
+	dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", music.Title), func(delete bool) {
+		if delete {
+			log.Printf("delete %vfrom the album %v \n", music.Title, manager.GetCurrentAlbum().Get().Title)
+			showErrorIfAny(manager.DeleteMusic(music))
+		}
+	}, getMainWindow())
 }

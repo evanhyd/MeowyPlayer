@@ -2,9 +2,17 @@ package utility
 
 import "golang.org/x/exp/slices"
 
+/**
+A generic observer class.
+*/
+
 type Observer[T any] interface {
 	Notify(T)
 }
+
+/**
+A generic subject class.
+*/
 
 type Subject[T any] struct {
 	observers []Observer[T]
@@ -27,6 +35,9 @@ func (s *Subject[T]) NotifyAll(t T) {
 	}
 }
 
+/**
+A generic value wrapper that notify the observers whenever the value gets set.
+*/
 type Data[T any] struct {
 	Subject[*T]
 	value T
@@ -44,6 +55,10 @@ func (d *Data[T]) Set(v *T) {
 func (d *Data[T]) Get() *T {
 	return &d.value
 }
+
+/**
+A generic function callback maker that can be used as a observer.
+*/
 
 type callbackWrapper[T any] struct {
 	function func(T)

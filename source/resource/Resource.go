@@ -24,7 +24,7 @@ func get(resourcePath string) fyne.Resource {
 	if os.IsNotExist(err) {
 		asset, err = fyne.LoadResourceFromPath(path.Asset(missingAssetName))
 	}
-	utility.MustOk(err)
+	utility.MustNil(err)
 
 	return asset
 }

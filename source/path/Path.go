@@ -36,13 +36,13 @@ func Asset(assetName string) string {
 }
 
 func MakeNecessaryPath() {
-	utility.MustOk(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm))
-	utility.MustOk(os.MkdirAll(filepath.Join(musicPath), os.ModePerm))
+	utility.MustNil(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm))
+	utility.MustNil(os.MkdirAll(filepath.Join(musicPath), os.ModePerm))
 
 	_, err := os.Stat(Config())
 	if os.IsNotExist(err) {
-		utility.MustOk(utility.WriteJson(Config(), &player.Config{Date: time.Now(), Albums: nil}))
+		utility.MustNil(utility.WriteJson(Config(), &player.Config{Date: time.Now(), Albums: nil}))
 	} else {
-		utility.MustOk(err)
+		utility.MustNil(err)
 	}
 }

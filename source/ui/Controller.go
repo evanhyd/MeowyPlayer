@@ -22,7 +22,7 @@ func newController() fyne.CanvasObject {
 	coverView.Image.SetMinSize(defaultCoverSize)
 
 	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(album *player.Album) {
-		coverView.SetImage(album.Cover)
+		coverView.SetImage(canvas.NewImageFromResource(album.Cover))
 		coverView.OnTapped = func() { manager.GetCurrentAlbum().Set(album) }
 	}))
 

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"golang.org/x/exp/slices"
 	"meowyplayer.com/source/path"
 	"meowyplayer.com/source/player"
@@ -49,13 +48,13 @@ func LoadFromLocalConfig() (player.Config, error) {
 		album := &inUse.Albums[i]
 
 		//read icon
-		album.Cover = canvas.NewImageFromResource(resource.GetCover(album))
+		album.Cover = resource.GetCover(album)
 
 		//read music file size
 		for j := range album.MusicList {
 			music := &album.MusicList[j]
 			fileInfo, err := os.Stat(path.Music(music))
-			utility.ShouldOk(err)
+			utility.ShouldNil(err)
 			music.FileSize = fileInfo.Size()
 		}
 	}

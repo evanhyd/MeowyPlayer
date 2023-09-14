@@ -166,3 +166,8 @@ main.main()
 2023/09/08 02:27:24 update Test's cover: C:/Users/evanh/Desktop/Schedule.PNG
 2023/09/08 02:27:44 add music from online
 2023/09/08 02:28:13 add Alec Benjamin - Let Me Down Slowly (Lyrics).mp3 from local to Test
+2023/09/13 21:05:52 PlatformError: WGL: Failed to make context current: The requested transformation operation is not supported. 
+2023/09/13 22:43:14 rename My Album (0) to a very very very very very very very very long title
+2023/09/13 22:50:12 delete 000000.mp3from the album Test Album 
+2023/09/13 22:50:17 add music from online
+2023/09/13 22:50:31 add 000000.mp3 from local to Test Album
