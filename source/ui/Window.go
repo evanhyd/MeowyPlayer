@@ -20,7 +20,7 @@ func NewMainWindow() fyne.Window {
 		iconName    = "icon.ico"
 		windowTitle = "MeowyPlayer"
 	)
-	windowSize := fyne.NewSize(460.0, 650.0)
+	windowSize := fyne.NewSize(490.0, 650.0)
 	icon := resource.GetAsset(iconName)
 
 	fyne.SetCurrentApp(app.NewWithID(windowTitle))
@@ -47,8 +47,8 @@ func NewMainWindow() fyne.Window {
 	tabs.SetTabLocation(container.TabLocationLeading)
 	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(_ *player.Album) { tabs.Select(musicTab) }))
 
-	// controller := newController()
-	window.SetContent(container.NewBorder(nil, nil, nil, nil, tabs))
+	controller := newController()
+	window.SetContent(container.NewBorder(nil, controller, nil, nil, tabs))
 	window.Canvas().Scale()
 	return window
 }

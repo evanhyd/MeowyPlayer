@@ -2,10 +2,26 @@ package ui
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
 func newController() fyne.CanvasObject {
+
+	return container.NewAdaptiveGrid(3,
+		widget.NewButtonWithIcon("", theme.MenuExpandIcon(), nil),
+		widget.NewButtonWithIcon("", theme.AccountIcon(), nil),
+		widget.NewButtonWithIcon("", theme.ComputerIcon(), nil),
+		widget.NewButtonWithIcon("", theme.DocumentCreateIcon(), nil),
+		widget.NewButtonWithIcon("", theme.HelpIcon(), nil),
+		widget.NewButtonWithIcon("", theme.LoginIcon(), nil),
+		widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
+		widget.NewButtonWithIcon("", theme.RadioButtonIcon(), nil),
+		widget.NewButtonWithIcon("", theme.MediaMusicIcon(), nil),
+		widget.NewButtonWithIcon("", theme.SettingsIcon(), nil),
+		widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
+		widget.NewButtonWithIcon("", theme.UploadIcon(), nil))
 
 	const defaultCoverName = "default.png"
 	// defaultCoverSize := fyne.NewSize(128.0, 128.0)
