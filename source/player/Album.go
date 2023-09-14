@@ -15,5 +15,5 @@ type Album struct {
 }
 
 func (a *Album) Description() string {
-	return fmt.Sprintf("[%v]\n%v", len(a.MusicList), a.Date.Format(time.DateTime))
+	return fmt.Sprintf("%v\n\nMusic: %v\n\n%v", a.Title, len(a.MusicList), a.Date.Format(time.DateTime))
 }

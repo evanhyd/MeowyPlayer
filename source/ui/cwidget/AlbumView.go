@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/player"
 )
@@ -15,6 +16,7 @@ type AlbumView struct {
 	cover             *canvas.Image
 	info              *widget.Label
 	title             *widget.Label
+	name              string
 	OnTapped          func(*fyne.PointEvent)
 	OnTappedSecondary func(*fyne.PointEvent)
 }
@@ -26,9 +28,11 @@ func NewAlbumView(album *player.Album) *AlbumView {
 		canvas.NewImageFromResource(album.Cover),
 		widget.NewLabel(album.Description()),
 		widget.NewLabel(album.Title),
+		album.Title,
 		func(*fyne.PointEvent) {},
 		func(*fyne.PointEvent) {},
 	}
+	view.info.Wrapping = fyne.TextWrapWord
 	view.title.Alignment = fyne.TextAlignCenter
 	view.title.Wrapping = fyne.TextTruncate
 	view.display.Add(view.cover)
@@ -41,17 +45,18 @@ func (a *AlbumView) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (a *AlbumView) MouseIn(event *desktop.MouseEvent) {
-	a.display.RemoveAll()
+	a.title.Text = ""
+	a.cover.Translucency = 0.8
 	a.display.Add(a.info)
-	a.title.Wrapping = fyne.TextWrapWord
 	a.Refresh()
 }
 
 func (a *AlbumView) MouseOut() {
-	a.display.RemoveAll()
-	a.display.Add(a.cover)
-	a.title.Wrapping = fyne.TextTruncate
+	a.title.Text = a.name
+	a.cover.Translucency = 0.0
+	a.display.Remove(a.info)
 	a.Refresh()
+	theme.HomeIcon()
 }
 
 func (a *AlbumView) MouseMoved(*desktop.MouseEvent) {
