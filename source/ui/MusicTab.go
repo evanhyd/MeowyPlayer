@@ -19,38 +19,27 @@ import (
 )
 
 func newMusicTab() *container.TabItem {
-	const (
-		musicTabName     = "Music"
-		musicTabIconName = "music_tab.png"
-	)
+	const musicTabName = "Music"
 
 	//music views
 	data := cbinding.MakeDataList[player.Music]()
 	view := newMusicViewList(&data)
 	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(a *player.Album) { data.Notify(a.MusicList) }))
 
-	searchBar := newMusicSearchBar(&data, view)
-	musicAdderLocalButton := newMusicAdderLocalButton(&data, view)
-	musicAdderOnlineButton := newMusicAdderOnlineButton(&data, view)
-	titleButton := newMusicTitleButton(&data, view)
-	dateButton := newMusicDateButton(&data, view)
-	dateButton.OnTapped()
-
 	border := container.NewBorder(
 		container.NewBorder(
 			nil,
-			container.NewGridWithRows(1, titleButton, dateButton),
+			container.NewGridWithRows(1, newMusicTitleButton(&data, view), newMusicDateButton(&data, view)),
 			nil,
-			container.NewGridWithRows(1, musicAdderLocalButton, musicAdderOnlineButton),
-			searchBar,
+			container.NewGridWithRows(1, newMusicAdderLocalButton(&data, view), newMusicAdderOnlineButton(&data, view)),
+			newMusicSearchBar(&data, view),
 		),
 		nil,
 		nil,
 		nil,
 		view,
 	)
-
-	return container.NewTabItemWithIcon(musicTabName, resource.GetAsset(musicTabIconName), border)
+	return container.NewTabItemWithIcon(musicTabName, resource.MusicTabIcon(), border)
 }
 
 func newMusicViewList(data *cbinding.DataList[player.Music]) *cwidget.MusicViewList {
@@ -62,7 +51,6 @@ func newMusicViewList(data *cbinding.DataList[player.Music]) *cwidget.MusicViewL
 	})
 
 	data.Attach(list)
-
 	return list
 }
 
@@ -70,15 +58,15 @@ func newMusicSearchBar(data *cbinding.DataList[player.Music], view *cwidget.Musi
 	entry := widget.NewEntry()
 	entry.OnChanged = func(title string) {
 		title = strings.ToLower(title)
-		filter := func(a player.Music) bool { return strings.Contains(strings.ToLower(a.Title), title) }
-		data.SetFilter(filter)
+		data.SetFilter(func(a player.Music) bool {
+			return strings.Contains(strings.ToLower(a.Title), title)
+		})
 	}
 	return entry
 }
 
 func newMusicAdderLocalButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
-	const iconName = "music_adder_local.png"
-	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {
+	button := widget.NewButtonWithIcon("", resource.MusicAdderLocalIcon(), func() {
 		fileReader := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
 				showErrorIfAny(err)
@@ -97,10 +85,7 @@ func newMusicAdderLocalButton(data *cbinding.DataList[player.Music], view *cwidg
 }
 
 func newMusicAdderOnlineButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
-	const iconName = "music_adder_online.png"
-	const musicAdderOnlineSearchIconName = "music_adder_online_search.png" //move to other place
-	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {
-		log.Println("add music from online")
+	button := widget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon(), func() {
 		//to do
 	})
 	button.Importance = widget.LowImportance
@@ -123,9 +108,12 @@ func newMusicDateButton(data *cbinding.DataList[player.Music], view *cwidget.Mus
 	reverse := true
 	button := widget.NewButton("Date", func() {
 		reverse = !reverse
-		data.SetSorter(func(a1, a2 player.Music) bool { return a1.Date.After(a2.Date) != reverse })
+		data.SetSorter(func(a1, a2 player.Music) bool {
+			return a1.Date.After(a2.Date) != reverse
+		})
 	})
 	button.Importance = widget.LowImportance
+	button.OnTapped()
 	return button
 }
 

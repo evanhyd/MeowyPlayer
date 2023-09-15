@@ -7,44 +7,53 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/resource"
 )
 
 type CoverView struct {
 	widget.BaseWidget
-	display  *fyne.Container
 	cover    *canvas.Image
 	title    *widget.Label
+	size     fyne.Size
 	OnTapped func(*fyne.PointEvent)
 }
 
-func NewCoverView(album *player.Album) *CoverView {
-	view := &CoverView{
-		widget.BaseWidget{},
-		container.NewMax(),
-		canvas.NewImageFromResource(album.Cover),
-		widget.NewLabel(album.Title),
-		func(*fyne.PointEvent) {},
-	}
+func NewCoverView(coverSize fyne.Size) *CoverView {
+	view := &CoverView{widget.BaseWidget{}, canvas.NewImageFromResource(resource.DefaultIcon()), widget.NewLabel(""), coverSize, func(*fyne.PointEvent) {}}
+	view.cover.SetMinSize(coverSize)
 	view.title.Alignment = fyne.TextAlignCenter
-	view.title.Wrapping = fyne.TextTruncate
+	view.title.Wrapping = fyne.TextWrapWord
+	view.title.Hide()
+
+	view.ExtendBaseWidget(view)
 	return view
 }
 
-func (c *CoverView) Tapped(event *fyne.PointEvent) {
-	c.OnTapped(event)
+func (c *CoverView) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewMax(c.cover, c.title))
+}
+
+func (c *CoverView) SetAlbum(album *player.Album) {
+	c.cover.Resource = album.Cover
+	c.title.Text = album.Title
+	c.Refresh()
 }
 
 func (c *CoverView) MouseIn(*desktop.MouseEvent) {
 	c.cover.Translucency = 0.8
-	c.display.Add(c.title)
+	c.title.Show()
 	c.Refresh()
 }
 
 func (c *CoverView) MouseOut() {
 	c.cover.Translucency = 0.0
-	c.display.Remove(c.title)
+	c.title.Hide()
 	c.Refresh()
 }
 
 func (c *CoverView) MouseMoved(*desktop.MouseEvent) {
+}
+
+func (c *CoverView) Tapped(event *fyne.PointEvent) {
+	c.OnTapped(event)
 }

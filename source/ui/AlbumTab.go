@@ -19,37 +19,27 @@ import (
 )
 
 func newAlbumTab() *container.TabItem {
-	const (
-		albumTabTitle    = "Album"
-		albumTabIconName = "album_tab.png"
-	)
+	const albumTabTitle = "Album"
 
-	//album views
+	//bind data and view
 	data := cbinding.MakeDataList[player.Album]()
 	view := newAlbumViewList(&data)
 	manager.GetCurrentConfig().Attach(utility.MakeCallback(func(config *player.Config) { data.Notify(config.Albums) }))
 
-	searchBar := newAlbumSearchBar(&data, view)
-	albumAdderLocalButton := newAlbumAdderLocalButton(&data, view)
-	albumAdderOnlineButton := newAlbumAdderOnlineButton(&data, view)
-	titleButton := newAlbumTitleButton(&data, view)
-	dateButton := newAlbumDateButton(&data, view)
-	dateButton.OnTapped()
-
 	border := container.NewBorder(
 		container.NewBorder(
 			nil,
-			container.NewGridWithRows(1, titleButton, dateButton),
+			container.NewGridWithRows(1, newAlbumTitleButton(&data, view), newAlbumDateButton(&data, view)),
 			nil,
-			container.NewGridWithRows(1, albumAdderLocalButton, albumAdderOnlineButton),
-			searchBar,
+			container.NewGridWithRows(1, newAlbumAdderLocalButton(&data, view), newAlbumAdderOnlineButton(&data, view)),
+			newAlbumSearchBar(&data, view),
 		),
 		nil,
 		nil,
 		nil,
 		view,
 	)
-	return container.NewTabItemWithIcon(albumTabTitle, resource.GetAsset(albumTabIconName), border)
+	return container.NewTabItemWithIcon(albumTabTitle, resource.AlbumTabIcon(), border)
 }
 
 func newAlbumViewList(data *cbinding.DataList[player.Album]) *cwidget.AlbumViewList {
@@ -57,16 +47,18 @@ func newAlbumViewList(data *cbinding.DataList[player.Album]) *cwidget.AlbumViewL
 	list := cwidget.NewAlbumViewList(func(album *player.Album) fyne.CanvasObject {
 		view := cwidget.NewAlbumView(album)
 
-		view.OnTapped = func(*fyne.PointEvent) { manager.GetCurrentAlbum().Set(album) }
+		view.OnTapped = func(*fyne.PointEvent) {
+			manager.GetCurrentAlbum().Set(album)
+		}
 
 		view.OnTappedSecondary = func(event *fyne.PointEvent) {
 			newAlbumMenu(fyne.CurrentApp().Driver().CanvasForObject(view), album).ShowAtPosition(event.AbsolutePosition)
 		}
+
 		return view
 	}, albumViewSize)
 
 	data.Attach(list)
-
 	return list
 }
 
@@ -74,22 +66,21 @@ func newAlbumSearchBar(data *cbinding.DataList[player.Album], view *cwidget.Albu
 	entry := widget.NewEntry()
 	entry.OnChanged = func(title string) {
 		title = strings.ToLower(title)
-		filter := func(a player.Album) bool { return strings.Contains(strings.ToLower(a.Title), title) }
-		data.SetFilter(filter)
+		data.SetFilter(func(a player.Album) bool {
+			return strings.Contains(strings.ToLower(a.Title), title)
+		})
 	}
 	return entry
 }
 
 func newAlbumAdderLocalButton(data *cbinding.DataList[player.Album], view *cwidget.AlbumViewList) *widget.Button {
-	const iconName = "album_adder_local.png"
-	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() { showErrorIfAny(manager.AddAlbum()) })
+	button := widget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), func() { showErrorIfAny(manager.AddAlbum()) })
 	button.Importance = widget.LowImportance
 	return button
 }
 
 func newAlbumAdderOnlineButton(data *cbinding.DataList[player.Album], view *cwidget.AlbumViewList) *widget.Button {
-	const iconName = "album_adder_online.png"
-	button := widget.NewButtonWithIcon("", resource.GetAsset(iconName), func() {})
+	button := widget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), func() {})
 	button.Importance = widget.LowImportance
 	return button
 }
@@ -110,9 +101,12 @@ func newAlbumDateButton(data *cbinding.DataList[player.Album], view *cwidget.Alb
 	reverse := true
 	button := widget.NewButton("Date", func() {
 		reverse = !reverse
-		data.SetSorter(func(a1, a2 player.Album) bool { return a1.Date.After(a2.Date) != reverse })
+		data.SetSorter(func(a1, a2 player.Album) bool {
+			return a1.Date.After(a2.Date) != reverse
+		})
 	})
 	button.Importance = widget.LowImportance
+	button.OnTapped()
 	return button
 }
 

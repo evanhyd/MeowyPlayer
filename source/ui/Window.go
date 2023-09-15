@@ -16,12 +16,8 @@ import (
 )
 
 func NewMainWindow() fyne.Window {
-	const (
-		iconName    = "icon.ico"
-		windowTitle = "MeowyPlayer"
-	)
-	windowSize := fyne.NewSize(490.0, 650.0)
-	icon := resource.GetAsset(iconName)
+	const windowTitle = "MeowyPlayer"
+	windowSize := fyne.NewSize(770.0, 650.0)
 
 	fyne.SetCurrentApp(app.NewWithID(windowTitle))
 	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
@@ -29,7 +25,7 @@ func NewMainWindow() fyne.Window {
 	//set up windows orientation
 	window := fyne.CurrentApp().NewWindow(windowTitle)
 	window.SetMaster()
-	window.SetIcon(icon)
+	window.SetIcon(resource.WindowIcon())
 	window.SetCloseIntercept(window.Hide)
 	window.Resize(windowSize)
 	window.CenterOnScreen()
@@ -37,7 +33,7 @@ func NewMainWindow() fyne.Window {
 	//create system tray
 	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
-		desktop.SetSystemTrayIcon(icon)
+		desktop.SetSystemTrayIcon(resource.WindowIcon())
 	}
 
 	//set up item tabs
@@ -45,11 +41,13 @@ func NewMainWindow() fyne.Window {
 	musicTab := newMusicTab()
 	tabs := container.NewAppTabs(albumTab, musicTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
-	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(_ *player.Album) { tabs.Select(musicTab) }))
+	tabs.DisableItem(musicTab)
+	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(*player.Album) {
+		tabs.EnableItem(musicTab)
+		tabs.Select(musicTab)
+	}))
 
-	controller := newController()
-	window.SetContent(container.NewBorder(nil, controller, nil, nil, tabs))
-	window.Canvas().Scale()
+	window.SetContent(container.NewBorder(nil, newController(), nil, nil, tabs))
 	return window
 }
 

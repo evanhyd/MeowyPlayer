@@ -15,7 +15,6 @@ const (
 	configFile = "config.json"
 
 	musicPath = "music"
-
 	assetPath = "asset"
 )
 
