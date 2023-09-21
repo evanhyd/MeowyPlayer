@@ -18,6 +18,11 @@ type Music struct {
 	FileSize int64     `json:"-"`
 }
 
+func (m *Music) GoodTitle() string {
+	const kExtensionLen = 4
+	return m.Title[:len(m.Title)-kExtensionLen]
+}
+
 func (m *Music) Length() time.Duration {
 	return time.Duration(m.FileSize * MAGIC_RATIO / (AUDIO_BIT_DEPTH * NUM_OF_CHANNELS * SAMPLING_RATE))
 }

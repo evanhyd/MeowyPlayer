@@ -2,6 +2,7 @@ package cwidget
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/player"
 )
@@ -18,9 +19,9 @@ func newTitleDisplay() *titleDisplay {
 }
 
 func (t *titleDisplay) CreateRenderer() fyne.WidgetRenderer {
-	return t.title.CreateRenderer()
+	return widget.NewSimpleRenderer(container.NewMax(t.title))
 }
 
 func (t *titleDisplay) SetMusicTitle(music *player.Music) {
-	t.title.SetText(music.Title[:len(music.Title)-3])
+	t.title.SetText(music.GoodTitle())
 }

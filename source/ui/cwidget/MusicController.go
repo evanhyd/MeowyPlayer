@@ -75,15 +75,16 @@ func (c *MusicController) start() {
 		utility.MustNil(err)
 		mp3Player := c.NewPlayer(mp3Decoder)
 
+		//update GUI
 		c.SetMusicTitle(currentPlay.Music())
 		c.BindVolume(mp3Player)
-		c.BindButton(mp3Decoder, mp3Player)
+		c.BindButton(mp3Player)
 
-		log.Printf("playing %v\n", currentPlay.Music().Title)
-
+		//play music
+		log.Printf("playing %v\n", currentPlay.Music().GoodTitle())
 		interrupt := false
 	MusicLoop:
-		for mp3Player.Play(); c.IsPausedManually() || mp3Player.IsPlaying(); {
+		for mp3Player.Play(); mp3Player.UnplayedBufferSize() > 0; {
 			select {
 			case currentPlay = <-c.playChan:
 				interrupt = true
@@ -92,6 +93,7 @@ func (c *MusicController) start() {
 			}
 		}
 
+		//next music
 		if !interrupt {
 			currentPlay.NextMusic()
 		}

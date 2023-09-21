@@ -1,11 +1,12 @@
 package cwidget
 
 import (
+	"io"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
 	"meowyplayer.com/source/resource"
 )
@@ -16,8 +17,6 @@ type buttonController struct {
 	playButton     *widget.Button
 	nextButton     *widget.Button
 	modeButton     *widget.Button
-
-	pauseManually bool
 }
 
 func newButtonController() *buttonController {
@@ -27,7 +26,6 @@ func newButtonController() *buttonController {
 		widget.NewButton("O", nil),
 		widget.NewButton(">>", nil),
 		widget.NewButtonWithIcon("", resource.DefaultIcon(), nil),
-		false,
 	}
 	controller.previousButton.Importance = widget.LowImportance
 	controller.playButton.Importance = widget.LowImportance
@@ -42,11 +40,9 @@ func (c *buttonController) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewHBox(layout.NewSpacer(), c.modeButton, c.previousButton, c.playButton, c.nextButton))
 }
 
-func (c *buttonController) BindButton(mp3Decoder *mp3.Decoder, mp3Player oto.Player) {
-	c.pauseManually = false
-
+func (c *buttonController) BindButton(mp3Player oto.Player) {
 	c.playButton.OnTapped = func() {
-		if c.pauseManually = mp3Player.IsPlaying(); c.pauseManually {
+		if mp3Player.IsPlaying() {
 			mp3Player.Pause()
 		} else {
 			mp3Player.Play()
@@ -54,11 +50,6 @@ func (c *buttonController) BindButton(mp3Decoder *mp3.Decoder, mp3Player oto.Pla
 	}
 
 	c.nextButton.OnTapped = func() {
-		c.pauseManually = false
-		mp3Player.Pause()
+		mp3Player.(io.Seeker).Seek(0, io.SeekEnd)
 	}
-}
-
-func (c *buttonController) IsPausedManually() bool {
-	return c.pauseManually
 }
