@@ -7,9 +7,9 @@ import (
 
 const (
 	MAGIC_RATIO     = 11024576435 //pray it doesn't overflow
-	AUDIO_BIT_DEPTH = 2
-	NUM_OF_CHANNELS = 2
 	SAMPLING_RATE   = 44100
+	NUM_OF_CHANNELS = 2
+	AUDIO_BIT_DEPTH = 2
 )
 
 type Music struct {

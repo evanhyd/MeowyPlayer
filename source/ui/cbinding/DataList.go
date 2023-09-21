@@ -5,33 +5,33 @@ import (
 	"meowyplayer.com/source/utility"
 )
 
-type DataList[T any] struct {
+type dataList[T any] struct {
 	utility.Subject[[]T]
 	data   []T
 	filter func(T) bool
 	sorter func(t1, t2 T) bool
 }
 
-func MakeDataList[T any]() DataList[T] {
-	return DataList[T]{filter: func(t T) bool { return true }, sorter: func(t1, t2 T) bool { return false }}
+func makeDataList[T any]() dataList[T] {
+	return dataList[T]{filter: func(t T) bool { return true }, sorter: func(t1, t2 T) bool { return false }}
 }
 
-func (d *DataList[T]) SetFilter(filter func(T) bool) {
+func (d *dataList[T]) SetFilter(filter func(T) bool) {
 	d.filter = filter
 	d.updateBinding()
 }
 
-func (d *DataList[T]) SetSorter(sorter func(t1, t2 T) bool) {
+func (d *dataList[T]) SetSorter(sorter func(t1, t2 T) bool) {
 	d.sorter = sorter
 	d.updateBinding()
 }
 
-func (d *DataList[T]) Notify(data []T) {
+func (d *dataList[T]) Notify(data []T) {
 	d.data = data
 	d.updateBinding()
 }
 
-func (d *DataList[T]) updateBinding() {
+func (d *dataList[T]) updateBinding() {
 	slices.SortStableFunc(d.data, d.sorter)
 
 	views := []T{}

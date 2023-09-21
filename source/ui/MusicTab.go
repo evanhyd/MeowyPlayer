@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -15,57 +14,37 @@ import (
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
 	"meowyplayer.com/source/ui/cwidget"
-	"meowyplayer.com/source/utility"
 )
 
 func newMusicTab() *container.TabItem {
-	const musicTabName = "Music"
+	data := cbinding.MakeMusicDataList()
+	manager.GetCurrentAlbum().Attach(&data)
 
-	//music views
-	data := cbinding.MakeDataList[player.Music]()
-	view := newMusicViewList(&data)
-	manager.GetCurrentAlbum().Attach(utility.MakeCallback(func(a *player.Album) { data.Notify(a.MusicList) }))
-
-	border := container.NewBorder(
+	return container.NewTabItemWithIcon("Music", resource.MusicTabIcon(), container.NewBorder(
 		container.NewBorder(
 			nil,
-			container.NewGridWithRows(1, newMusicTitleButton(&data, view), newMusicDateButton(&data, view)),
+			container.NewGridWithRows(1, cwidget.NewMusicTitleButton(&data, "Title"), cwidget.NewMusicDateButton(&data, "Date")),
 			nil,
-			container.NewGridWithRows(1, newMusicAdderLocalButton(&data, view), newMusicAdderOnlineButton(&data, view)),
-			newMusicSearchBar(&data, view),
+			container.NewGridWithRows(1, newMusicAdderLocalButton(&data), newMusicAdderOnlineButton(&data)),
+			cwidget.NewMusicSearchBar(&data),
 		),
 		nil,
 		nil,
 		nil,
-		view,
-	)
-	return container.NewTabItemWithIcon(musicTabName, resource.MusicTabIcon(), border)
+		newMusicViewList(&data),
+	))
 }
 
-func newMusicViewList(data *cbinding.DataList[player.Music]) *cwidget.MusicViewList {
-	list := cwidget.NewMusicViewList(func(m *player.Music) fyne.CanvasObject {
+func newMusicViewList(data *cbinding.MusicDataList) *cwidget.MusicViewList {
+	return cwidget.NewMusicViewList(data, func(m *player.Music) fyne.CanvasObject {
 		view := cwidget.NewMusicView(m)
-		view.OnTapped = func(*fyne.PointEvent) { fmt.Println(m.Title) }
+		view.OnTapped = func(*fyne.PointEvent) { manager.GetCurrentPlay().Set(player.NewPlay(data.GetAlbum(), m)) }
 		view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(m) }
 		return view
 	})
-
-	data.Attach(list)
-	return list
 }
 
-func newMusicSearchBar(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Entry {
-	entry := widget.NewEntry()
-	entry.OnChanged = func(title string) {
-		title = strings.ToLower(title)
-		data.SetFilter(func(a player.Music) bool {
-			return strings.Contains(strings.ToLower(a.Title), title)
-		})
-	}
-	return entry
-}
-
-func newMusicAdderLocalButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
+func newMusicAdderLocalButton(data *cbinding.MusicDataList) *widget.Button {
 	button := widget.NewButtonWithIcon("", resource.MusicAdderLocalIcon(), func() {
 		fileReader := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -80,40 +59,14 @@ func newMusicAdderLocalButton(data *cbinding.DataList[player.Music], view *cwidg
 		fileReader.Show()
 	})
 	button.Importance = widget.LowImportance
-
 	return button
 }
 
-func newMusicAdderOnlineButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
+func newMusicAdderOnlineButton(data *cbinding.MusicDataList) *widget.Button {
 	button := widget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon(), func() {
 		//to do
 	})
 	button.Importance = widget.LowImportance
-	return button
-}
-
-func newMusicTitleButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
-	reverse := false
-	button := widget.NewButton("Title", func() {
-		reverse = !reverse
-		data.SetSorter(func(a1, a2 player.Music) bool {
-			return (strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) < 0) != reverse
-		})
-	})
-	button.Importance = widget.LowImportance
-	return button
-}
-
-func newMusicDateButton(data *cbinding.DataList[player.Music], view *cwidget.MusicViewList) *widget.Button {
-	reverse := true
-	button := widget.NewButton("Date", func() {
-		reverse = !reverse
-		data.SetSorter(func(a1, a2 player.Music) bool {
-			return a1.Date.After(a2.Date) != reverse
-		})
-	})
-	button.Importance = widget.LowImportance
-	button.OnTapped()
 	return button
 }
 

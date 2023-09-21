@@ -6,6 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
+	"meowyplayer.com/source/manager"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 )
@@ -15,7 +16,7 @@ type CoverView struct {
 	cover    *canvas.Image
 	title    *widget.Label
 	size     fyne.Size
-	OnTapped func(*fyne.PointEvent)
+	onTapped func(*fyne.PointEvent)
 }
 
 func NewCoverView(coverSize fyne.Size) *CoverView {
@@ -55,5 +56,10 @@ func (c *CoverView) MouseMoved(*desktop.MouseEvent) {
 }
 
 func (c *CoverView) Tapped(event *fyne.PointEvent) {
-	c.OnTapped(event)
+	c.onTapped(event)
+}
+
+func (c *CoverView) Notify(play *player.Play) {
+	c.SetAlbum(play.Album())
+	c.onTapped = func(*fyne.PointEvent) { manager.GetCurrentAlbum().Set(play.Album()) }
 }

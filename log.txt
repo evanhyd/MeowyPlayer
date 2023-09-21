@@ -207,3 +207,233 @@ meowyplayer.com/source/ui.NewMainWindow()
 	C:/Users/evanh/Desktop/MeowyPlayer/source/ui/Window.go:47 +0x5b4
 main.main()
 	C:/Users/evanh/Desktop/MeowyPlayer/main.go:24 +0x4f
+2023/09/15 00:35:31 rename Test Album to Goose Dairies
+2023/09/15 00:35:42 update Goose Dairies's cover: C:/Users/evanh/Desktop/Goose Dairies.png
+2023/09/15 20:41:49 rename a very very very very very very very very long title to abcdefghijklmnopqrstuvwxyz0123456789
+2023/09/15 20:42:50 rename abcdefghijklmnopqrstuvwxyz0123456789 to a very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very long name
+2023/09/20 23:08:00 EOF
+2023/09/20 23:08:37 EOF
+2023/09/20 23:42:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/20 23:42:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/20 23:42:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/20 23:42:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/20 23:42:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/20 23:42:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/20 23:42:55 Fyne error:  GLFW poll event error: InvalidValue: Invalid scancode 256
+2023/09/20 23:42:55   At: C:/Users/evanh/go/pkg/mod/fyne.io/fyne/v2@v2.3.5/internal/driver/glfw/loop_desktop.go:35
+2023/09/20 23:51:49 playing &{2023-08-14 00:53:46.812659 -0400 EDT Eromanga-sensei Ending Full『TrySail - adrenaline!!!』.mp3 4385782}
+2023/09/20 23:53:05 playing Eromanga-sensei Ending Full『TrySail - adrenaline!!!』.mp3
+2023/09/20 23:53:08 playing Steins;Gate VN Opening [OP] Sky Clad Observer by Kanako Itō [ENG SUB].mp3
+2023/09/20 23:53:10 playing Steins;Gate 0 Ending Full『Last Game By Zwei』.mp3
+2023/09/20 23:53:11 playing Steins;Gate 0 Episode 23 Ending Song  Gate of Steiner by Eri Sasaki.mp3
+2023/09/20 23:53:11 playing STEINS;GATE 0 Opening 2  [HD].mp3
+2023/09/20 23:53:13 playing Eromanga-sensei Ending Full『TrySail - adrenaline!!!』.mp3
+2023/09/20 23:53:15 playing Steins;Gate VN Opening [OP] Sky Clad Observer by Kanako Itō [ENG SUB].mp3
+2023/09/20 23:53:20 playing Steins;Gate 0 Ending Full『Last Game By Zwei』.mp3
+2023/09/20 23:53:42 playing Eromanga-sensei Ending Full『TrySail - adrenaline!!!』.mp3
+2023/09/20 23:53:44 playing Steins;Gate VN Opening [OP] Sky Clad Observer by Kanako Itō [ENG SUB].mp3
+2023/09/20 23:54:01 playing Eromanga-sensei Ending Full『TrySail - adrenaline!!!』.mp3
+2023/09/20 23:54:48 playing Eromanga-sensei Ending Full『TrySail - adrenaline!!!』.mp3
+2023/09/20 23:56:50 playing Zaregoto.mp3
+2023/09/20 23:56:50 playing Jikai Hitagi Club.mp3
+2023/09/20 23:56:50 playing supercell - Kimino Shiranai Monogatari.mp3
+2023/09/20 23:56:50 playing Ika Kaisou.mp3
+2023/09/20 23:56:50 playing Omoshi Kani.mp3
+2023/09/20 23:56:50 playing Jouka.mp3
+2023/09/20 23:56:50 playing Gehou.mp3
+2023/09/20 23:56:50 playing Kekkai.mp3
+2023/09/20 23:56:50 playing Dokuzetsu.mp3
+2023/09/20 23:56:50 playing Shiniki.mp3
+2023/09/20 23:56:50 playing Shugendou.mp3
+2023/09/20 23:56:50 playing Haikyo.mp3
+2023/09/20 23:56:50 playing Sensou.mp3
+2023/09/20 23:56:50 playing Joshou.mp3
+2023/09/20 23:56:50 playing Hyouri.mp3
+2023/09/20 23:56:51 playing Yokoku.mp3
+2023/09/20 23:56:51 playing perfect slumbers.mp3
+2023/09/20 23:56:51 playing Marshmallow Justice.mp3
+2023/09/20 23:56:51 playing Futakotome.mp3
+2023/09/20 23:56:51 playing Bakemonogatari OP 5 - Tsubasa Cat OP.mp3
+2023/09/20 23:56:51 playing Kokuhaku.mp3
+2023/09/20 23:56:51 playing Kaerimichi.mp3
+2023/09/20 23:56:51 playing Staple Stable.mp3
+2023/09/20 23:56:51 playing Mathemagics.mp3
+2023/09/20 23:56:51 playing Mousou Express.mp3
+2023/09/20 23:56:51 playing Platinum Disco.mp3
+2023/09/20 23:56:51 playing Decent Black.mp3
+2023/09/20 23:56:51 playing Renai Circulation.mp3
+2023/09/20 23:56:51 playing Orange Mint.mp3
+2023/09/20 23:56:51 playing chocolate insomnia.mp3
+2023/09/20 23:56:51 playing Arigatou Gozaimasu. Tasukarimashita.mp3
+2023/09/20 23:56:51 playing Bakemonogatari Medley.mp3
+2023/09/20 23:56:51 playing 12 – 圧迫される感 - Sense of Opression - Zoku Owarimonogatari - OST.mp3
+2023/09/20 23:56:51 playing 13 – 別人老倉 - A different Old Warehouse - Zoku Owarimonogatari - OST.mp3
+2023/09/20 23:56:51 playing 07 – 八九寺おねーさん - Hachikuji Onesan - Zoku Owarimonogatari - OST.mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Kawarimasen ne, Araragi-senpai [「変わりませんねぇ、阿良々木先輩」].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Shinjuu [心中].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Yuujin no Ichimen [友人の一面].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Kochou no Yume [胡蝶の夢].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Watson-kun [ワトソンくん].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Driver-gahara Hitagi [ドライバーヶ原ひたぎ].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Destination [ディスティネーション].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Kyouhaku [脅迫].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Jikoai [自己愛].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Nagazeri [長ゼリ].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Balance [バランス].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Goaikyou [ご愛嬌].mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second Season OST - Kozou [小僧].mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost “Washi no Houkoso Warukatta – Seishiro”.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Dare ka no Tokubetsu.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Senpai Myouri.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Douha.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost  Joshi Doushi no Kenka.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost  Kanashiki Mugen Continue.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Zensetsu.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Watashi wa Nani mo Shirimasen yo. Anata ga Shitte Irundesu, Araragi-senpai.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Yappari.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Teokure.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost 444 goushitsu.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Omimai.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost Bugaisha.mp3
+2023/09/20 23:56:51 playing Owarimonogatari ost  Suugaku no Yousei.mp3
+2023/09/20 23:56:51 playing Owarimonogatari Second season Ost Planetarium.mp3
+2023/09/20 23:56:51 playing Nattoku.mp3
+2023/09/20 23:56:51 playing Sotsugyou.mp3
+2023/09/20 23:56:51 playing Jamakke Na Atogaki.mp3
+2023/09/20 23:56:51 playing Watashi Wa Aitsu Ga Urayamasikattanda.mp3
+2023/09/20 23:56:51 playing Hitamuki Na Kigai.mp3
+2023/09/20 23:56:51 playing Tomadou Kimochi.mp3
+2023/09/20 23:56:51 playing Syukuteki.mp3
+2023/09/20 23:56:51 playing Imadoki No Kouhai.mp3
+2023/09/20 23:56:51 playing Timing No Iiyatsu.mp3
+2023/09/20 23:56:51 playing Nostalgy.mp3
+2023/09/20 23:56:51 playing Pony Tail.mp3
+2023/09/20 23:56:51 playing Feint.mp3
+2023/09/20 23:56:51 playing Manshinsoui.mp3
+2023/09/20 23:56:51 playing Warui Joudan.mp3
+2023/09/20 23:56:51 playing Namakemono No Sekku Bataraki.mp3
+2023/09/20 23:56:51 playing Shiraketa Hannou.mp3
+2023/09/20 23:56:51 playing Haragei.mp3
+2023/09/20 23:56:51 playing Rokudemonai, Oninomonogatariga.mp3
+2023/09/20 23:56:51 playing Tenbatsu.mp3
+2023/09/20 23:56:51 playing Kamikakushinoshoutai.mp3
+2023/09/20 23:56:51 playing Kamiatsukai.mp3
+2023/09/20 23:56:52 playing Fuiuchi.mp3
+2023/09/20 23:56:52 playing Hanamuke.mp3
+2023/09/20 23:56:52 playing White Lies.mp3
+2023/09/20 23:56:52 playing Jibunnokotoba.mp3
+2023/09/20 23:56:52 playing Ijoujitai.mp3
+2023/09/20 23:56:52 playing Rifujin.mp3
+2023/09/20 23:56:52 playing Kattenahanashi.mp3
+2023/09/20 23:56:52 playing Dowsing.mp3
+2023/09/20 23:56:52 playing Sengokunadeko Juyonsai.mp3
+2023/09/20 23:56:52 playing Torihiki.mp3
+2023/09/20 23:56:52 playing Shitsugen.mp3
+2023/09/20 23:56:52 playing Ninen Nikumi.mp3
+2023/09/20 23:56:52 playing Chugakusei Life.mp3
+2023/09/20 23:56:52 playing Murinasoudan.mp3
+2023/09/20 23:56:52 playing Shitaisagashi.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Bad Bully.mp3
+2023/09/20 23:56:52 playing Kizumonogatari part lll ost Kudaranai Riyuu.mp3
+2023/09/20 23:56:52 playing Kizumonogatari part lll ost Warukunai Haruyasumi.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Aftertaste of Our Parting.mp3
+2023/09/20 23:56:52 playing Kizumonogatari part lll ost Shigatsuyouka.mp3
+2023/09/20 23:56:52 playing Kizumonogatari part lll ost Bonus01 Kizuminogatari Seisaku Happyyou PV BGM BONUS TRACK.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Dismissal.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost My Fault.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Limited Information.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Bespectacled Class Presidents Special Feature.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Lifesaver.mp3
+2023/09/20 23:56:52 playing etoile et toi.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Rare Breed.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Servant.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost What Tomorrow Will Bring.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Innocent Prank.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Afterfeel.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Mission.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost A Feeling Close to Lust.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Friend.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Human Strength.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Rumor.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Proof of Submission.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Eating.mp3
+2023/09/20 23:56:52 playing Bonus02 Nekketsuhen Tokuhou BGM BONUS TRACK.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Full Name.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Negotiator.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost What you Don't Want Seen.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Memories.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Gust of Wind.mp3
+2023/09/20 23:56:52 playing Kizumonogatari ost Preface.mp3
+2023/09/20 23:56:52 playing Kizumonogatari II ost Spasibo!.mp3
+2023/09/20 23:56:52 playing Golden Week.mp3
+2023/09/20 23:56:52 playing Futsuno Onnanoko.mp3
+2023/09/20 23:56:52 playing Old Fashion.mp3
+2023/09/20 23:56:52 playing Karenchan.mp3
+2023/09/20 23:56:52 playing Ienaikoto Igainokoto.mp3
+2023/09/20 23:56:52 playing Bokunenjin.mp3
+2023/09/20 23:56:52 playing Amanojaku.mp3
+2023/09/20 23:56:52 playing Koi.mp3
+2023/09/20 23:56:52 playing Toutotsu Na Toi.mp3
+2023/09/20 23:56:52 playing Tamikurasou.mp3
+2023/09/20 23:56:52 playing Tadaima.mp3
+2023/09/20 23:56:52 playing Shinjitsu Karaha Hodotooi Sonzai.mp3
+2023/09/20 23:56:52 playing Kazoku Kaigi.mp3
+2023/09/20 23:56:52 playing Kantetsu.mp3
+2023/09/20 23:56:52 playing Watashi No Monogatari.mp3
+2023/09/20 23:56:52 playing Kegen.mp3
+2023/09/20 23:56:52 playing Tegami (Neko MONOGATARI White).mp3
+2023/09/20 23:56:52 playing Shitagokoro.mp3
+2023/09/20 23:56:52 playing Joshi Doushi.mp3
+2023/09/20 23:56:52 playing Platinum Mukatsuku.mp3
+2023/09/20 23:56:52 playing Shideno Tori.mp3
+2023/09/20 23:56:52 playing Niichan. Atoha Makaseta.mp3
+2023/09/20 23:56:52 playing Okorarerunoha Kowaidesukarane.mp3
+2023/09/20 23:56:52 playing Maegami.mp3
+2023/09/20 23:56:52 playing Aizuchi.mp3
+2023/09/20 23:56:52 playing Yuutousei.mp3
+2023/09/20 23:56:52 playing Yuuwaku.mp3
+2023/09/20 23:56:52 playing Koibitodoushi.mp3
+2023/09/20 23:56:53 playing 11 Nengo No Sugata.mp3
+2023/09/20 23:56:53 playing Tegami (KabukiMONOGATARI).mp3
+2023/09/20 23:56:53 playing Umarekawari.mp3
+2023/09/20 23:56:53 playing Magaimono Sonomonono Onna.mp3
+2023/09/20 23:56:53 playing Trivia.mp3
+2023/09/20 23:56:53 playing Watashiwa Araragisanto Aetandesukara.mp3
+2023/09/20 23:56:53 playing Shinsetsu.mp3
+2023/09/20 23:56:53 playing Gaidankousetsu.mp3
+2023/09/20 23:56:53 playing Jinchiku.mp3
+2023/09/20 23:56:53 playing Tadaima Kaerimashita.mp3
+2023/09/20 23:56:53 playing Shianchu.mp3
+2023/09/20 23:56:53 playing Senjougahara Tore.mp3
+2023/09/20 23:56:53 playing Watashi Usonanka Tsuitakotoga Naimono.mp3
+2023/09/20 23:56:53 playing Nichiyoubi.mp3
+2023/09/20 23:56:53 playing Hanekawa Tsubasa No Baai.mp3
+2023/09/20 23:56:53 playing Shinsou no reijou.mp3
+2023/09/20 23:56:53 playing Sanpo.mp3
+2023/09/20 23:56:53 playing Doutokutosetsu.mp3
+2023/09/20 23:56:53 playing Date.mp3
+2023/09/20 23:56:53 playing Sutekimeppou.mp3
+2023/09/20 23:56:53 playing Hoyoku.mp3
+2023/09/20 23:56:53 playing Irobokeneko.mp3
+2023/09/20 23:56:53 playing Bakarlolite.mp3
+2023/09/20 23:56:53 playing Zaregoto.mp3
+2023/09/20 23:56:53 playing Jikai Hitagi Club.mp3
+2023/09/20 23:56:53 playing supercell - Kimino Shiranai Monogatari.mp3
+2023/09/20 23:56:53 playing Ika Kaisou.mp3
+2023/09/20 23:56:53 playing Omoshi Kani.mp3
+2023/09/20 23:56:53 playing Jouka.mp3
+2023/09/20 23:56:53 playing Gehou.mp3
+2023/09/20 23:56:53 playing Kekkai.mp3
+2023/09/20 23:56:53 playing Dokuzetsu.mp3
+2023/09/20 23:56:53 playing Shiniki.mp3
+2023/09/20 23:56:53 playing Shugendou.mp3
+2023/09/20 23:56:53 playing Haikyo.mp3
+2023/09/20 23:56:53 playing Sensou.mp3
+2023/09/20 23:56:53 playing Joshou.mp3
+2023/09/20 23:56:53 playing Hyouri.mp3
+2023/09/20 23:56:53 playing Yokoku.mp3
+2023/09/20 23:56:53 playing perfect slumbers.mp3
+2023/09/20 23:56:53 playing Marshmallow Justice.mp3
+2023/09/20 23:57:38 playing Steins;Gate 0 Ending Full『Last Game By Zwei』.mp3
+2023/09/20 23:57:41 playing Steins;Gate 0 Episode 23 Ending Song  Gate of Steiner by Eri Sasaki.mp3
+2023/09/20 23:57:50 playing Eromanga-sensei Ending Full『TrySail - adrenaline!!!』.mp3

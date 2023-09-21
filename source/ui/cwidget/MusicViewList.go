@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/ui/cbinding"
 )
 
 type MusicViewList struct {
@@ -13,8 +14,9 @@ type MusicViewList struct {
 	makeView func(*player.Music) fyne.CanvasObject
 }
 
-func NewMusicViewList(makeMusicView func(*player.Music) fyne.CanvasObject) *MusicViewList {
+func NewMusicViewList(data *cbinding.MusicDataList, makeMusicView func(*player.Music) fyne.CanvasObject) *MusicViewList {
 	list := &MusicViewList{widget.BaseWidget{}, container.NewVBox(), makeMusicView}
+	data.Attach(list)
 	list.ExtendBaseWidget(list)
 	return list
 }

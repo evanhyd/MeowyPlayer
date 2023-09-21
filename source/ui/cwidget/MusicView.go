@@ -37,12 +37,12 @@ func (m *MusicView) CreateRenderer() fyne.WidgetRenderer {
 
 func (m *MusicView) MouseIn(event *desktop.MouseEvent) {
 	m.highlight.Show()
-	m.highlight.Refresh()
+	m.Refresh()
 }
 
 func (m *MusicView) MouseOut() {
 	m.highlight.Hide()
-	m.highlight.Refresh()
+	m.Refresh()
 }
 
 func (m *MusicView) MouseMoved(*desktop.MouseEvent) {

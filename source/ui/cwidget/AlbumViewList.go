@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/ui/cbinding"
 )
 
 type AlbumViewList struct {
@@ -13,8 +14,9 @@ type AlbumViewList struct {
 	makeView func(*player.Album) fyne.CanvasObject
 }
 
-func NewAlbumViewList(makeAlbumView func(*player.Album) fyne.CanvasObject, size fyne.Size) *AlbumViewList {
+func NewAlbumViewList(data *cbinding.AlbumDataList, makeAlbumView func(*player.Album) fyne.CanvasObject, size fyne.Size) *AlbumViewList {
 	list := &AlbumViewList{widget.BaseWidget{}, container.NewGridWrap(size), makeAlbumView}
+	data.Attach(list)
 	list.ExtendBaseWidget(list)
 	return list
 }

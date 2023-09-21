@@ -21,21 +21,31 @@ import (
 
 var configData utility.Data[player.Config]
 var albumData utility.Data[player.Album]
+var playData utility.Data[player.Play]
 
 // the album pointer parameter may refer to a temporary object from the view list
 // we need the original one from the config
 func getSourceAlbum(album *player.Album) *player.Album {
-	inUse := configData.Get()
-	index := slices.IndexFunc(inUse.Albums, func(a player.Album) bool { return a.Title == album.Title })
-	return &inUse.Albums[index]
+	index := slices.IndexFunc(configData.Get().Albums, func(a player.Album) bool { return a.Title == album.Title })
+	return &configData.Get().Albums[index]
 }
 
-func GetCurrentConfig() *utility.Data[player.Config] {
-	return &configData
+func reloadConfig() error {
+	if err := utility.WriteJson(path.Config(), configData.Get()); err != nil {
+		return err
+	}
+	config, err := LoadFromLocalConfig()
+	if err != nil {
+		return err
+	}
+
+	configData.Set(&config)
+	return nil
 }
 
-func GetCurrentAlbum() *utility.Data[player.Album] {
-	return &albumData
+func reloadAlbum() error {
+	albumData.Set(getSourceAlbum(albumData.Get()))
+	return nil
 }
 
 func LoadFromLocalConfig() (player.Config, error) {
@@ -46,8 +56,6 @@ func LoadFromLocalConfig() (player.Config, error) {
 
 	for i := range inUse.Albums {
 		album := &inUse.Albums[i]
-
-		//read icon
 		album.Cover = resource.GetCover(album)
 
 		//read music file size
@@ -62,24 +70,16 @@ func LoadFromLocalConfig() (player.Config, error) {
 	return inUse, nil
 }
 
-func reloadConfig() error {
-	if err := utility.WriteJson(path.Config(), configData.Get()); err != nil {
-		return err
-	}
-
-	config, err := LoadFromLocalConfig()
-	if err != nil {
-		return err
-	}
-
-	configData.Set(&config)
-	return nil
+func GetCurrentConfig() *utility.Data[player.Config] {
+	return &configData
 }
 
-func reloadAlbum() error {
-	source := getSourceAlbum(albumData.Get())
-	albumData.Set(source)
-	return nil
+func GetCurrentAlbum() *utility.Data[player.Album] {
+	return &albumData
+}
+
+func GetCurrentPlay() *utility.Data[player.Play] {
+	return &playData
 }
 
 func AddAlbum() error {
@@ -102,12 +102,10 @@ func AddAlbum() error {
 	iconColor := color.NRGBA{uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32())}
 	iconImage := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	iconImage.SetNRGBA(0, 0, iconColor)
-
 	imageData := bytes.Buffer{}
 	if err := png.Encode(&imageData, iconImage); err != nil {
 		return err
 	}
-
 	if err := os.WriteFile(path.Cover(&album), imageData.Bytes(), os.ModePerm); err != nil {
 		return err
 	}
@@ -116,20 +114,19 @@ func AddAlbum() error {
 }
 
 func AddMusic(musicInfo fyne.URIReadCloser) error {
+	//add to the source album
 	music := player.Music{Date: time.Now(), Title: musicInfo.URI().Name()}
-	source := getSourceAlbum(albumData.Get())
-	source.MusicList = append(source.MusicList, music)
+	album := getSourceAlbum(albumData.Get())
+	album.MusicList = append(album.MusicList, music)
 
-	//copy the file to the music directory
+	//copy the music file to the music repo
 	musicFile, err := os.ReadFile(musicInfo.URI().Path())
 	if err != nil {
 		return err
 	}
-
 	if err = os.WriteFile(path.Music(&music), musicFile, os.ModePerm); err != nil {
 		return err
 	}
-
 	if err := reloadConfig(); err != nil {
 		return err
 	}
@@ -137,29 +134,29 @@ func AddMusic(musicInfo fyne.URIReadCloser) error {
 }
 
 func DeleteAlbum(album *player.Album) error {
-	source := getSourceAlbum(album)
-	inUse := configData.Get()
-	index := slices.IndexFunc(inUse.Albums, func(a player.Album) bool { return a.Title == source.Title })
-	last := len(inUse.Albums) - 1
+	conf := configData.Get()
+	index := slices.IndexFunc(conf.Albums, func(a player.Album) bool { return a.Title == album.Title })
+	last := len(conf.Albums) - 1
 
 	//remove album icon
-	if err := os.Remove(path.Cover(source)); err != nil && !os.IsNotExist(err) {
+	if err := os.Remove(path.Cover(album)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	inUse.Albums[index] = inUse.Albums[last]
-	inUse.Albums = inUse.Albums[:last]
-
+	//pop from the config
+	conf.Albums[index] = conf.Albums[last]
+	conf.Albums = conf.Albums[:last]
 	return reloadConfig()
 }
 
 func DeleteMusic(music *player.Music) error {
-	source := getSourceAlbum(albumData.Get())
-	index := slices.IndexFunc(source.MusicList, func(m player.Music) bool { return m.Title == music.Title })
-	last := len(source.MusicList) - 1
+	album := getSourceAlbum(albumData.Get())
+	index := slices.IndexFunc(album.MusicList, func(m player.Music) bool { return m.Title == music.Title })
+	last := len(album.MusicList) - 1
 
-	source.MusicList[index] = source.MusicList[last]
-	source.MusicList = source.MusicList[:last]
+	//pop form the album
+	album.MusicList[index] = album.MusicList[last]
+	album.MusicList = album.MusicList[:last]
 
 	if err := reloadConfig(); err != nil {
 		return err
@@ -168,37 +165,38 @@ func DeleteMusic(music *player.Music) error {
 }
 
 func UpdateTitle(album *player.Album, title string) error {
-	inUse := configData.Get()
-	if slices.ContainsFunc(inUse.Albums, func(a player.Album) bool { return a.Title == title }) {
+	if slices.ContainsFunc(configData.Get().Albums, func(a player.Album) bool { return a.Title == title }) {
 		return fmt.Errorf("album \"%v\" already exists", title)
 	}
 
+	//update timestamp
+	configData.Get().Date = time.Now()
 	source := getSourceAlbum(album)
 	source.Date = time.Now()
-	inUse.Date = time.Now()
 
+	//rename the album cover
 	oldPath := path.Cover(source)
 	source.Title = title
 	if err := os.Rename(oldPath, path.Cover(source)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-
 	return reloadConfig()
 }
 
 func UpdateCover(album *player.Album, iconPath string) error {
-	source := getSourceAlbum(album)
-	source.Date = time.Now() //update description -> update album view
+	album = getSourceAlbum(album)
+
+	//update timestamp
+	album.Date = time.Now()
 	configData.Get().Date = time.Now()
 
+	//update cover image
 	icon, err := os.ReadFile(iconPath)
 	if err != nil {
 		return err
 	}
-
-	if err = os.WriteFile(path.Cover(source), icon, os.ModePerm); err != nil {
+	if err = os.WriteFile(path.Cover(album), icon, os.ModePerm); err != nil {
 		return err
 	}
-
 	return reloadConfig()
 }
