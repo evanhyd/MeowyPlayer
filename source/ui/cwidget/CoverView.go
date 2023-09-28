@@ -6,26 +6,26 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/manager"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 )
 
 type CoverView struct {
 	widget.BaseWidget
-	cover    *canvas.Image
-	title    *widget.Label
-	size     fyne.Size
-	onTapped func(*fyne.PointEvent)
+	tappableBase
+	cover *canvas.Image
+	title *widget.Label
 }
 
-func NewCoverView(coverSize fyne.Size) *CoverView {
-	view := &CoverView{widget.BaseWidget{}, canvas.NewImageFromResource(resource.DefaultIcon()), widget.NewLabel(""), coverSize, func(*fyne.PointEvent) {}}
-	view.cover.SetMinSize(coverSize)
+func NewCoverView(size fyne.Size) *CoverView {
+	view := &CoverView{
+		cover: canvas.NewImageFromResource(resource.DefaultIcon()),
+		title: widget.NewLabel(""),
+	}
+	view.cover.SetMinSize(size)
 	view.title.Alignment = fyne.TextAlignCenter
 	view.title.Wrapping = fyne.TextWrapWord
 	view.title.Hide()
-
 	view.ExtendBaseWidget(view)
 	return view
 }
@@ -53,13 +53,5 @@ func (c *CoverView) MouseOut() {
 }
 
 func (c *CoverView) MouseMoved(*desktop.MouseEvent) {
-}
-
-func (c *CoverView) Tapped(event *fyne.PointEvent) {
-	c.onTapped(event)
-}
-
-func (c *CoverView) Notify(play *player.Play) {
-	c.SetAlbum(play.Album())
-	c.onTapped = func(*fyne.PointEvent) { manager.GetCurrentAlbum().Set(play.Album()) }
+	//satisfy MouseMovement interface
 }

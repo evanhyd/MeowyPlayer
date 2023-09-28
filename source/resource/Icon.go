@@ -1,8 +1,11 @@
 package resource
 
 import (
+	"os"
+
 	"fyne.io/fyne/v2"
-	"meowyplayer.com/source/path"
+	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/utility"
 )
 
 const (
@@ -18,8 +21,21 @@ const (
 	iconNameDefault          = "default.png"
 )
 
+func getResource(resourcePath string) fyne.Resource {
+	asset, err := fyne.LoadResourceFromPath(resourcePath)
+	if os.IsNotExist(err) {
+		asset, err = fyne.LoadResourceFromPath(AssetPath(iconNameMissing))
+	}
+	utility.MustNil(err)
+	return asset
+}
+
 func getIcon(iconName string) fyne.Resource {
-	return get(path.Asset(iconName))
+	return getResource(AssetPath(iconName))
+}
+
+func GetCover(album *player.Album) fyne.Resource {
+	return getResource(CoverPath(album))
 }
 
 func WindowIcon() fyne.Resource {

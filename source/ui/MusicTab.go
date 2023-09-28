@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/manager"
+	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
@@ -18,7 +18,7 @@ import (
 
 func newMusicTab() *container.TabItem {
 	data := cbinding.MakeMusicDataList()
-	manager.GetCurrentAlbum().Attach(&data)
+	client.GetCurrentAlbum().Attach(&data)
 
 	return container.NewTabItemWithIcon("Music", resource.MusicTabIcon(), container.NewBorder(
 		container.NewBorder(
@@ -38,7 +38,7 @@ func newMusicTab() *container.TabItem {
 func newMusicViewList(data *cbinding.MusicDataList) *cwidget.MusicViewList {
 	return cwidget.NewMusicViewList(data, func(m *player.Music) fyne.CanvasObject {
 		view := cwidget.NewMusicView(m)
-		view.OnTapped = func(*fyne.PointEvent) { manager.GetCurrentPlay().Set(player.NewPlay(data.GetAlbum(), m)) }
+		view.OnTapped = func(*fyne.PointEvent) { client.GetCurrentPlayList().Set(player.NewPlayList(data.GetAlbum(), m)) }
 		view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(m) }
 		return view
 	})
@@ -50,8 +50,8 @@ func newMusicAdderLocalButton(data *cbinding.MusicDataList) *widget.Button {
 			if err != nil {
 				showErrorIfAny(err)
 			} else if result != nil {
-				log.Printf("add %v from local to %v\n", result.URI().Name(), manager.GetCurrentAlbum().Get().Title)
-				showErrorIfAny(manager.AddMusic(result))
+				log.Printf("add %v from local to %v\n", result.URI().Name(), client.GetCurrentAlbum().Get().Title)
+				showErrorIfAny(client.AddMusic(result))
 			}
 		}, getMainWindow())
 		fileReader.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
@@ -73,8 +73,8 @@ func newMusicAdderOnlineButton(data *cbinding.MusicDataList) *widget.Button {
 func showDeleteMusicDialog(music *player.Music) {
 	dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", music.Title), func(delete bool) {
 		if delete {
-			log.Printf("delete %vfrom the album %v \n", music.Title, manager.GetCurrentAlbum().Get().Title)
-			showErrorIfAny(manager.DeleteMusic(music))
+			log.Printf("delete %vfrom the album %v \n", music.Title, client.GetCurrentAlbum().Get().Title)
+			showErrorIfAny(client.DeleteMusic(music))
 		}
 	}, getMainWindow())
 }

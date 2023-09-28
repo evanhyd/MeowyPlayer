@@ -5,29 +5,29 @@ import (
 	"meowyplayer.com/source/utility"
 )
 
-type Play struct {
+type PlayList struct {
 	album      Album
 	musicIndex int
 }
 
-func NewPlay(album *Album, music *Music) *Play {
+func NewPlayList(album *Album, music *Music) *PlayList {
 	index := slices.Index(album.MusicList, *music)
 	utility.Assert(func() bool { return index != -1 })
-	return &Play{*album, index}
+	return &PlayList{*album, index}
 }
 
-func (p *Play) Album() *Album {
+func (p *PlayList) Album() *Album {
 	return &p.album
 }
 
-func (p *Play) Music() *Music {
+func (p *PlayList) Music() *Music {
 	return &p.album.MusicList[p.musicIndex]
 }
 
-func (p *Play) NextMusic() {
+func (p *PlayList) NextMusic() {
 	p.musicIndex = (p.musicIndex + 1) % len(p.album.MusicList)
 }
 
-func (p *Play) PrevMusic() {
+func (p *PlayList) PrevMusic() {
 	p.musicIndex = (p.musicIndex - 1 + len(p.album.MusicList)) % len(p.album.MusicList)
 }

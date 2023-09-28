@@ -11,23 +11,19 @@ import (
 
 type AlbumView struct {
 	widget.BaseWidget
-	cover             *canvas.Image
-	info              *widget.Label
-	title             *widget.Label
-	name              string
-	OnTapped          func(*fyne.PointEvent)
-	OnTappedSecondary func(*fyne.PointEvent)
+	tappableBase
+	cover *canvas.Image
+	info  *widget.Label
+	title *widget.Label
+	name  string
 }
 
 func NewAlbumView(album *player.Album) *AlbumView {
 	view := &AlbumView{
-		widget.BaseWidget{},
-		canvas.NewImageFromResource(album.Cover),
-		widget.NewLabel(album.Description()),
-		widget.NewLabel(album.Title),
-		album.Title,
-		func(*fyne.PointEvent) {},
-		func(*fyne.PointEvent) {},
+		cover: canvas.NewImageFromResource(album.Cover),
+		info:  widget.NewLabel(album.Description()),
+		title: widget.NewLabel(album.Title),
+		name:  album.Title,
 	}
 	view.info.Hide()
 	view.info.Wrapping = fyne.TextWrapWord
@@ -56,12 +52,5 @@ func (a *AlbumView) MouseOut() {
 }
 
 func (a *AlbumView) MouseMoved(*desktop.MouseEvent) {
-}
-
-func (a *AlbumView) Tapped(event *fyne.PointEvent) {
-	a.OnTapped(event)
-}
-
-func (a *AlbumView) TappedSecondary(event *fyne.PointEvent) {
-	a.OnTappedSecondary(event)
+	//satisfy MouseMovement interface
 }

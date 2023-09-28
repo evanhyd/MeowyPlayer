@@ -18,7 +18,8 @@ type Music struct {
 	FileSize int64     `json:"-"`
 }
 
-func (m *Music) GoodTitle() string {
+// return title without the extension string
+func (m *Music) SimpleTitle() string {
 	const kExtensionLen = 4
 	return m.Title[:len(m.Title)-kExtensionLen]
 }

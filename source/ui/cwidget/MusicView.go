@@ -12,19 +12,15 @@ import (
 
 type MusicView struct {
 	widget.BaseWidget
-	title             *widget.Label
-	highlight         *canvas.Rectangle
-	OnTapped          func(*fyne.PointEvent)
-	OnTappedSecondary func(*fyne.PointEvent)
+	tappableBase
+	title     *widget.Label
+	highlight *canvas.Rectangle
 }
 
 func NewMusicView(music *player.Music) *MusicView {
 	view := &MusicView{
-		widget.BaseWidget{},
-		widget.NewLabel(music.Description()),
-		canvas.NewRectangle(theme.HoverColor()),
-		func(*fyne.PointEvent) {},
-		func(*fyne.PointEvent) {},
+		title:     widget.NewLabel(music.Description()),
+		highlight: canvas.NewRectangle(theme.HoverColor()),
 	}
 	view.highlight.Hide()
 	view.ExtendBaseWidget(view)
@@ -46,12 +42,5 @@ func (m *MusicView) MouseOut() {
 }
 
 func (m *MusicView) MouseMoved(*desktop.MouseEvent) {
-}
-
-func (m *MusicView) Tapped(event *fyne.PointEvent) {
-	m.OnTapped(event)
-}
-
-func (m *MusicView) TappedSecondary(event *fyne.PointEvent) {
-	m.OnTappedSecondary(event)
+	//satisfy MouseMovement interface
 }

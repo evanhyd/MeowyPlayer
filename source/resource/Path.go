@@ -1,4 +1,4 @@
-package path
+package resource
 
 import (
 	"os"
@@ -18,19 +18,19 @@ const (
 	assetPath = "asset"
 )
 
-func Config() string {
+func ConfigPath() string {
 	return filepath.Join(albumPath, configFile)
 }
 
-func Cover(album *player.Album) string {
+func CoverPath(album *player.Album) string {
 	return filepath.Join(albumPath, coverPath, album.Title+".png")
 }
 
-func Music(music *player.Music) string {
+func MusicPath(music *player.Music) string {
 	return filepath.Join(musicPath, music.Title)
 }
 
-func Asset(assetName string) string {
+func AssetPath(assetName string) string {
 	return filepath.Join(assetPath, assetName)
 }
 
@@ -38,9 +38,9 @@ func MakeNecessaryPath() {
 	utility.MustNil(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm))
 	utility.MustNil(os.MkdirAll(filepath.Join(musicPath), os.ModePerm))
 
-	_, err := os.Stat(Config())
+	_, err := os.Stat(ConfigPath())
 	if os.IsNotExist(err) {
-		utility.MustNil(utility.WriteJson(Config(), &player.Config{Date: time.Now(), Albums: nil}))
+		utility.MustNil(utility.WriteJson(ConfigPath(), &player.Config{Date: time.Now(), Albums: nil}))
 	} else {
 		utility.MustNil(err)
 	}

@@ -24,7 +24,7 @@ func NewMusicSearchBar(data *cbinding.MusicDataList) *widget.Entry {
 	entry.OnChanged = func(title string) {
 		title = strings.ToLower(title)
 		data.SetFilter(func(a player.Music) bool {
-			return strings.Contains(strings.ToLower(a.Title), title)
+			return strings.Contains(strings.ToLower(a.SimpleTitle()), title)
 		})
 	}
 	return entry

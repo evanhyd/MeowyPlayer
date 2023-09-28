@@ -4,8 +4,8 @@ import (
 	"log"
 	"runtime/debug"
 
-	"meowyplayer.com/source/manager"
-	"meowyplayer.com/source/path"
+	"meowyplayer.com/source/client"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui"
 	"meowyplayer.com/source/utility"
 )
@@ -14,17 +14,17 @@ func main() {
 	//redirect panic message
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatalf("%v\n%v", err, string(debug.Stack()))
+			log.Printf("%v\n%v", err, string(debug.Stack()))
 		}
 	}()
 
 	utility.InitLogger()
-	path.MakeNecessaryPath()
+	resource.MakeNecessaryPath()
 
 	window := ui.NewMainWindow()
-	inUse, err := manager.LoadFromLocalConfig()
+	inUse, err := client.LoadFromLocalConfig()
 	utility.MustNil(err)
-	manager.GetCurrentConfig().Set(&inUse)
+	client.GetCurrentConfig().Set(&inUse)
 
 	window.ShowAndRun()
 }

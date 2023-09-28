@@ -15,7 +15,7 @@ type MusicViewList struct {
 }
 
 func NewMusicViewList(data *cbinding.MusicDataList, makeMusicView func(*player.Music) fyne.CanvasObject) *MusicViewList {
-	list := &MusicViewList{widget.BaseWidget{}, container.NewVBox(), makeMusicView}
+	list := &MusicViewList{box: container.NewVBox(), makeView: makeMusicView}
 	data.Attach(list)
 	list.ExtendBaseWidget(list)
 	return list

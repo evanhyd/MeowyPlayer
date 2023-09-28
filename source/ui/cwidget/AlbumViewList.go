@@ -15,7 +15,7 @@ type AlbumViewList struct {
 }
 
 func NewAlbumViewList(data *cbinding.AlbumDataList, makeAlbumView func(*player.Album) fyne.CanvasObject, size fyne.Size) *AlbumViewList {
-	list := &AlbumViewList{widget.BaseWidget{}, container.NewGridWrap(size), makeAlbumView}
+	list := &AlbumViewList{grid: container.NewGridWrap(size), makeView: makeAlbumView}
 	data.Attach(list)
 	list.ExtendBaseWidget(list)
 	return list

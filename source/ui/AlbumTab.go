@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/manager"
+	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
@@ -18,7 +18,7 @@ import (
 
 func newAlbumTab() *container.TabItem {
 	data := cbinding.MakeAlbumDataList()
-	manager.GetCurrentConfig().Attach(&data)
+	client.GetCurrentConfig().Attach(&data)
 
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon(), container.NewBorder(
 		container.NewBorder(
@@ -38,7 +38,7 @@ func newAlbumTab() *container.TabItem {
 func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
 	return cwidget.NewAlbumViewList(data, func(album *player.Album) fyne.CanvasObject {
 		view := cwidget.NewAlbumView(album)
-		view.OnTapped = func(*fyne.PointEvent) { manager.GetCurrentAlbum().Set(album) }
+		view.OnTapped = func(*fyne.PointEvent) { client.GetCurrentAlbum().Set(album) }
 		view.OnTappedSecondary = func(event *fyne.PointEvent) {
 			canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
 			newAlbumMenu(canvas, album).ShowAtPosition(event.AbsolutePosition)
@@ -48,7 +48,7 @@ func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
 }
 
 func newAlbumAdderLocalButton(data *cbinding.AlbumDataList) *widget.Button {
-	button := widget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), func() { showErrorIfAny(manager.AddAlbum()) })
+	button := widget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), func() { showErrorIfAny(client.AddAlbum()) })
 	button.Importance = widget.LowImportance
 	return button
 }
@@ -72,7 +72,7 @@ func makeRenameDialog(album *player.Album) func() {
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(rename bool) {
 			if rename {
 				log.Printf("rename %v to %v\n", album.Title, entry.Text)
-				showErrorIfAny(manager.UpdateTitle(album, entry.Text))
+				showErrorIfAny(client.UpdateAlbumTitle(album, entry.Text))
 			}
 		}, getMainWindow())
 	}
@@ -85,7 +85,7 @@ func makeCoverDialog(album *player.Album) func() {
 				showErrorIfAny(err)
 			} else if result != nil {
 				log.Printf("update %v's cover: %v\n", album.Title, result.URI().Path())
-				showErrorIfAny(manager.UpdateCover(album, result.URI().Path()))
+				showErrorIfAny(client.UpdateAlbumCover(album, result.URI().Path()))
 			}
 		}, getMainWindow())
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
@@ -99,7 +99,7 @@ func makeDeleteAlbumDialog(album *player.Album) func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title), func(delete bool) {
 			if delete {
 				log.Printf("delete %v\n", album.Title)
-				showErrorIfAny(manager.DeleteAlbum(album))
+				showErrorIfAny(client.DeleteAlbum(album))
 			}
 		}, getMainWindow())
 	}
