@@ -6,8 +6,8 @@ import (
 )
 
 type PlayList struct {
-	album      Album
-	musicIndex int
+	album Album
+	index int
 }
 
 func NewPlayList(album *Album, music *Music) *PlayList {
@@ -21,13 +21,14 @@ func (p *PlayList) Album() *Album {
 }
 
 func (p *PlayList) Music() *Music {
-	return &p.album.MusicList[p.musicIndex]
+	return &p.album.MusicList[p.index]
 }
 
-func (p *PlayList) NextMusic() {
-	p.musicIndex = (p.musicIndex + 1) % len(p.album.MusicList)
+func (p *PlayList) Index() int {
+	return p.index
 }
 
-func (p *PlayList) PrevMusic() {
-	p.musicIndex = (p.musicIndex - 1 + len(p.album.MusicList)) % len(p.album.MusicList)
+func (p *PlayList) SetIndex(musicIndex int) {
+	utility.Assert(func() bool { return 0 <= musicIndex && musicIndex < len(p.album.MusicList) })
+	p.index = musicIndex
 }

@@ -10,6 +10,6 @@ func MakeAlbumDataList() AlbumDataList {
 	return AlbumDataList{makeDataList[player.Album]()}
 }
 
-func (a *AlbumDataList) Notify(config *player.Config) {
-	a.dataList.Notify(config.Albums)
+func (a *AlbumDataList) Notify(collection *player.Collection) {
+	a.dataList.Notify(collection.Albums)
 }

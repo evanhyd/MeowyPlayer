@@ -22,9 +22,9 @@ func main() {
 	resource.MakeNecessaryPath()
 
 	window := ui.NewMainWindow()
-	inUse, err := client.LoadFromLocalConfig()
+	inUse, err := client.LoadFromLocalCollection()
 	utility.MustNil(err)
-	client.GetCurrentConfig().Set(&inUse)
+	client.GetCurrentCollection().Set(&inUse)
 
 	window.ShowAndRun()
 }

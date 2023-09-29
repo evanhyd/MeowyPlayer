@@ -10,16 +10,16 @@ import (
 )
 
 const (
-	albumPath  = "album"
-	coverPath  = "cover"
-	configFile = "config.json"
+	albumPath      = "album"
+	coverPath      = "cover"
+	collectionFile = "collection.json"
 
 	musicPath = "music"
 	assetPath = "asset"
 )
 
-func ConfigPath() string {
-	return filepath.Join(albumPath, configFile)
+func CollectionPath() string {
+	return filepath.Join(albumPath, collectionFile)
 }
 
 func CoverPath(album *player.Album) string {
@@ -38,9 +38,9 @@ func MakeNecessaryPath() {
 	utility.MustNil(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm))
 	utility.MustNil(os.MkdirAll(filepath.Join(musicPath), os.ModePerm))
 
-	_, err := os.Stat(ConfigPath())
+	_, err := os.Stat(CollectionPath())
 	if os.IsNotExist(err) {
-		utility.MustNil(utility.WriteJson(ConfigPath(), &player.Config{Date: time.Now(), Albums: nil}))
+		utility.MustNil(utility.WriteJson(CollectionPath(), &player.Collection{Date: time.Now(), Albums: nil}))
 	} else {
 		utility.MustNil(err)
 	}

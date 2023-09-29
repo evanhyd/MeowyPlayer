@@ -18,7 +18,7 @@ import (
 
 func newAlbumTab() *container.TabItem {
 	data := cbinding.MakeAlbumDataList()
-	client.GetCurrentConfig().Attach(&data)
+	client.GetCurrentCollection().Attach(&data)
 
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon(), container.NewBorder(
 		container.NewBorder(
@@ -54,7 +54,7 @@ func newAlbumAdderLocalButton(data *cbinding.AlbumDataList) *widget.Button {
 }
 
 func newAlbumAdderOnlineButton(data *cbinding.AlbumDataList) *widget.Button {
-	button := widget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), func() {})
+	button := widget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), func() { /* to do */ })
 	button.Importance = widget.LowImportance
 	return button
 }

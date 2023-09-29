@@ -39,3 +39,11 @@ func (m *MP3Controller) SetProgress(percent float64) {
 func (m *MP3Controller) IsOver() bool {
 	return m.CurrentProgressBytes() == m.Length()
 }
+
+func (m *MP3Controller) PlayOrPause() {
+	if m.IsPlaying() {
+		m.Pause()
+	} else {
+		m.Play()
+	}
+}

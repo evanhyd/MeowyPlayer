@@ -18,26 +18,26 @@ import (
 	"meowyplayer.com/source/utility"
 )
 
-var configData utility.Data[player.Config]
+var collectionData utility.Data[player.Collection]
 var albumData utility.Data[player.Album]
 var playListData utility.Data[player.PlayList]
 
 // the album pointer parameter may refer to a temporary object from the view list
-// we need the original one from the config
+// we need the original one from the collection
 func getSourceAlbum(album *player.Album) *player.Album {
-	index := slices.IndexFunc(configData.Get().Albums, func(a player.Album) bool { return a.Title == album.Title })
-	return &configData.Get().Albums[index]
+	index := slices.IndexFunc(collectionData.Get().Albums, func(a player.Album) bool { return a.Title == album.Title })
+	return &collectionData.Get().Albums[index]
 }
 
-func reloadConfig() error {
-	if err := utility.WriteJson(resource.ConfigPath(), configData.Get()); err != nil {
+func reloadCollection() error {
+	if err := utility.WriteJson(resource.CollectionPath(), collectionData.Get()); err != nil {
 		return err
 	}
-	config, err := LoadFromLocalConfig()
+	collection, err := LoadFromLocalCollection()
 	if err != nil {
 		return err
 	}
-	configData.Set(&config)
+	collectionData.Set(&collection)
 	return nil
 }
 
@@ -46,9 +46,9 @@ func reloadAlbum() error {
 	return nil
 }
 
-func LoadFromLocalConfig() (player.Config, error) {
-	inUse := player.Config{}
-	if err := utility.ReadJson(resource.ConfigPath(), &inUse); err != nil {
+func LoadFromLocalCollection() (player.Collection, error) {
+	inUse := player.Collection{}
+	if err := utility.ReadJson(resource.CollectionPath(), &inUse); err != nil {
 		return inUse, err
 	}
 
@@ -68,8 +68,8 @@ func LoadFromLocalConfig() (player.Config, error) {
 	return inUse, nil
 }
 
-func GetCurrentConfig() *utility.Data[player.Config] {
-	return &configData
+func GetCurrentCollection() *utility.Data[player.Collection] {
+	return &collectionData
 }
 
 func GetCurrentAlbum() *utility.Data[player.Album] {
@@ -81,7 +81,7 @@ func GetCurrentPlayList() *utility.Data[player.PlayList] {
 }
 
 func AddAlbum() error {
-	inUse := configData.Get()
+	inUse := collectionData.Get()
 
 	//generate title
 	title := ""
@@ -108,7 +108,7 @@ func AddAlbum() error {
 		return err
 	}
 
-	return reloadConfig()
+	return reloadCollection()
 }
 
 func AddMusic(musicInfo fyne.URIReadCloser) error {
@@ -125,26 +125,26 @@ func AddMusic(musicInfo fyne.URIReadCloser) error {
 	if err = os.WriteFile(resource.MusicPath(&music), musicFile, os.ModePerm); err != nil {
 		return err
 	}
-	if err := reloadConfig(); err != nil {
+	if err := reloadCollection(); err != nil {
 		return err
 	}
 	return reloadAlbum()
 }
 
 func DeleteAlbum(album *player.Album) error {
-	conf := configData.Get()
-	index := slices.IndexFunc(conf.Albums, func(a player.Album) bool { return a.Title == album.Title })
-	last := len(conf.Albums) - 1
+	collection := collectionData.Get()
+	index := slices.IndexFunc(collection.Albums, func(a player.Album) bool { return a.Title == album.Title })
+	last := len(collection.Albums) - 1
 
 	//remove album icon
 	if err := os.Remove(resource.CoverPath(album)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	//pop from the config
-	conf.Albums[index] = conf.Albums[last]
-	conf.Albums = conf.Albums[:last]
-	return reloadConfig()
+	//pop from the collection
+	collection.Albums[index] = collection.Albums[last]
+	collection.Albums = collection.Albums[:last]
+	return reloadCollection()
 }
 
 func DeleteMusic(music *player.Music) error {
@@ -156,19 +156,19 @@ func DeleteMusic(music *player.Music) error {
 	album.MusicList[index] = album.MusicList[last]
 	album.MusicList = album.MusicList[:last]
 
-	if err := reloadConfig(); err != nil {
+	if err := reloadCollection(); err != nil {
 		return err
 	}
 	return reloadAlbum()
 }
 
 func UpdateAlbumTitle(album *player.Album, title string) error {
-	if slices.ContainsFunc(configData.Get().Albums, func(a player.Album) bool { return a.Title == title }) {
+	if slices.ContainsFunc(collectionData.Get().Albums, func(a player.Album) bool { return a.Title == title }) {
 		return fmt.Errorf("album \"%v\" already exists", title)
 	}
 
 	//update timestamp
-	configData.Get().Date = time.Now()
+	collectionData.Get().Date = time.Now()
 	source := getSourceAlbum(album)
 	source.Date = time.Now()
 
@@ -178,7 +178,7 @@ func UpdateAlbumTitle(album *player.Album, title string) error {
 	if err := os.Rename(oldPath, resource.CoverPath(source)); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	return reloadConfig()
+	return reloadCollection()
 }
 
 func UpdateAlbumCover(album *player.Album, iconPath string) error {
@@ -186,7 +186,7 @@ func UpdateAlbumCover(album *player.Album, iconPath string) error {
 
 	//update timestamp
 	album.Date = time.Now()
-	configData.Get().Date = time.Now()
+	collectionData.Get().Date = time.Now()
 
 	//update cover image
 	icon, err := os.ReadFile(iconPath)
@@ -196,5 +196,5 @@ func UpdateAlbumCover(album *player.Album, iconPath string) error {
 	if err = os.WriteFile(resource.CoverPath(album), icon, os.ModePerm); err != nil {
 		return err
 	}
-	return reloadConfig()
+	return reloadCollection()
 }
