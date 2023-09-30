@@ -18,7 +18,7 @@ import (
 
 func newMusicTab() *container.TabItem {
 	data := cbinding.MakeMusicDataList()
-	client.GetCurrentAlbum().Attach(&data)
+	client.GetAlbumData().Attach(&data)
 
 	return container.NewTabItemWithIcon("Music", resource.MusicTabIcon(), container.NewBorder(
 		container.NewBorder(
@@ -38,7 +38,7 @@ func newMusicTab() *container.TabItem {
 func newMusicViewList(data *cbinding.MusicDataList) *cwidget.MusicViewList {
 	return cwidget.NewMusicViewList(data, func(m *player.Music) fyne.CanvasObject {
 		view := cwidget.NewMusicView(m)
-		view.OnTapped = func(*fyne.PointEvent) { client.GetCurrentPlayList().Set(player.NewPlayList(data.GetAlbum(), m)) }
+		view.OnTapped = func(*fyne.PointEvent) { client.GetPlayListData().Set(player.NewPlayList(data.GetAlbum(), m)) }
 		view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(m) }
 		return view
 	})
@@ -50,10 +50,10 @@ func newMusicAdderLocalButton(data *cbinding.MusicDataList) *widget.Button {
 			if err != nil {
 				showErrorIfAny(err)
 			} else if result != nil {
-				log.Printf("add %v from local to %v\n", result.URI().Name(), client.GetCurrentAlbum().Get().Title)
+				log.Printf("add %v from local to %v\n", result.URI().Name(), client.GetAlbumData().Get().Title)
 				showErrorIfAny(client.AddMusic(result))
 			}
-		}, getMainWindow())
+		}, getWindow())
 		fileReader.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
 		fileReader.SetConfirmText("Add")
 		fileReader.Show()
@@ -73,8 +73,8 @@ func newMusicAdderOnlineButton(data *cbinding.MusicDataList) *widget.Button {
 func showDeleteMusicDialog(music *player.Music) {
 	dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", music.Title), func(delete bool) {
 		if delete {
-			log.Printf("delete %vfrom the album %v \n", music.Title, client.GetCurrentAlbum().Get().Title)
+			log.Printf("delete %vfrom the album %v \n", music.Title, client.GetAlbumData().Get().Title)
 			showErrorIfAny(client.DeleteMusic(music))
 		}
-	}, getMainWindow())
+	}, getWindow())
 }

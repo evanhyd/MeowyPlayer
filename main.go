@@ -7,7 +7,8 @@ import (
 	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui"
-	"meowyplayer.com/source/utility"
+	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/utility/logger"
 )
 
 func main() {
@@ -18,13 +19,13 @@ func main() {
 		}
 	}()
 
-	utility.InitLogger()
+	logger.Initiate()
 	resource.MakeNecessaryPath()
 
 	window := ui.NewMainWindow()
 	inUse, err := client.LoadFromLocalCollection()
-	utility.MustNil(err)
-	client.GetCurrentCollection().Set(&inUse)
+	assert.NoErr(err)
+	client.GetCollectionData().Set(&inUse)
 
 	window.ShowAndRun()
 }

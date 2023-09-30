@@ -6,13 +6,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/ui/cbinding"
-	"meowyplayer.com/source/utility"
 )
 
 // make data sort by music title
 func NewMusicTitleButton(data *cbinding.MusicDataList, title string) *widget.Button {
-	utility.MustNotNil(data)
-
 	reverse := false
 	button := widget.NewButton(title, func() {
 		reverse = !reverse
@@ -26,8 +23,6 @@ func NewMusicTitleButton(data *cbinding.MusicDataList, title string) *widget.But
 
 // make data sort by music date
 func NewMusicDateButton(data *cbinding.MusicDataList, title string) *widget.Button {
-	utility.MustNotNil(data)
-
 	reverse := true
 	button := widget.NewButton(title, func() {
 		reverse = !reverse

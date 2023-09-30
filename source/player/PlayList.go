@@ -2,7 +2,7 @@ package player
 
 import (
 	"golang.org/x/exp/slices"
-	"meowyplayer.com/source/utility"
+	"meowyplayer.com/utility/assert"
 )
 
 type PlayList struct {
@@ -12,7 +12,7 @@ type PlayList struct {
 
 func NewPlayList(album *Album, music *Music) *PlayList {
 	index := slices.Index(album.MusicList, *music)
-	utility.Assert(func() bool { return index != -1 })
+	assert.Ensure(func() bool { return index != -1 })
 	return &PlayList{*album, index}
 }
 
@@ -29,6 +29,6 @@ func (p *PlayList) Index() int {
 }
 
 func (p *PlayList) SetIndex(musicIndex int) {
-	utility.Assert(func() bool { return 0 <= musicIndex && musicIndex < len(p.album.MusicList) })
+	assert.Ensure(func() bool { return 0 <= musicIndex && musicIndex < len(p.album.MusicList) })
 	p.index = musicIndex
 }

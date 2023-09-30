@@ -13,16 +13,7 @@ import (
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cwidget"
-	"meowyplayer.com/source/utility"
-)
-
-type MusicOrder int
-
-const (
-	RANDOM MusicOrder = iota
-	ORDERED
-	REPEAT
-	SIZE
+	"meowyplayer.com/utility/assert"
 )
 
 type MusicPlayer struct {
@@ -30,7 +21,7 @@ type MusicPlayer struct {
 	player.PlayList
 	playListChan chan player.PlayList
 
-	playMode    MusicOrder
+	playMode    int
 	history     []int
 	randomQueue []int
 }
@@ -38,14 +29,14 @@ type MusicPlayer struct {
 func NewMusicPlayer() *MusicPlayer {
 	//initialize oto mp3 player
 	context, ready, err := oto.NewContext(player.SAMPLING_RATE, player.NUM_OF_CHANNELS, player.AUDIO_BIT_DEPTH)
-	utility.MustNil(err)
+	assert.NoErr(err)
 	<-ready
 
-	return &MusicPlayer{Context: context, playListChan: make(chan player.PlayList), playMode: RANDOM}
+	return &MusicPlayer{Context: context, playListChan: make(chan player.PlayList), playMode: cwidget.RANDOM}
 }
 
-func (m *MusicPlayer) setPlayMode(playMode MusicOrder) {
-	if playMode == RANDOM {
+func (m *MusicPlayer) setPlayMode(playMode int) {
+	if playMode == cwidget.RANDOM {
 		m.history = []int{}
 		m.randomQueue = rand.Perm(len(m.Album().MusicList))
 	}
@@ -59,15 +50,15 @@ func (m *MusicPlayer) setPlayList(playList player.PlayList) {
 
 func (m *MusicPlayer) decode(music *player.Music) MP3Controller {
 	mp3Data, err := os.ReadFile(resource.MusicPath(music))
-	utility.MustNil(err)
+	assert.NoErr(err)
 	mp3Decoder, err := mp3.NewDecoder(bytes.NewReader(mp3Data))
-	utility.MustNil(err)
+	assert.NoErr(err)
 	return makeMP3Player(mp3Decoder, m.NewPlayer(mp3Decoder))
 }
 
 func (m *MusicPlayer) rollback() {
 	switch m.playMode {
-	case RANDOM:
+	case cwidget.RANDOM:
 		if len(m.history) > 0 {
 			m.randomQueue = append(m.randomQueue, m.Index())
 			last := len(m.history) - 1
@@ -75,17 +66,17 @@ func (m *MusicPlayer) rollback() {
 			m.history = m.history[:last]
 		}
 
-	case ORDERED:
+	case cwidget.ORDERED:
 		m.SetIndex((m.Index() - 1 + len(m.Album().MusicList)) % len(m.Album().MusicList))
 
-	case REPEAT:
+	case cwidget.REPEAT:
 		//nothing
 	}
 }
 
 func (m *MusicPlayer) skip() {
 	switch m.playMode {
-	case RANDOM:
+	case cwidget.RANDOM:
 		//generate new queue if run out of music
 		if len(m.randomQueue) == 0 {
 			m.randomQueue = rand.Perm(len(m.Album().MusicList))
@@ -95,10 +86,10 @@ func (m *MusicPlayer) skip() {
 		m.SetIndex(m.randomQueue[last])
 		m.randomQueue = m.randomQueue[:last]
 
-	case ORDERED:
+	case cwidget.ORDERED:
 		m.SetIndex((m.Index() + 1) % len(m.Album().MusicList))
 
-	case REPEAT:
+	case cwidget.REPEAT:
 		//nothing
 	}
 }
@@ -111,7 +102,22 @@ func (m *MusicPlayer) Start(menu *cwidget.PlayerMenu) {
 	menuChannel := menu.GetMenuChannel()
 
 	//wait for the user to click the music
-	m.setPlayList(<-m.playListChan)
+WaitLoop:
+	for {
+		select {
+		case playList := <-m.playListChan:
+			m.setPlayList(playList)
+			break WaitLoop
+		case <-menuChannel.Skip:
+		case <-menuChannel.Rollback:
+		case <-menuChannel.Play:
+		case <-menuChannel.Mode:
+		case <-menuChannel.Progress:
+		case <-menuChannel.Volume:
+			//drain out meaningless commands
+		}
+	}
+
 	for {
 		log.Printf("playing %v\n", m.Music().SimpleTitle())
 		menu.SetMusic(m.Music())
@@ -143,8 +149,8 @@ func (m *MusicPlayer) Start(menu *cwidget.PlayerMenu) {
 				fmt.Println("play/pause")
 				mp3Controller.PlayOrPause()
 
-			case <-menuChannel.Mode:
-				m.setPlayMode((m.playMode + 1) % SIZE)
+			case playMode := <-menuChannel.Mode:
+				m.setPlayMode(playMode)
 
 			case percent := <-menuChannel.Progress:
 				fmt.Println("progress", percent)
@@ -158,9 +164,9 @@ func (m *MusicPlayer) Start(menu *cwidget.PlayerMenu) {
 				mp3Controller.SetVolume(volume)
 
 			default:
+				time.Sleep(100 * time.Millisecond)
 			}
 			menu.UpdateProgressBar(mp3Controller.CurrentProgressPercent())
-			time.Sleep(100 * time.Millisecond)
 		}
 
 		if !interrupted {

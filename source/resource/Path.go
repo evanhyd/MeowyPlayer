@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/utility"
+	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/utility/json"
 )
 
 const (
@@ -35,13 +36,14 @@ func AssetPath(assetName string) string {
 }
 
 func MakeNecessaryPath() {
-	utility.MustNil(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm))
-	utility.MustNil(os.MkdirAll(filepath.Join(musicPath), os.ModePerm))
+	assert.NoErr(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm))
+	assert.NoErr(os.MkdirAll(filepath.Join(musicPath), os.ModePerm))
 
 	_, err := os.Stat(CollectionPath())
 	if os.IsNotExist(err) {
-		utility.MustNil(utility.WriteJson(CollectionPath(), &player.Collection{Date: time.Now(), Albums: nil}))
+		//create default collection
+		assert.NoErr(json.Write(CollectionPath(), &player.Collection{Date: time.Now(), Albums: nil}))
 	} else {
-		utility.MustNil(err)
+		assert.NoErr(err)
 	}
 }

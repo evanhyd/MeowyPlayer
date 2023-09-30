@@ -18,7 +18,7 @@ import (
 
 func newAlbumTab() *container.TabItem {
 	data := cbinding.MakeAlbumDataList()
-	client.GetCurrentCollection().Attach(&data)
+	client.GetCollectionData().Attach(&data)
 
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon(), container.NewBorder(
 		container.NewBorder(
@@ -38,7 +38,7 @@ func newAlbumTab() *container.TabItem {
 func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
 	return cwidget.NewAlbumViewList(data, func(album *player.Album) fyne.CanvasObject {
 		view := cwidget.NewAlbumView(album)
-		view.OnTapped = func(*fyne.PointEvent) { client.GetCurrentAlbum().Set(album) }
+		view.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(album) }
 		view.OnTappedSecondary = func(event *fyne.PointEvent) {
 			canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
 			newAlbumMenu(canvas, album).ShowAtPosition(event.AbsolutePosition)
@@ -74,7 +74,7 @@ func makeRenameDialog(album *player.Album) func() {
 				log.Printf("rename %v to %v\n", album.Title, entry.Text)
 				showErrorIfAny(client.UpdateAlbumTitle(album, entry.Text))
 			}
-		}, getMainWindow())
+		}, getWindow())
 	}
 }
 
@@ -87,7 +87,7 @@ func makeCoverDialog(album *player.Album) func() {
 				log.Printf("update %v's cover: %v\n", album.Title, result.URI().Path())
 				showErrorIfAny(client.UpdateAlbumCover(album, result.URI().Path()))
 			}
-		}, getMainWindow())
+		}, getWindow())
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
 		fileOpenDialog.SetConfirmText("Upload")
 		fileOpenDialog.Show()
@@ -101,6 +101,6 @@ func makeDeleteAlbumDialog(album *player.Album) func() {
 				log.Printf("delete %v\n", album.Title)
 				showErrorIfAny(client.DeleteAlbum(album))
 			}
-		}, getMainWindow())
+		}, getWindow())
 	}
 }

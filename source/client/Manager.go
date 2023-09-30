@@ -9,18 +9,20 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"slices"
 	"time"
 
 	"fyne.io/fyne/v2"
-	"golang.org/x/exp/slices"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
-	"meowyplayer.com/source/utility"
+	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/utility/json"
+	"meowyplayer.com/utility/pattern"
 )
 
-var collectionData utility.Data[player.Collection]
-var albumData utility.Data[player.Album]
-var playListData utility.Data[player.PlayList]
+var collectionData pattern.Data[player.Collection]
+var albumData pattern.Data[player.Album]
+var playListData pattern.Data[player.PlayList]
 
 // the album pointer parameter may refer to a temporary object from the view list
 // we need the original one from the collection
@@ -30,7 +32,7 @@ func getSourceAlbum(album *player.Album) *player.Album {
 }
 
 func reloadCollection() error {
-	if err := utility.WriteJson(resource.CollectionPath(), collectionData.Get()); err != nil {
+	if err := json.Write(resource.CollectionPath(), collectionData.Get()); err != nil {
 		return err
 	}
 	collection, err := LoadFromLocalCollection()
@@ -48,7 +50,7 @@ func reloadAlbum() error {
 
 func LoadFromLocalCollection() (player.Collection, error) {
 	inUse := player.Collection{}
-	if err := utility.ReadJson(resource.CollectionPath(), &inUse); err != nil {
+	if err := json.Read(resource.CollectionPath(), &inUse); err != nil {
 		return inUse, err
 	}
 
@@ -60,7 +62,7 @@ func LoadFromLocalCollection() (player.Collection, error) {
 		for j := range album.MusicList {
 			music := &album.MusicList[j]
 			fileInfo, err := os.Stat(resource.MusicPath(music))
-			utility.ShouldNil(err)
+			assert.NoErr(err)
 			music.FileSize = fileInfo.Size()
 		}
 	}
@@ -68,15 +70,15 @@ func LoadFromLocalCollection() (player.Collection, error) {
 	return inUse, nil
 }
 
-func GetCurrentCollection() *utility.Data[player.Collection] {
+func GetCollectionData() *pattern.Data[player.Collection] {
 	return &collectionData
 }
 
-func GetCurrentAlbum() *utility.Data[player.Album] {
+func GetAlbumData() *pattern.Data[player.Album] {
 	return &albumData
 }
 
-func GetCurrentPlayList() *utility.Data[player.PlayList] {
+func GetPlayListData() *pattern.Data[player.PlayList] {
 	return &playListData
 }
 

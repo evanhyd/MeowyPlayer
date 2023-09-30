@@ -5,7 +5,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"meowyplayer.com/source/player"
-	"meowyplayer.com/source/utility"
+	"meowyplayer.com/utility/assert"
 )
 
 const (
@@ -19,6 +19,9 @@ const (
 	iconNameMusicAdderOnline = "music_adder_online.png"
 	iconNameSearch           = "search.png"
 	iconNameDefault          = "default.png"
+	iconPlayModeRandom       = "playmode_random.png"
+	iconPlayModeOrdered      = "playmode_ordered.png"
+	iconPlayModeRepeat       = "playmode_repeat.png"
 )
 
 func getResource(resourcePath string) fyne.Resource {
@@ -26,7 +29,7 @@ func getResource(resourcePath string) fyne.Resource {
 	if os.IsNotExist(err) {
 		asset, err = fyne.LoadResourceFromPath(AssetPath(iconNameMissing))
 	}
-	utility.MustNil(err)
+	assert.NoErr(err)
 	return asset
 }
 
@@ -72,4 +75,16 @@ func SearchIcon() fyne.Resource {
 
 func DefaultIcon() fyne.Resource {
 	return getIcon(iconNameDefault)
+}
+
+func PlayModeRandomIcon() fyne.Resource {
+	return getIcon(iconPlayModeRandom)
+}
+
+func PlayModeOrderedIcon() fyne.Resource {
+	return getIcon(iconPlayModeOrdered)
+}
+
+func PlayModeRepeatIcon() fyne.Resource {
+	return getIcon(iconPlayModeRepeat)
 }

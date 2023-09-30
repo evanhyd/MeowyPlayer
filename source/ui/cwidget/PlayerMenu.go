@@ -9,13 +9,20 @@ import (
 	"meowyplayer.com/source/resource"
 )
 
+const (
+	RANDOM = iota
+	ORDERED
+	REPEAT
+	SIZE
+)
+
 type MenuChannel struct {
 	Progress chan float64
 	Volume   chan float64
 	Play     chan struct{}
 	Rollback chan struct{}
 	Skip     chan struct{}
-	Mode     chan struct{}
+	Mode     chan int
 }
 
 func makeMenuChannel() MenuChannel {
@@ -25,7 +32,7 @@ func makeMenuChannel() MenuChannel {
 		make(chan struct{}, 16),
 		make(chan struct{}, 16),
 		make(chan struct{}, 16),
-		make(chan struct{}, 16),
+		make(chan int, 16),
 	}
 }
 
@@ -61,7 +68,13 @@ func NewPlayerMenu() *PlayerMenu {
 	skipButton := widget.NewButton(">>", func() { menuChannel.Skip <- struct{}{} })
 	skipButton.Importance = widget.LowImportance
 
-	modeButton := widget.NewButtonWithIcon("", resource.DefaultIcon(), func() { menuChannel.Mode <- struct{}{} })
+	modeIcons, mode := []fyne.Resource{resource.PlayModeRandomIcon(), resource.PlayModeOrderedIcon(), resource.PlayModeRepeatIcon()}, 0
+	var modeButton *widget.Button
+	modeButton = widget.NewButtonWithIcon("", resource.DefaultIcon(), func() {
+		mode = (mode + 1) % len(modeIcons)
+		modeButton.SetIcon(modeIcons[mode])
+		menuChannel.Mode <- mode
+	})
 	modeButton.Importance = widget.LowImportance
 
 	volumeSlider := newVolumeSlider()

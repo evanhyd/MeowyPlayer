@@ -1,32 +1,30 @@
-package utility
+package pattern
 
-import "golang.org/x/exp/slices"
+import (
+	"golang.org/x/exp/slices"
+	"meowyplayer.com/utility/container"
+)
 
-/**
-A generic observer class.
+/*
+A generic observer interface.
 */
-
 type Observer[T any] interface {
 	Notify(T)
 }
 
-/**
+/*
 A generic subject class.
 */
-
 type Subject[T any] struct {
-	observers []Observer[T]
+	observers container.Vector[Observer[T]]
 }
 
 func (s *Subject[T]) Attach(observer Observer[T]) {
-	s.observers = append(s.observers, observer)
+	s.observers.PushBack(observer)
 }
 
 func (s *Subject[T]) Detach(observer Observer[T]) {
-	index := slices.Index(s.observers, observer)
-	last := len(s.observers) - 1
-	s.observers[index] = s.observers[last]
-	s.observers = s.observers[:last]
+	s.observers.Remove(slices.Index(s.observers, observer))
 }
 
 func (s *Subject[T]) NotifyAll(t T) {
@@ -35,7 +33,7 @@ func (s *Subject[T]) NotifyAll(t T) {
 	}
 }
 
-/**
+/*
 A generic value wrapper that notify the observers whenever the value gets set.
 */
 type Data[T any] struct {
@@ -56,10 +54,9 @@ func (d *Data[T]) Get() *T {
 	return &d.value
 }
 
-/**
+/*
 A generic function callback maker that can be used as a observer.
 */
-
 type callbackWrapper[T any] struct {
 	function func(T)
 }
@@ -69,6 +66,5 @@ func (c *callbackWrapper[T]) Notify(data T) {
 }
 
 func MakeCallback[T any](function func(T)) Observer[T] {
-	call := callbackWrapper[T]{function}
-	return &call
+	return &callbackWrapper[T]{function}
 }

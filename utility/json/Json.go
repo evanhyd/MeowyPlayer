@@ -1,11 +1,11 @@
-package utility
+package json
 
 import (
 	"encoding/json"
 	"os"
 )
 
-func WriteJson(fileName string, object any) error {
+func Write(fileName string, object any) error {
 	data, err := json.MarshalIndent(object, "", "  ")
 	if err != nil {
 		return err
@@ -13,7 +13,7 @@ func WriteJson(fileName string, object any) error {
 	return os.WriteFile(fileName, data, os.ModePerm)
 }
 
-func ReadJson(fileName string, object any) error {
+func Read(fileName string, object any) error {
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		return err

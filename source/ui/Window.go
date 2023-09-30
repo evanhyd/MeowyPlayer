@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"log"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -12,23 +10,17 @@ import (
 	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
-	"meowyplayer.com/source/utility"
+	"meowyplayer.com/utility/pattern"
 )
 
 func NewMainWindow() fyne.Window {
 	const windowTitle = "MeowyPlayer"
 	windowSize := fyne.NewSize(770.0, 650.0)
 
+	//create window
 	fyne.SetCurrentApp(app.NewWithID(windowTitle))
 	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
-
-	//set up windows orientation
-	window := fyne.CurrentApp().NewWindow(windowTitle)
-	window.SetMaster()
-	window.SetIcon(resource.WindowIcon())
-	window.SetCloseIntercept(window.Hide)
-	window.Resize(windowSize)
-	window.CenterOnScreen()
+	window := newWindow(windowTitle, windowSize)
 
 	//create system tray
 	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
@@ -36,13 +28,13 @@ func NewMainWindow() fyne.Window {
 		desktop.SetSystemTrayIcon(resource.WindowIcon())
 	}
 
-	//set up item tabs
+	//create item tabs
 	albumTab := newAlbumTab()
 	musicTab := newMusicTab()
 	tabs := container.NewAppTabs(albumTab, musicTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
 	tabs.DisableItem(musicTab)
-	client.GetCurrentAlbum().Attach(utility.MakeCallback(func(*player.Album) {
+	client.GetAlbumData().Attach(pattern.MakeCallback(func(*player.Album) {
 		tabs.EnableItem(musicTab)
 		tabs.Select(musicTab)
 	}))
@@ -51,13 +43,22 @@ func NewMainWindow() fyne.Window {
 	return window
 }
 
-func getMainWindow() fyne.Window {
+func newWindow(title string, size fyne.Size) fyne.Window {
+	window := fyne.CurrentApp().NewWindow(title)
+	window.SetMaster()
+	window.SetIcon(resource.WindowIcon())
+	window.SetCloseIntercept(window.Hide)
+	window.Resize(size)
+	window.CenterOnScreen()
+	return window
+}
+
+func getWindow() fyne.Window {
 	return fyne.CurrentApp().Driver().AllWindows()[0]
 }
 
 func showErrorIfAny(err error) {
 	if err != nil {
-		log.Printf("gui error: %v\n", err)
-		dialog.ShowError(err, getMainWindow())
+		dialog.ShowError(err, getWindow())
 	}
 }
