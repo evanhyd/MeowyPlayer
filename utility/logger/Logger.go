@@ -10,16 +10,12 @@ import (
 
 func Initiate() {
 	const kLogFileName = "log.txt"
-	errLog := flag.Bool("errlog", true, "output logs to the error stream")
 	fileLog := flag.Bool("filelog", true, "output logs to "+kLogFileName)
+	errLog := flag.Bool("errlog", true, "output logs to the error stream")
 	flag.Parse()
 
 	//set up writing destination
 	loggers := []io.Writer{}
-
-	if *errLog {
-		loggers = append(loggers, os.Stderr)
-	}
 
 	if *fileLog {
 		file, err := os.OpenFile(kLogFileName, os.O_CREATE|os.O_APPEND, 0777)
@@ -29,6 +25,13 @@ func Initiate() {
 		loggers = append(loggers, file)
 	}
 
+	if *errLog {
+		loggers = append(loggers, os.Stderr)
+	}
+
+	//if -H=windowsgui is set, then writing to Stderr stream will fails AND
+	//stops all the subsequence writing operations to the remaining writers
+	//hence log file should be written before the console output
 	log.SetOutput(io.MultiWriter(loggers...))
 }
 

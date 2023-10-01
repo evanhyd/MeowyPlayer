@@ -1,1 +1,2 @@
-go build -ldflags -H=windowsgui -o meowyplayer.exe
+rm meowyplayer.com
+go build -ldflags -H=windowsgui -o meowyplayer.com

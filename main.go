@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"runtime/debug"
 
 	"meowyplayer.com/source/client"
@@ -15,7 +15,7 @@ func main() {
 	//redirect panic message
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("%v\n%v", err, string(debug.Stack()))
+			logger.Error("caught error", fmt.Errorf("%v\n%v", err, string(debug.Stack())), 1)
 		}
 	}()
 
