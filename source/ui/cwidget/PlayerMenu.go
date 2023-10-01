@@ -1,6 +1,9 @@
 package cwidget
 
 import (
+	"fmt"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -115,6 +118,11 @@ func (c *PlayerMenu) SetMusic(music *player.Music) {
 	c.controlChannel.Volume <- c.volumeSlider.Volume()
 }
 
-func (c *PlayerMenu) UpdateProgressBar(percent float64) {
+func (c *PlayerMenu) UpdateProgress(length time.Duration, percent float64) {
+	const kConversionFactor = 60
+	length = time.Duration(float64(length) * percent)
+	mins := int(length.Minutes()) % kConversionFactor
+	secs := int(length.Seconds()) % kConversionFactor
+	c.durationLabel.SetText(fmt.Sprintf("%02v:%02v", mins, secs))
 	c.progressSlider.SetValue(percent)
 }

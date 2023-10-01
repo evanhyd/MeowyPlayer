@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"github.com/hajimehoshi/go-mp3"
 	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/utility/assert"
@@ -55,16 +56,7 @@ func LoadFromLocalCollection() (player.Collection, error) {
 	}
 
 	for i := range inUse.Albums {
-		album := &inUse.Albums[i]
-		album.Cover = resource.GetCover(album)
-
-		//read music file size
-		for j := range album.MusicList {
-			music := &album.MusicList[j]
-			fileInfo, err := os.Stat(resource.MusicPath(music))
-			assert.NoErr(err)
-			music.FileSize = fileInfo.Size()
-		}
+		inUse.Albums[i].Cover = resource.GetCover(&inUse.Albums[i])
 	}
 
 	return inUse, nil
@@ -113,20 +105,28 @@ func AddAlbum() error {
 	return reloadCollection()
 }
 
-func AddMusic(musicInfo fyne.URIReadCloser) error {
-	//add to the source album
+func estimateMP3DataLength(data []byte) time.Duration {
+	decoder, err := mp3.NewDecoder(bytes.NewReader(data))
+	assert.NoErr(err)
+	seconds := float64(decoder.Length()) / float64(player.SAMPLING_RATE) / float64(player.NUM_OF_CHANNELS) / float64(player.AUDIO_BIT_DEPTH)
+	return time.Duration(seconds * float64(time.Second))
+}
+
+func AddLocalMusic(musicInfo fyne.URIReadCloser) error {
 	music := player.Music{Date: time.Now(), Title: musicInfo.URI().Name()}
-	album := getSourceAlbum(albumData.Get())
-	album.MusicList = append(album.MusicList, music)
 
 	//copy the music file to the music repo
-	musicFile, err := os.ReadFile(musicInfo.URI().Path())
+	data, err := os.ReadFile(musicInfo.URI().Path())
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(resource.MusicPath(&music), musicFile, os.ModePerm); err != nil {
+	if err = os.WriteFile(resource.MusicPath(&music), data, os.ModePerm); err != nil {
 		return err
 	}
+	music.Length = estimateMP3DataLength(data)
+
+	album := getSourceAlbum(albumData.Get())
+	album.MusicList = append(album.MusicList, music)
 	if err := reloadCollection(); err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	//redirect panic message
+	// redirect panic message
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Error("caught error", fmt.Errorf("%v\n%v", err, string(debug.Stack())), 1)
@@ -26,6 +26,5 @@ func main() {
 	inUse, err := client.LoadFromLocalCollection()
 	assert.NoErr(err)
 	client.GetCollectionData().Set(&inUse)
-
 	window.ShowAndRun()
 }

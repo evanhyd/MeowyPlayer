@@ -119,10 +119,12 @@ WaitLoop:
 	}
 
 	for {
-		log.Printf("playing %v\n", m.Music().SimpleTitle())
 		menu.SetMusic(m.Music())
 		mp3Controller := m.decode(m.Music())
 		interrupted := false
+
+		log.Println("playing", m.Music().SimpleTitle())
+		log.Println("duration", float64(mp3Controller.Length()))
 
 	CONTROL_LOOP:
 		for mp3Controller.Play(); !mp3Controller.IsOver(); {
@@ -166,7 +168,7 @@ WaitLoop:
 			default:
 				time.Sleep(100 * time.Millisecond)
 			}
-			menu.UpdateProgressBar(mp3Controller.CurrentProgressPercent())
+			menu.UpdateProgress(m.PlayList.Music().Length, mp3Controller.CurrentProgressPercent())
 		}
 
 		if !interrupted {

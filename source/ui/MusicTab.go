@@ -51,7 +51,7 @@ func newMusicAdderLocalButton(data *cbinding.MusicDataList) *widget.Button {
 				showErrorIfAny(err)
 			} else if result != nil {
 				log.Printf("add %v from local to %v\n", result.URI().Name(), client.GetAlbumData().Get().Title)
-				showErrorIfAny(client.AddMusic(result))
+				showErrorIfAny(client.AddLocalMusic(result))
 			}
 		}, getWindow())
 		fileReader.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
