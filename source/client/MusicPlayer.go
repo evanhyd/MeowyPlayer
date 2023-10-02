@@ -125,7 +125,7 @@ func (m *MusicPlayer) Notify(play *resource.PlayList) {
 	m.playListChan <- *play
 }
 
-func (m *MusicPlayer) Start(menu *cwidget.PlayMenu) {
+func (m *MusicPlayer) Start(menu *cwidget.CommandMenu) {
 	//initialize oto mp3 context
 	context, ready, err := oto.NewContext(resource.SAMPLING_RATE, resource.NUM_OF_CHANNELS, resource.AUDIO_BIT_DEPTH)
 	assert.NoErr(err)

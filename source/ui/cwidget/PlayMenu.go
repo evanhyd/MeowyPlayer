@@ -20,7 +20,7 @@ type MenuCommander interface {
 	CommandMode(int)
 }
 
-type PlayMenu struct {
+type CommandMenu struct {
 	widget.BaseWidget
 	title          *widget.Label
 	progressSlider *ProgressSlider
@@ -32,9 +32,9 @@ type PlayMenu struct {
 	volumeSlider   *volumeSlider
 }
 
-func NewPlayerMenu() *PlayMenu {
+func NewCommandMenu() *CommandMenu {
 	modeIcons := []fyne.Resource{resource.PlayModeRandomIcon(), resource.PlayModeOrderedIcon(), resource.PlayModeRepeatIcon()}
-	menu := &PlayMenu{
+	menu := &CommandMenu{
 		widget.BaseWidget{},
 		widget.NewLabel(""),
 		NewProgressSlider(0.0, 1.0, 0.001, 0.0),
@@ -49,7 +49,7 @@ func NewPlayerMenu() *PlayMenu {
 	return menu
 }
 
-func (c *PlayMenu) CreateRenderer() fyne.WidgetRenderer {
+func (c *CommandMenu) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
 		c.title,
 		container.NewGridWithRows(1, layout.NewSpacer(), container.NewHBox(layout.NewSpacer(), c.rollbackButton, c.playButton, c.skipButton, c.modeButton), layout.NewSpacer(), c.volumeSlider),
@@ -59,7 +59,7 @@ func (c *PlayMenu) CreateRenderer() fyne.WidgetRenderer {
 	))
 }
 
-func (c *PlayMenu) Bind(commander MenuCommander) {
+func (c *CommandMenu) Bind(commander MenuCommander) {
 	c.progressSlider.OnReleased = func(percent float64) { commander.CommandProgress(percent) }
 	c.playButton.OnTapped = func() { commander.CommandPlay() }
 	c.skipButton.OnTapped = func() { commander.CommandSkip() }
@@ -68,13 +68,13 @@ func (c *PlayMenu) Bind(commander MenuCommander) {
 	c.volumeSlider.SetOnChanged(func(volume float64) { commander.CommandVolume(volume) })
 }
 
-func (c *PlayMenu) SetMusic(music *resource.Music) {
+func (c *CommandMenu) SetMusic(music *resource.Music) {
 	c.title.SetText(music.SimpleTitle())
 	c.progressSlider.SetValue(0.0)
 	c.volumeSlider.SetVolume(c.volumeSlider.Volume())
 }
 
-func (c *PlayMenu) UpdateProgress(length time.Duration, percent float64) {
+func (c *CommandMenu) UpdateProgress(length time.Duration, percent float64) {
 	const kConversionFactor = 60
 	length = time.Duration(float64(length) * percent)
 	mins := int(length.Minutes()) % kConversionFactor
