@@ -6,8 +6,8 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
+	resource1 "meowyplayer.com/source/resource"
 )
 
 type CoverView struct {
@@ -34,7 +34,7 @@ func (c *CoverView) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewMax(c.cover, c.title))
 }
 
-func (c *CoverView) SetAlbum(album *player.Album) {
+func (c *CoverView) SetAlbum(album *resource1.Album) {
 	c.cover.Resource = album.Cover
 	c.title.Text = album.Title
 	c.Refresh()

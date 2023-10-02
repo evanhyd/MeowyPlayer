@@ -22,6 +22,10 @@ func (v *Vector[T]) Empty() bool {
 	return v.Size() > 0
 }
 
+func (v *Vector[T]) Clear() {
+	*v = []T{}
+}
+
 func (v *Vector[T]) Remove(index int) {
 	if 0 <= index && index < v.Size() {
 		(*v)[index] = *v.Back()

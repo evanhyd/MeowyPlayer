@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"fyne.io/fyne/v2"
-	"meowyplayer.com/source/player"
 	"meowyplayer.com/utility/assert"
 )
 
@@ -37,7 +36,7 @@ func getIcon(iconName string) fyne.Resource {
 	return getResource(AssetPath(iconName))
 }
 
-func GetCover(album *player.Album) fyne.Resource {
+func GetCover(album *Album) fyne.Resource {
 	return getResource(CoverPath(album))
 }
 

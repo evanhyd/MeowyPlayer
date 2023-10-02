@@ -14,21 +14,20 @@ import (
 
 	"fyne.io/fyne/v2"
 	"github.com/hajimehoshi/go-mp3"
-	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/json"
 	"meowyplayer.com/utility/pattern"
 )
 
-var collectionData pattern.Data[player.Collection]
-var albumData pattern.Data[player.Album]
-var playListData pattern.Data[player.PlayList]
+var collectionData pattern.Data[resource.Collection]
+var albumData pattern.Data[resource.Album]
+var playListData pattern.Data[resource.PlayList]
 
 // the album pointer parameter may refer to a temporary object from the view list
 // we need the original one from the collection
-func getSourceAlbum(album *player.Album) *player.Album {
-	index := slices.IndexFunc(collectionData.Get().Albums, func(a player.Album) bool { return a.Title == album.Title })
+func getSourceAlbum(album *resource.Album) *resource.Album {
+	index := slices.IndexFunc(collectionData.Get().Albums, func(a resource.Album) bool { return a.Title == album.Title })
 	return &collectionData.Get().Albums[index]
 }
 
@@ -49,8 +48,8 @@ func reloadAlbum() error {
 	return nil
 }
 
-func LoadFromLocalCollection() (player.Collection, error) {
-	inUse := player.Collection{}
+func LoadFromLocalCollection() (resource.Collection, error) {
+	inUse := resource.Collection{}
 	if err := json.Read(resource.CollectionPath(), &inUse); err != nil {
 		return inUse, err
 	}
@@ -62,15 +61,15 @@ func LoadFromLocalCollection() (player.Collection, error) {
 	return inUse, nil
 }
 
-func GetCollectionData() *pattern.Data[player.Collection] {
+func GetCollectionData() *pattern.Data[resource.Collection] {
 	return &collectionData
 }
 
-func GetAlbumData() *pattern.Data[player.Album] {
+func GetAlbumData() *pattern.Data[resource.Album] {
 	return &albumData
 }
 
-func GetPlayListData() *pattern.Data[player.PlayList] {
+func GetPlayListData() *pattern.Data[resource.PlayList] {
 	return &playListData
 }
 
@@ -81,13 +80,13 @@ func AddAlbum() error {
 	title := ""
 	for i := 0; i < math.MaxInt; i++ {
 		title = fmt.Sprintf("Album (%v)", i)
-		if !slices.ContainsFunc(inUse.Albums, func(a player.Album) bool { return a.Title == title }) {
+		if !slices.ContainsFunc(inUse.Albums, func(a resource.Album) bool { return a.Title == title }) {
 			break
 		}
 	}
 
 	//generate album
-	album := player.Album{Date: time.Now(), Title: title}
+	album := resource.Album{Date: time.Now(), Title: title}
 	inUse.Albums = append(inUse.Albums, album)
 
 	//generate album cover
@@ -108,12 +107,12 @@ func AddAlbum() error {
 func estimateMP3DataLength(data []byte) time.Duration {
 	decoder, err := mp3.NewDecoder(bytes.NewReader(data))
 	assert.NoErr(err)
-	seconds := float64(decoder.Length()) / float64(player.SAMPLING_RATE) / float64(player.NUM_OF_CHANNELS) / float64(player.AUDIO_BIT_DEPTH)
+	seconds := float64(decoder.Length()) / float64(resource.SAMPLING_RATE) / float64(resource.NUM_OF_CHANNELS) / float64(resource.AUDIO_BIT_DEPTH)
 	return time.Duration(seconds * float64(time.Second))
 }
 
 func AddLocalMusic(musicInfo fyne.URIReadCloser) error {
-	music := player.Music{Date: time.Now(), Title: musicInfo.URI().Name()}
+	music := resource.Music{Date: time.Now(), Title: musicInfo.URI().Name()}
 
 	//copy the music file to the music repo
 	data, err := os.ReadFile(musicInfo.URI().Path())
@@ -133,9 +132,9 @@ func AddLocalMusic(musicInfo fyne.URIReadCloser) error {
 	return reloadAlbum()
 }
 
-func DeleteAlbum(album *player.Album) error {
+func DeleteAlbum(album *resource.Album) error {
 	collection := collectionData.Get()
-	index := slices.IndexFunc(collection.Albums, func(a player.Album) bool { return a.Title == album.Title })
+	index := slices.IndexFunc(collection.Albums, func(a resource.Album) bool { return a.Title == album.Title })
 	last := len(collection.Albums) - 1
 
 	//remove album icon
@@ -149,9 +148,9 @@ func DeleteAlbum(album *player.Album) error {
 	return reloadCollection()
 }
 
-func DeleteMusic(music *player.Music) error {
+func DeleteMusic(music *resource.Music) error {
 	album := getSourceAlbum(albumData.Get())
-	index := slices.IndexFunc(album.MusicList, func(m player.Music) bool { return m.SimpleTitle() == music.SimpleTitle() })
+	index := slices.IndexFunc(album.MusicList, func(m resource.Music) bool { return m.SimpleTitle() == music.SimpleTitle() })
 	last := len(album.MusicList) - 1
 
 	//pop form the album
@@ -164,8 +163,8 @@ func DeleteMusic(music *player.Music) error {
 	return reloadAlbum()
 }
 
-func UpdateAlbumTitle(album *player.Album, title string) error {
-	if slices.ContainsFunc(collectionData.Get().Albums, func(a player.Album) bool { return a.Title == title }) {
+func UpdateAlbumTitle(album *resource.Album, title string) error {
+	if slices.ContainsFunc(collectionData.Get().Albums, func(a resource.Album) bool { return a.Title == title }) {
 		return fmt.Errorf("album \"%v\" already exists", title)
 	}
 
@@ -183,7 +182,7 @@ func UpdateAlbumTitle(album *player.Album, title string) error {
 	return reloadCollection()
 }
 
-func UpdateAlbumCover(album *player.Album, iconPath string) error {
+func UpdateAlbumCover(album *resource.Album, iconPath string) error {
 	album = getSourceAlbum(album)
 
 	//update timestamp

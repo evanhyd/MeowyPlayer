@@ -8,8 +8,8 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"meowyplayer.com/source/client"
-	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
+	resource1 "meowyplayer.com/source/resource"
 	"meowyplayer.com/utility/pattern"
 )
 
@@ -34,7 +34,7 @@ func NewMainWindow() fyne.Window {
 	tabs := container.NewAppTabs(albumTab, musicTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
 	tabs.DisableItem(musicTab)
-	client.GetAlbumData().Attach(pattern.MakeCallback(func(*player.Album) {
+	client.GetAlbumData().Attach(pattern.MakeCallback(func(*resource1.Album) {
 		tabs.EnableItem(musicTab)
 		tabs.Select(musicTab)
 	}))

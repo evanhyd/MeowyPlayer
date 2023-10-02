@@ -1,4 +1,4 @@
-package player
+package resource
 
 import (
 	"fmt"

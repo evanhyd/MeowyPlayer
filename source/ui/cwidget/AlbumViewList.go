@@ -4,17 +4,17 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
 )
 
 type AlbumViewList struct {
 	widget.BaseWidget
 	grid     *fyne.Container
-	makeView func(*player.Album) fyne.CanvasObject
+	makeView func(*resource.Album) fyne.CanvasObject
 }
 
-func NewAlbumViewList(data *cbinding.AlbumDataList, makeAlbumView func(*player.Album) fyne.CanvasObject, size fyne.Size) *AlbumViewList {
+func NewAlbumViewList(data *cbinding.AlbumDataList, makeAlbumView func(*resource.Album) fyne.CanvasObject, size fyne.Size) *AlbumViewList {
 	list := &AlbumViewList{grid: container.NewGridWrap(size), makeView: makeAlbumView}
 	data.Attach(list)
 	list.ExtendBaseWidget(list)
@@ -25,7 +25,7 @@ func (a *AlbumViewList) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewScroll(a.grid))
 }
 
-func (a *AlbumViewList) Notify(data []player.Album) {
+func (a *AlbumViewList) Notify(data []resource.Album) {
 	a.grid.RemoveAll()
 	views := a.makeViews(data)
 	for i := range views {
@@ -33,7 +33,7 @@ func (a *AlbumViewList) Notify(data []player.Album) {
 	}
 }
 
-func (a *AlbumViewList) makeViews(data []player.Album) []fyne.CanvasObject {
+func (a *AlbumViewList) makeViews(data []resource.Album) []fyne.CanvasObject {
 	views := make([]fyne.CanvasObject, len(data))
 	for i := range data {
 		views[i] = a.makeView(&data[i])

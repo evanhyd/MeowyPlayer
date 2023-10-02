@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -10,7 +11,6 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/client"
-	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
 	"meowyplayer.com/source/ui/cwidget"
@@ -23,7 +23,7 @@ func newAlbumTab() *container.TabItem {
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon(), container.NewBorder(
 		container.NewBorder(
 			nil,
-			container.NewGridWithRows(1, cwidget.NewAlbumTitleButton(&data, "Title"), cwidget.NewAlbumDateButton(&data, "Date")),
+			container.NewGridWithRows(1, newAlbumTitleButton(&data, "Title"), newAlbumDateButton(&data, "Date")),
 			nil,
 			container.NewGridWithRows(1, newAlbumAdderLocalButton(&data), newAlbumAdderOnlineButton(&data)),
 			cwidget.NewAlbumSearchBar(&data),
@@ -36,7 +36,7 @@ func newAlbumTab() *container.TabItem {
 }
 
 func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
-	return cwidget.NewAlbumViewList(data, func(album *player.Album) fyne.CanvasObject {
+	return cwidget.NewAlbumViewList(data, func(album *resource.Album) fyne.CanvasObject {
 		view := cwidget.NewAlbumView(album)
 		view.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(album) }
 		view.OnTappedSecondary = func(event *fyne.PointEvent) {
@@ -48,25 +48,43 @@ func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
 }
 
 func newAlbumAdderLocalButton(data *cbinding.AlbumDataList) *widget.Button {
-	button := widget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), func() { showErrorIfAny(client.AddAlbum()) })
-	button.Importance = widget.LowImportance
-	return button
+	return cwidget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), func() { showErrorIfAny(client.AddAlbum()) })
 }
 
 func newAlbumAdderOnlineButton(data *cbinding.AlbumDataList) *widget.Button {
-	button := widget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), func() { /* to do */ })
-	button.Importance = widget.LowImportance
+	return cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), func() { /* to do */ })
+}
+
+func newAlbumTitleButton(data *cbinding.AlbumDataList, title string) *widget.Button {
+	reverse := false
+	return cwidget.NewButton(title, func() {
+		reverse = !reverse
+		data.SetSorter(func(a1, a2 resource.Album) bool {
+			return (strings.ToLower(a1.Title) < strings.ToLower(a2.Title)) != reverse
+		})
+	})
+}
+
+func newAlbumDateButton(data *cbinding.AlbumDataList, title string) *widget.Button {
+	reverse := true
+	button := cwidget.NewButton(title, func() {
+		reverse = !reverse
+		data.SetSorter(func(a1, a2 resource.Album) bool {
+			return a1.Date.After(a2.Date) != reverse
+		})
+	})
+	button.OnTapped()
 	return button
 }
 
-func newAlbumMenu(canvas fyne.Canvas, album *player.Album) *widget.PopUpMenu {
+func newAlbumMenu(canvas fyne.Canvas, album *resource.Album) *widget.PopUpMenu {
 	rename := fyne.NewMenuItem("Rename", makeRenameDialog(album))
 	cover := fyne.NewMenuItem("Cover", makeCoverDialog(album))
 	delete := fyne.NewMenuItem("Delete", makeDeleteAlbumDialog(album))
 	return widget.NewPopUpMenu(fyne.NewMenu("", rename, cover, delete), canvas)
 }
 
-func makeRenameDialog(album *player.Album) func() {
+func makeRenameDialog(album *resource.Album) func() {
 	entry := widget.NewEntry()
 	return func() {
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(rename bool) {
@@ -78,7 +96,7 @@ func makeRenameDialog(album *player.Album) func() {
 	}
 }
 
-func makeCoverDialog(album *player.Album) func() {
+func makeCoverDialog(album *resource.Album) func() {
 	return func() {
 		fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
 			if err != nil {
@@ -94,7 +112,7 @@ func makeCoverDialog(album *player.Album) func() {
 	}
 }
 
-func makeDeleteAlbumDialog(album *player.Album) func() {
+func makeDeleteAlbumDialog(album *resource.Album) func() {
 	return func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title), func(delete bool) {
 			if delete {

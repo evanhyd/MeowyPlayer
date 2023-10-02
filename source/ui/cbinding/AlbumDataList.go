@@ -1,15 +1,15 @@
 package cbinding
 
-import "meowyplayer.com/source/player"
+import "meowyplayer.com/source/resource"
 
 type AlbumDataList struct {
-	dataList[player.Album]
+	dataList[resource.Album]
 }
 
 func MakeAlbumDataList() AlbumDataList {
-	return AlbumDataList{makeDataList[player.Album]()}
+	return AlbumDataList{makeDataList[resource.Album]()}
 }
 
-func (a *AlbumDataList) Notify(collection *player.Collection) {
+func (a *AlbumDataList) Notify(collection *resource.Collection) {
 	a.dataList.Notify(collection.Albums)
 }

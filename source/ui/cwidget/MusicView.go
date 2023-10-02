@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/resource"
 )
 
 type MusicView struct {
@@ -17,7 +17,7 @@ type MusicView struct {
 	highlight *canvas.Rectangle
 }
 
-func NewMusicView(music *player.Music) *MusicView {
+func NewMusicView(music *resource.Music) *MusicView {
 	view := &MusicView{
 		title:     widget.NewLabel(music.Description()),
 		highlight: canvas.NewRectangle(theme.HoverColor()),

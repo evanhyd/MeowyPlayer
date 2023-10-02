@@ -1,0 +1,40 @@
+package cwidget
+
+import (
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/widget"
+	"meowyplayer.com/utility/assert"
+)
+
+type ModeButton struct {
+	widget.Button
+	labels   []string
+	icons    []fyne.Resource
+	mode     int
+	OnTapped func(int)
+}
+
+func newModeButton(labels []string, icons []fyne.Resource, onTapped func(int)) *ModeButton {
+	assert.Ensure(func() bool { return len(labels) > 0 || len(icons) > 0 })
+	button := &ModeButton{widget.Button{Importance: widget.LowImportance}, labels, icons, 0, onTapped}
+	button.update()
+	button.ExtendBaseWidget(button)
+	return button
+}
+
+func (b *ModeButton) update() {
+	if b.mode < len(b.labels) {
+		b.Text = b.labels[b.mode]
+	}
+	if b.mode < len(b.icons) {
+		b.Icon = b.icons[b.mode]
+	}
+	b.Refresh()
+}
+
+func (b *ModeButton) Tapped(*fyne.PointEvent) {
+	maxLen := max(len(b.labels), len(b.icons))
+	b.mode = (b.mode + 1) % maxLen
+	b.update()
+	b.OnTapped(b.mode)
+}

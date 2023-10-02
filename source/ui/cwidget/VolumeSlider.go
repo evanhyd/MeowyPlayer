@@ -19,16 +19,14 @@ func newVolumeSlider() *volumeSlider {
 	slider.Value = 0.5
 
 	volume := 0.0
-	button := widget.NewButtonWithIcon("", theme.MediaMusicIcon(), nil)
-	button.Importance = widget.LowImportance
-	button.OnTapped = func() {
+	button := NewButtonWithIcon("", theme.MediaMusicIcon(), func() {
 		if slider.Value == 0.0 {
 			slider.SetValue(volume)
 		} else {
 			volume = slider.Value
 			slider.SetValue(0.0)
 		}
-	}
+	})
 
 	volumeSlider := &volumeSlider{slider: slider, muteButton: button}
 	volumeSlider.ExtendBaseWidget(volumeSlider)
@@ -41,6 +39,10 @@ func (v *volumeSlider) CreateRenderer() fyne.WidgetRenderer {
 
 func (v *volumeSlider) SetOnChanged(onChanged func(volume float64)) {
 	v.slider.OnChanged = onChanged
+}
+
+func (v *volumeSlider) SetVolume(volume float64) {
+	v.slider.SetValue(volume)
 }
 
 func (v *volumeSlider) Volume() float64 {

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"meowyplayer.com/source/player"
 	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/json"
 )
@@ -23,11 +22,11 @@ func CollectionPath() string {
 	return filepath.Join(albumPath, collectionFile)
 }
 
-func CoverPath(album *player.Album) string {
+func CoverPath(album *Album) string {
 	return filepath.Join(albumPath, coverPath, album.Title+".png")
 }
 
-func MusicPath(music *player.Music) string {
+func MusicPath(music *Music) string {
 	return filepath.Join(musicPath, music.Title)
 }
 
@@ -42,7 +41,7 @@ func MakeNecessaryPath() {
 	_, err := os.Stat(CollectionPath())
 	if os.IsNotExist(err) {
 		//create default collection
-		assert.NoErr(json.Write(CollectionPath(), &player.Collection{Date: time.Now(), Albums: nil}))
+		assert.NoErr(json.Write(CollectionPath(), &Collection{Date: time.Now(), Albums: nil}))
 	} else {
 		assert.NoErr(err)
 	}

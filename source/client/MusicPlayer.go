@@ -1,105 +1,135 @@
 package client
 
 import (
-	"bytes"
 	"fmt"
-	"log"
 	"math/rand"
-	"os"
 	"time"
 
-	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
-	"meowyplayer.com/source/player"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cwidget"
 	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/utility/container"
+)
+
+const (
+	RANDOM = iota
+	ORDERED
+	REPEAT
+	SIZE
 )
 
 type MusicPlayer struct {
-	*oto.Context
-	player.PlayList
-	playListChan chan player.PlayList
-
+	resource.PlayList
 	playMode    int
-	history     []int
-	randomQueue []int
+	history     container.Vector[int]
+	randomQueue container.Vector[int]
+
+	//channel to syncrhonize the commands
+	playListChan chan resource.PlayList
+	progressCMD  chan float64
+	volumeCMD    chan float64
+	playCMD      chan struct{}
+	rollbackCMD  chan struct{}
+	skipCMD      chan struct{}
+	modeCMD      chan int
 }
 
 func NewMusicPlayer() *MusicPlayer {
-	//initialize oto mp3 player
-	context, ready, err := oto.NewContext(player.SAMPLING_RATE, player.NUM_OF_CHANNELS, player.AUDIO_BIT_DEPTH)
-	assert.NoErr(err)
-	<-ready
+	return &MusicPlayer{
+		playMode:     RANDOM,
+		playListChan: make(chan resource.PlayList),
+		progressCMD:  make(chan float64, 16),
+		volumeCMD:    make(chan float64, 16),
+		playCMD:      make(chan struct{}, 16),
+		rollbackCMD:  make(chan struct{}, 16),
+		skipCMD:      make(chan struct{}, 16),
+		modeCMD:      make(chan int, 16),
+	}
+}
 
-	return &MusicPlayer{Context: context, playListChan: make(chan player.PlayList), playMode: cwidget.RANDOM}
+func (m *MusicPlayer) CommandProgress(percent float64) {
+	m.progressCMD <- percent
+}
+
+func (m *MusicPlayer) CommandVolume(volume float64) {
+	m.volumeCMD <- volume
+}
+
+func (m *MusicPlayer) CommandPlay() {
+	m.playCMD <- struct{}{}
+}
+
+func (m *MusicPlayer) CommandRollback() {
+	m.rollbackCMD <- struct{}{}
+}
+
+func (m *MusicPlayer) CommandSkip() {
+	m.skipCMD <- struct{}{}
+}
+
+func (m *MusicPlayer) CommandMode(mode int) {
+	m.modeCMD <- mode
 }
 
 func (m *MusicPlayer) setPlayMode(playMode int) {
-	if playMode == cwidget.RANDOM {
-		m.history = []int{}
+	if playMode == RANDOM {
+		m.history.Clear()
 		m.randomQueue = rand.Perm(len(m.Album().MusicList))
 	}
 	m.playMode = playMode
 }
 
-func (m *MusicPlayer) setPlayList(playList player.PlayList) {
+func (m *MusicPlayer) setPlayList(playList resource.PlayList) {
 	m.PlayList = playList
 	m.setPlayMode(m.playMode)
 }
 
-func (m *MusicPlayer) decode(music *player.Music) MP3Controller {
-	mp3Data, err := os.ReadFile(resource.MusicPath(music))
-	assert.NoErr(err)
-	mp3Decoder, err := mp3.NewDecoder(bytes.NewReader(mp3Data))
-	assert.NoErr(err)
-	return makeMP3Player(mp3Decoder, m.NewPlayer(mp3Decoder))
-}
-
 func (m *MusicPlayer) rollback() {
 	switch m.playMode {
-	case cwidget.RANDOM:
-		if len(m.history) > 0 {
-			m.randomQueue = append(m.randomQueue, m.Index())
-			last := len(m.history) - 1
-			m.SetIndex(m.history[last])
-			m.history = m.history[:last]
+	case RANDOM:
+		if !m.history.Empty() {
+			m.randomQueue.PushBack(m.Index())
+			m.SetIndex(*m.history.Back())
+			m.history.PopBack()
 		}
 
-	case cwidget.ORDERED:
+	case ORDERED:
 		m.SetIndex((m.Index() - 1 + len(m.Album().MusicList)) % len(m.Album().MusicList))
 
-	case cwidget.REPEAT:
+	case REPEAT:
 		//nothing
 	}
 }
 
 func (m *MusicPlayer) skip() {
 	switch m.playMode {
-	case cwidget.RANDOM:
+	case RANDOM:
 		//generate new queue if run out of music
-		if len(m.randomQueue) == 0 {
+		if m.randomQueue.Empty() {
 			m.randomQueue = rand.Perm(len(m.Album().MusicList))
 		}
-		m.history = append(m.history, m.Index())
-		last := len(m.randomQueue) - 1
-		m.SetIndex(m.randomQueue[last])
-		m.randomQueue = m.randomQueue[:last]
+		m.history.PushBack(m.Index())
+		m.SetIndex(*m.randomQueue.Back())
+		m.randomQueue.PopBack()
 
-	case cwidget.ORDERED:
+	case ORDERED:
 		m.SetIndex((m.Index() + 1) % len(m.Album().MusicList))
 
-	case cwidget.REPEAT:
+	case REPEAT:
 		//nothing
 	}
 }
 
-func (m *MusicPlayer) Notify(play *player.PlayList) {
+func (m *MusicPlayer) Notify(play *resource.PlayList) {
 	m.playListChan <- *play
 }
 
-func (m *MusicPlayer) Start(menu *cwidget.PlayerMenu) {
-	menuChannel := menu.GetMenuChannel()
+func (m *MusicPlayer) Start(menu *cwidget.PlayMenu) {
+	//initialize oto mp3 context
+	context, ready, err := oto.NewContext(resource.SAMPLING_RATE, resource.NUM_OF_CHANNELS, resource.AUDIO_BIT_DEPTH)
+	assert.NoErr(err)
+	<-ready
 
 	//wait for the user to click the music
 WaitLoop:
@@ -108,26 +138,24 @@ WaitLoop:
 		case playList := <-m.playListChan:
 			m.setPlayList(playList)
 			break WaitLoop
-		case <-menuChannel.Skip:
-		case <-menuChannel.Rollback:
-		case <-menuChannel.Play:
-		case <-menuChannel.Mode:
-		case <-menuChannel.Progress:
-		case <-menuChannel.Volume:
+		case <-m.skipCMD:
+		case <-m.rollbackCMD:
+		case <-m.playCMD:
+		case <-m.modeCMD:
+		case <-m.progressCMD:
+		case <-m.volumeCMD:
 			//drain out meaningless commands
 		}
 	}
 
 	for {
 		menu.SetMusic(m.Music())
-		mp3Controller := m.decode(m.Music())
+		mp3Controller := resource.NewMP3Controller(context, m.PlayList.Music())
 		interrupted := false
-
-		log.Println("playing", m.Music().SimpleTitle())
-		log.Println("duration", float64(mp3Controller.Length()))
+		fmt.Println("playing", m.Music().SimpleTitle())
 
 	CONTROL_LOOP:
-		for mp3Controller.Play(); !mp3Controller.IsOver(); {
+		for mp3Controller.PlayOrPause(); !mp3Controller.IsOver(); {
 			select {
 			case playList := <-m.playListChan:
 				fmt.Println("new playlist")
@@ -135,33 +163,34 @@ WaitLoop:
 				interrupted = true
 				break CONTROL_LOOP
 
-			case <-menuChannel.Skip:
+			case <-m.skipCMD:
 				fmt.Println("skip")
 				m.skip()
 				interrupted = true
 				break CONTROL_LOOP
 
-			case <-menuChannel.Rollback:
+			case <-m.rollbackCMD:
 				fmt.Println("rollback")
 				m.rollback()
 				interrupted = true
 				break CONTROL_LOOP
 
-			case <-menuChannel.Play:
+			case <-m.playCMD:
 				fmt.Println("play/pause")
 				mp3Controller.PlayOrPause()
 
-			case playMode := <-menuChannel.Mode:
+			case playMode := <-m.modeCMD:
+				fmt.Println("mode", playMode)
 				m.setPlayMode(playMode)
 
-			case percent := <-menuChannel.Progress:
+			case percent := <-m.progressCMD:
 				fmt.Println("progress", percent)
 				mp3Controller.Pause()
 				time.Sleep(10 * time.Millisecond) //mp3 library has race condition
 				mp3Controller.SetProgress(percent)
 				mp3Controller.Play()
 
-			case volume := <-menuChannel.Volume:
+			case volume := <-m.volumeCMD:
 				fmt.Println("set volume")
 				mp3Controller.SetVolume(volume)
 

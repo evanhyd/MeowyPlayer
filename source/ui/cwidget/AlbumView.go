@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/player"
+	"meowyplayer.com/source/resource"
 )
 
 type AlbumView struct {
@@ -18,7 +18,7 @@ type AlbumView struct {
 	name  string
 }
 
-func NewAlbumView(album *player.Album) *AlbumView {
+func NewAlbumView(album *resource.Album) *AlbumView {
 	view := &AlbumView{
 		cover: canvas.NewImageFromResource(album.Cover),
 		info:  widget.NewLabel(album.Description()),
