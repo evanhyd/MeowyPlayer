@@ -25,10 +25,10 @@ type CommandMenu struct {
 	title          *widget.Label
 	progressSlider *ProgressSlider
 	durationLabel  *widget.Label
+	modeButton     *ModeButton
 	rollbackButton *widget.Button
 	playButton     *widget.Button
 	skipButton     *widget.Button
-	modeButton     *ModeButton
 	volumeSlider   *volumeSlider
 }
 
@@ -39,10 +39,10 @@ func NewCommandMenu() *CommandMenu {
 		widget.NewLabel(""),
 		NewProgressSlider(0.0, 1.0, 0.001, 0.0),
 		widget.NewLabel("00:00"),
+		newModeButton(nil, modeIcons, nil),
 		NewButton("<<", nil),
 		NewButton("O", nil),
 		NewButton(">>", nil),
-		newModeButton(nil, modeIcons, nil),
 		newVolumeSlider(),
 	}
 	menu.ExtendBaseWidget(menu)
@@ -52,7 +52,7 @@ func NewCommandMenu() *CommandMenu {
 func (c *CommandMenu) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
 		c.title,
-		container.NewGridWithRows(1, layout.NewSpacer(), container.NewHBox(layout.NewSpacer(), c.rollbackButton, c.playButton, c.skipButton, c.modeButton), layout.NewSpacer(), c.volumeSlider),
+		container.NewGridWithRows(1, layout.NewSpacer(), container.NewHBox(layout.NewSpacer(), c.modeButton, c.rollbackButton, c.playButton, c.skipButton), layout.NewSpacer(), c.volumeSlider),
 		nil,
 		nil,
 		container.NewBorder(nil, nil, nil, c.durationLabel, c.progressSlider),
