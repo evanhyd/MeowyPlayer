@@ -20,7 +20,7 @@ func Initiate() {
 	if *fileLog {
 		file, err := os.OpenFile(kLogFileName, os.O_CREATE|os.O_APPEND, 0777)
 		if err != nil {
-			Error("failed to initiate logger", err, 1)
+			Error(err, "failed to initiate logger", 1)
 		}
 		loggers = append(loggers, file)
 	}
@@ -35,7 +35,7 @@ func Initiate() {
 	log.SetOutput(io.MultiWriter(loggers...))
 }
 
-func Error(message string, err error, frameRewind int) {
+func Error(err error, message string, frameRewind int) {
 	_, file, line, ok := runtime.Caller(frameRewind)
 	if ok {
 		log.Printf("error occured at: %s:%d\n%v: %v\n", file, line, message, err)

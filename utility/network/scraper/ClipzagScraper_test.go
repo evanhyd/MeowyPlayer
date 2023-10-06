@@ -6,11 +6,26 @@ import (
 	"meowyplayer.com/utility/network/scraper"
 )
 
-func TestChickenNugget(t *testing.T) {
-	var scraper scraper.Scraper = &scraper.ClipzagScraper{}
+//race condition detection, panic if occurs
+//go test -race -run NameOfThatTestFunc .
 
-	_, err := scraper.Search("chicken nugget")
+func TestChickenNugget(t *testing.T) {
+	var scraper scraper.YoutubeScraper = scraper.NewClipzagScraper()
+	SearchQuery(scraper, "chicken nugget", t)
+}
+
+func TestMonogatari(t *testing.T) {
+	var scraper scraper.YoutubeScraper = scraper.NewClipzagScraper()
+	SearchQuery(scraper, "renai circulation", t)
+}
+
+func SearchQuery(scraper scraper.YoutubeScraper, title string, t *testing.T) {
+	results, err := scraper.Search(title)
 	if err != nil {
 		t.Fatalf("%v\n", err)
+	}
+
+	for _, result := range results {
+		t.Logf("\n\n%+v\n\n", result)
 	}
 }

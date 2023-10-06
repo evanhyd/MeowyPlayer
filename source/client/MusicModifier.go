@@ -14,7 +14,7 @@ import (
 
 func estimateMP3DataLength(data []byte) time.Duration {
 	decoder, err := mp3.NewDecoder(bytes.NewReader(data))
-	assert.NoErr(err)
+	assert.NoErr(err, "failed to decode mp3 data")
 	seconds := float64(decoder.Length()) / float64(resource.SAMPLING_RATE) / float64(resource.NUM_OF_CHANNELS) / float64(resource.AUDIO_BIT_DEPTH)
 	return time.Duration(seconds * float64(time.Second))
 }

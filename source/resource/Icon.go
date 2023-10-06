@@ -28,7 +28,7 @@ func getResource(resourcePath string) fyne.Resource {
 	if os.IsNotExist(err) {
 		asset, err = fyne.LoadResourceFromPath(AssetPath(iconNameMissing))
 	}
-	assert.NoErr(err)
+	assert.NoErr(err, "failed to load icon resource")
 	return asset
 }
 

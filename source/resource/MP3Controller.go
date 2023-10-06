@@ -19,9 +19,9 @@ type MP3Controller struct {
 
 func NewMP3Controller(context *oto.Context, music *Music) *MP3Controller {
 	mp3Data, err := os.ReadFile(MusicPath(music))
-	assert.NoErr(err)
+	assert.NoErr(err, "failed to load mp3 file")
 	mp3Decoder, err := mp3.NewDecoder(bytes.NewReader(mp3Data))
-	assert.NoErr(err)
+	assert.NoErr(err, "failed to decode mp3 data")
 	return &MP3Controller{Decoder: mp3Decoder, Player: context.NewPlayer(mp3Decoder)}
 }
 

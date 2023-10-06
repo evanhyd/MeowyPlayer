@@ -35,14 +35,14 @@ func AssetPath(assetName string) string {
 }
 
 func MakeNecessaryPath() {
-	assert.NoErr(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm))
-	assert.NoErr(os.MkdirAll(filepath.Join(musicPath), os.ModePerm))
+	assert.NoErr(os.MkdirAll(filepath.Join(albumPath, coverPath), os.ModePerm), "failed to create cover directory")
+	assert.NoErr(os.MkdirAll(filepath.Join(musicPath), os.ModePerm), "failed to create music directory")
 
 	_, err := os.Stat(CollectionPath())
 	if os.IsNotExist(err) {
 		//create default collection
-		assert.NoErr(json.Write(CollectionPath(), &Collection{Date: time.Now(), Albums: nil}))
+		assert.NoErr(json.Write(CollectionPath(), &Collection{Date: time.Now(), Albums: nil}), "failed to create default collection")
 	} else {
-		assert.NoErr(err)
+		assert.NoErr(err, "failed to fetch collection path stats")
 	}
 }

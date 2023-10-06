@@ -15,7 +15,7 @@ func main() {
 	// redirect panic message
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Error("caught error", fmt.Errorf("%v\n%v", err, string(debug.Stack())), 1)
+			logger.Error(fmt.Errorf("%v\n%v", err, string(debug.Stack())), "caught panic error", 1)
 		}
 	}()
 
@@ -24,7 +24,7 @@ func main() {
 
 	window := ui.NewMainWindow()
 	inUse, err := client.LoadFromLocalCollection()
-	assert.NoErr(err)
+	assert.NoErr(err, "failed to load from local collection")
 	client.GetCollectionData().Set(&inUse)
 	window.ShowAndRun()
 }

@@ -128,7 +128,7 @@ func (m *MusicPlayer) Notify(play *resource.PlayList) {
 func (m *MusicPlayer) Start(menu *cwidget.CommandMenu) {
 	//initialize oto mp3 context
 	context, ready, err := oto.NewContext(resource.SAMPLING_RATE, resource.NUM_OF_CHANNELS, resource.AUDIO_BIT_DEPTH)
-	assert.NoErr(err)
+	assert.NoErr(err, "failed to start the music player")
 	<-ready
 
 	//wait for the user to click the music
