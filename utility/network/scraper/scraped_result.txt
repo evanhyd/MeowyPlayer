@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en" prefix="og: http://ogp.me/ns#" xmlns:og="http://ogp.me/ns#" xmlns:fb="https://www.facebook.com/2008/fbml">
+<head>
+<title>Search -  chicken nugget</title>
+<meta name="title" content="Search -  chicken nugget">
+<meta charset="utf-8">
+<link rel="dns-prefetch" href="//clients1.google.com/complete/search">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
+<meta name="description" content="Watch or Download trending videos from all around the world without proxy or vpn.">
+<meta name="keywords" content="clipzag.com, clipzag, pakistani videos, browse videos, browse lastest videos, watch trending videos, unblock videos, download videos, download funny videos, watch funny videos, watch videos without proxy or vpn">
+<link rel="shortcut icon" href="images/favicon.ico?ver=1.2" />
+<link rel="stylesheet" href="styles/bootstrap.min.css?ver=3.0.11" />
+<link rel="stylesheet" href="styles/styles.css?ver=3.0.313" />
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.10.4/typeahead.bundle.min.js"></script><link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" />
+<!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]--><script type="text/javascript">
+   $(document).ready(function() {
+        var anExcitedSource = function(query, cb) {
+            $.getJSON("//suggestqueries.google.com/complete/search?callback=?",
+                    { 'hl':'en', 'jsonp':'suggestCallBack', 'q':query, 'client':'youtube', 'ds':'yt', 'gl':'us' } );
+                 suggestCallBack = function (data) {
+                    var suggestions = [];
+                    $.each(data[1], function(key, val) {
+                        suggestions.push({"value":val[0]});
+                    });
+                    suggestions.length = 6;                     cb(suggestions);
+                }; };
+          $('#searchInput, #searchInputmobile').typeahead({
+                autoselect: false,
+                highlight: true,
+                minLength: 2,
+                hint: false
+            }, {
+                source: anExcitedSource
+                  }).on('typeahead:selected', function(e){
+                e.target.form.submit();
+              });
+            
+                      
+       $('#showmobilesearch').click(function(){
+          $('#searchmobile').addClass('open-searchbar');
+           $('#searchmobile #searchInput').focus();
+           $('#fadeMe').show();
+       });
+       $('#close-searchmobile').click(function(){
+          $('#searchmobile').removeClass('open-searchbar');
+           $('#searchmobile #searchInput').blur();
+           $('#fadeMe').hide();
+       });
+       $('#fadeMe').click(function(){
+          $('#searchmobile').removeClass('open-searchbar');
+           $('#searchmobile #searchInput').blur();
+           $('#fadeMe').hide();
+       });
+
+
+      $('.mediaimg, .videosthumbs-style, .relatedthumbs-style').hover(function(){
+        var animated_thumbnail = $(this).attr('data-thumb-m');
+        if( animated_thumbnail != '' ){
+          $(this).attr('src',animated_thumbnail);
+        }
+      },function(){
+        $(this).attr('src',$(this).attr('data-thumb'));
+      });
+
+      // $('.videopost').hover(function(){
+      //   var animated_thumbnail = $(this).find('.videosthumbs-style').attr('data-thumb-m');
+      //   if( animated_thumbnail != '' ){
+      //     $(this).find('.videosthumbs-style').attr('src',animated_thumbnail);
+      //   }
+      // },function(){
+      //   $(this).find('.videosthumbs-style').attr('src',$(this).find('.videosthumbs-style').attr('data-thumb'));
+      // });
+
+
+
+    });
+function setCookie(cname,cvalue,time,timevalue) {
+  timevalue = typeof timevalue !== 'undefined' ? timevalue : 'd';
+
+  var d = new Date();
+  if(timevalue == 'h'){
+    var st = time*60*60*1000;
+  }else{
+    var st = time*24*60*60*1000;
+  }
+  d.setTime(d.getTime() + st);
+  var expires = "expires=" + d.toGMTString();
+  document.cookie = cname+"="+cvalue+"; "+expires;
+}
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return;
+}
+  </script>
+</head>
+<body>
+<div id="fadeMe" style="display:none;"></div>
+<div class="navbar navbar-default navbar-fixed-top bs-docs-nav" role="banner">
+<div class="container">
+<div class="navbar-header">
+<button class="navbar-toggle menu-iconlines collapsed" type="button" style="border: none;background: none;" data-toggle="collapse" data-target=".bs-navbar-collapse">
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+<span class="icon-bar"></span>
+</button>
+<div id="logo-toggle"><a href="/" class="navbar-brand logo"><img src="/images/logo.png?ver=1.4" height="25" /></a></div>
+<div id="showmobilesearch" style="display:none;"><i class="fa fa-search btn-bg-blue"></i></div>
+</div>
+<form action="search" id="searchmobile" style="display:none;" role="form" class="navbar-form navbar-search">
+<span class="twitter-typeahead" style="position: relative; display: inline-block;">
+<input id="searchInput" type="search" class="search-input form-control typeahead tt-query" placeholder="Search for videos.." name="q" value="chicken nugget">
+<input type="hidden" value="type">
+<button type="submit" class="btn navbar-search-btn"><i style="font-size:19px;" class="fa fa-search btn-bg-blue"></i></button>
+<div id="close-searchmobile"> <i class="fa fa-times" aria-hidden="true"></i> </div>
+</span>
+</form>
+<nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+<div class="col-lg-6 col-md-6 col-sm-6">
+<form action="search" id="search" role="form" class="navbar-form navbar-left navbar-search">
+<span class="twitter-typeahead" style="position: relative; display: inline-block;">
+<input id="searchInput" type="search" class="search-input form-control typeahead tt-query" placeholder="Search for videos.." name="q" value="chicken nugget">
+<input type="hidden" value="type">
+<button type="submit" class="btn navbar-search-btn"><i class="fa fa-search btn-bg-blue"></i></button>
+</span>
+</form>
+</div>
+<ul class="nav navbar-nav navbar-right">
+</ul>
+</nav>
+</div>
+</div>
+<div class="headerboard">
+<div id="M792541ScriptRootC1529132"></div>
+<script src="https://jsc.mgid.com/c/l/clipzag.com.1529132.js" async></script>
+</div>
+<div class="container">
+<div class="row"> <script>
+    $(document).ready(function(){
+       $( "#loadvideos" ).click(function(){
+                  loadvideos($('#loadvideos').data('next'));
+       });
+    });
+
+    function loadvideos(next){
+      $('#loadvideos').html('<i class="fa fa-spinner fa-spin"></i> Loading...');
+        $('#loadvideos').addClass('disabled');
+       $.ajax({
+          type: "GET", 
+          url: "process/getvideos",
+          data: { type: 'search',q:'chicken nugget',token:next},
+          dataType: "json",
+          success: function(response){
+               $('#results').append(response.html);  
+          if(response.nexttoken){
+            $('#loadvideos').html('Load more').removeClass('disabled').show().data('next', response.nexttoken);
+          }else{
+            $('#loadvideos').html('End of Videos');
+          }
+        },   
+        error: function(XMLHttpRequest,textStatus,errorThrown) {
+                        setTimeout(function(){
+                         loadvideos(next);
+                        },5000);    
+        }
+      });
+    }; 
+    $(window).scroll(function(){
+      if  ( $(window).scrollTop() >= ($(document).height() - $(window).height() - 220) && !$( "#loadvideos" ).hasClass( "disabled" )){
+            $('#loadvideos').click();   
+      }
+    }); 
+  </script>
+<script src="combo?p=s"></script> <div class="col-md-12" style="padding:0 5px;">
+<div class="border-bg">
+<div class="page-heading-nav">
+<div class="pagehead">
+<div class="page-heading">Search Results</div>
+<div class="btn-group pull-left margin-top-10 margin-bottom-5">
+<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+Sort Videos <span class="caret"></span>
+</button>
+<ul class="dropdown-menu" role="menu">
+<li><a href="search?q=chicken+nugget&order=rating">Rating</a></li>
+<li><a href="search?q=chicken+nugget&order=relevance">Relevance</a></li>
+<li><a href="search?q=chicken+nugget&order=uploaddate">Upload date</a></li>
+<li><a href="search?q=chicken+nugget&order=viewCount">Views</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div id="results">
+<div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=UF3bcDvNW5g">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/UF3bcDvNW5g/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/UF3bcDvNW5g/mqdefault.jpg"><span class="duration">1:08</span></div>
+<div class="title-style" title="The Birth of Iscream">The Birth of Iscream</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCC0aCrsMnk074Tg5JhDj8Qg">Chikn Nuggit</a><br/>1M views • 1 month ago</span>
+</div>
+<div class="postdiscription">The first YouTube exclusive episode! Featuring Iscream's origin story. Look forward to even more in the near future! Captions are ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=H_NF2sXUZ5U">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/H_NF2sXUZ5U/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/H_NF2sXUZ5U/mqdefault.jpg"><span class="duration">9:27</span></div>
+<div class="title-style" title="Matty&#039;s Chicken Nugget Party | Cookin&#039; Somethin&#039; w/ Matty Matheson">Matty&#039;s Chicken Nugget Party | Cookin&#039; Somethin&#039; w/ Matty Matheson</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCpqH8-BBNTsluhcOzFKWLuw">MATTY MATHESON</a><br/>252K views • 4 days ago</span>
+</div>
+<div class="postdiscription">CHICKEN NUGGET PARTY TIME!! BUFFALO CHICKY GENERAL TSO CHICKY AND MATHESON FOODCOMPANY ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=OeemN2xFD6g">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/OeemN2xFD6g/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/OeemN2xFD6g/mqdefault.jpg"><span class="duration">2:03</span></div>
+<div class="title-style" title="Chicken Nugget Dreamland - Parry Gripp">Chicken Nugget Dreamland - Parry Gripp</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCLNfsUeQm6zU2eBlQbEy4tw">ParryGripp</a><br/>5.6M views • 5 years ago</span>
+</div>
+<div class="postdiscription">Nugget artwork by the great Nathan Mazur! #parrygripp #nuggets #foodsongs Chicken Nugget Chicken Chicken Nugget Nugget ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=rqDoG3IYcZY">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/rqDoG3IYcZY/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/rqDoG3IYcZY/mqdefault.jpg"><span class="duration">0:29</span></div>
+<div class="title-style" title="Worlds best chicken nugget?!">Worlds best chicken nugget?!</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCHy--e2ieRj786WY5rWXOBg">Lets Test Lab</a><br/>8.3M views • 4 months ago</span>
+</div>
+<div class="postdiscription">This is just a McDonald's chicken nugget and I'm gonna test it against one from the store starting with a crunch test we can see ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=84Cp9Q_BFsc">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/84Cp9Q_BFsc/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/84Cp9Q_BFsc/mqdefault.jpg"><span class="duration">5:26</span></div>
+<div class="title-style" title="Chikn Nuggit Lore Pt. 1">Chikn Nuggit Lore Pt. 1</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCC0aCrsMnk074Tg5JhDj8Qg">Chikn Nuggit</a><br/>1M views • 4 months ago</span>
+</div>
+<div class="postdiscription">Why does weird stuff happen so often? Who's this clock guy? Here's the start of a chaotic arc in Chikn Nuggit #animation ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=m8dkjtNessU">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/m8dkjtNessU/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/m8dkjtNessU/mqdefault.jpg"><span class="duration">8:48</span></div>
+<div class="title-style" title="World’s Largest Chicken Nugget (Official World Record)">World’s Largest Chicken Nugget (Official World Record)</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCMyOj6fhvKFMjxUCp3b_3gA">Nick DiGiovanni</a><br/>8.7M views • 1 year ago</span>
+</div>
+<div class="postdiscription">We made history today. This is our second world record, and Lynja and I are proud to be the creators of the largest chicken nugget ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=hNSRvuqHSRc">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/hNSRvuqHSRc/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/hNSRvuqHSRc/mqdefault.jpg"><span class="duration">8:59</span></div>
+<div class="title-style" title="chikn.nuggit compilation⭐️🌸🧸">chikn.nuggit compilation⭐️🌸🧸</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCyZNZ_LOuC81WuSojaknVqA">Love Life</a><br/>375K views • 6 months ago</span>
+</div>
+<div class="postdiscription"></div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=gFAZVWd5Edk">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/gFAZVWd5Edk/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/gFAZVWd5Edk/mqdefault.jpg"><span class="duration">2:36</span></div>
+<div class="title-style" title="Chicken Nugget Song &quot;PARODY&quot;">Chicken Nugget Song &quot;PARODY&quot;</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCsejZUDx4LpD7hacopUnyJA">Nick Bean</a><br/>14M views • 7 years ago</span>
+</div>
+<div class="postdiscription">Prod by : @ Cbmix my facebook: https://www.facebook.com/Thenickbean/ SUBSCRIBE NEW VIDEO EVERY SATURDAY!</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=o-p7U-wuVv0">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/o-p7U-wuVv0/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/o-p7U-wuVv0/mqdefault.jpg"><span class="duration">9:26</span></div>
+<div class="title-style" title="The Best of Cheezborger">The Best of Cheezborger</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCC0aCrsMnk074Tg5JhDj8Qg">Chikn Nuggit</a><br/>325K views • 1 month ago</span>
+</div>
+<div class="postdiscription">A compilation of cute, cheerful, moments from the bubbly and sweet Cheezborger!</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=zAHOtH1d9g4">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/zAHOtH1d9g4/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/zAHOtH1d9g4/mqdefault.jpg"><span class="duration">0:33</span></div>
+<div class="title-style" title="Chicken McNuggets">Chicken McNuggets</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCMyOj6fhvKFMjxUCp3b_3gA">Nick DiGiovanni</a><br/>11M views • 1 year ago</span>
+</div>
+<div class="postdiscription">shorts #McDonalds #chickennuggets #mcnuggets.</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=WdkhDcaPx4c">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/WdkhDcaPx4c/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/WdkhDcaPx4c/mqdefault.jpg"><span class="duration">54:53</span></div>
+<div class="title-style" title="Chikn.nuggit All Animation. #chiknnuggit">Chikn.nuggit All Animation. #chiknnuggit</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UC_LzT1N_peqQ3KvPDi_ooXw">Magyar TikTok</a><br/>2.9M views • 1 year ago</span>
+</div>
+<div class="postdiscription"></div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=JANsRu5sQfQ">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/JANsRu5sQfQ/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/JANsRu5sQfQ/mqdefault.jpg"><span class="duration">7:39</span></div>
+<div class="title-style" title="Making McDonald&#039;s Chicken McNuggets At Home | But Better">Making McDonald&#039;s Chicken McNuggets At Home | But Better</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UChBEbMKI1eCcejTtmI32UEw">Joshua Weissman</a><br/>7.3M views • 3 years ago</span>
+</div>
+<div class="postdiscription">The coveted chicken McNugget is no secret. It's all in the technique and as it turns out, that's pretty easy too! And with that ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=eW2hYfnCfXs">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/eW2hYfnCfXs/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/eW2hYfnCfXs/mqdefault.jpg"><span class="duration">5:11</span></div>
+<div class="title-style" title="Homemade Chicken Nuggets | Jamie &amp; Amber">Homemade Chicken Nuggets | Jamie &amp; Amber</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCpSgg_ECBj25s9moCDfSTsA">Jamie Oliver</a><br/>1.2M views • 8 years ago</span>
+</div>
+<div class="postdiscription">For the perfect start to 2016 check out all the great videos we have for a Happier Healthier You: 10 Healthy Meals ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=ZWA2wcuC4Jg">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/ZWA2wcuC4Jg/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/ZWA2wcuC4Jg/mqdefault.jpg"><span class="duration">0:41</span></div>
+<div class="title-style" title="McDonald&#039;s Chicken Nuggets at home !! #shortsfeed #shorts">McDonald&#039;s Chicken Nuggets at home !! #shortsfeed #shorts</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCGyZg4DZmWyj0q3H3IY15EA">Rohit Ghosh</a><br/>1.4M views • 4 months ago</span>
+</div>
+<div class="postdiscription">shortsfeed #shortsvideo #shortsyoutube #chickennuggets #mcdonalds #mcdonaldschickennuggets.</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=VueEQ5KlYyk">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/VueEQ5KlYyk/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/VueEQ5KlYyk/mqdefault.jpg"><span class="duration">21:10</span></div>
+<div class="title-style" title="Rating Fast Food Chicken Nuggets">Rating Fast Food Chicken Nuggets</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCMyOj6fhvKFMjxUCp3b_3gA">Nick DiGiovanni</a><br/>4.9M views • 2 years ago</span>
+</div>
+<div class="postdiscription">There are a LOT of fast food restaurants to choose from. And one of the most exciting menu items, in my humble opinion, ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=ev2y4YhWnhE">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/ev2y4YhWnhE/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/ev2y4YhWnhE/mqdefault.jpg"><span class="duration">13:06</span></div>
+<div class="title-style" title="CHEF RV’s HOMEMADE CHICKEN NUGGETS!">CHEF RV’s HOMEMADE CHICKEN NUGGETS!</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCDdPJHmxHCJLH1sDyytCATw">Chef RV Manabat</a><br/>121K views • 5 days ago</span>
+</div>
+<div class="postdiscription">HOMEMADE CHICKEN NUGGETS 750g ground chicken 1 tsp. garlic powder 1 tsp. salt 2 tbsp. oyster sauce 2 pcs. whole eggs 1 ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=q5Un0Dd0TIU">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/q5Un0Dd0TIU/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/q5Un0Dd0TIU/mqdefault.jpg"><span class="duration">14:50</span></div>
+<div class="title-style" title="I Made Giant Chicken Nuggets And Fries For A Competitive Eater • Tasty">I Made Giant Chicken Nuggets And Fries For A Competitive Eater • Tasty</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCJFp8uSYCjXOMnkUyb3CQ3Q">Tasty</a><br/>16M views • 4 years ago</span>
+</div>
+<div class="postdiscription">There's 7 pounds of chicken in each nugget. Things are about to get a little messy.” Be sure to watch Godzilla: King of Monsters, ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=8pdyAhjpH4Q">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/8pdyAhjpH4Q/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/8pdyAhjpH4Q/mqdefault.jpg"><span class="duration">5:13</span></div>
+<div class="title-style" title="The $2 Chicken Nugget Meal | But Cheaper">The $2 Chicken Nugget Meal | But Cheaper</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UChBEbMKI1eCcejTtmI32UEw">Joshua Weissman</a><br/>1.1M views • 1 year ago</span>
+</div>
+<div class="postdiscription">The perfect chicken meal on a budget. Oh, and you get macaroni and cheese, sauce, and a lemonade too. Get My Cookbook: ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=avtPnGGeneQ">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/avtPnGGeneQ/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/avtPnGGeneQ/mqdefault.jpg"><span class="duration">14:59</span></div>
+<div class="title-style" title="4 Levels of Chicken Nuggets: Amateur to Food Scientist | Epicurious">4 Levels of Chicken Nuggets: Amateur to Food Scientist | Epicurious</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCcjhYlL1WRBjKaJsMH_h7Lg">Epicurious</a><br/>2M views • 1 year ago</span>
+</div>
+<div class="postdiscription">We challenged chefs of three different skill levels - amateur Emily, home cook Lorenzo, and professional chef Saul Montiel from ...</div>
+</div><div class="col-xs-12 videopost">
+<a class="title-color" href="watch?v=OfodNdurYOc">
+<div class="video-thumbs">
+<img class="videosthumbs-style" data-thumb-m data-thumb="//ytimg.googleusercontent.com/vi/OfodNdurYOc/mqdefault.jpg" src="//ytimg.googleusercontent.com/vi/OfodNdurYOc/mqdefault.jpg"><span class="duration">0:22</span></div>
+<div class="title-style" title="Chicken McNuggets Lifehack !! #shorts">Chicken McNuggets Lifehack !! #shorts</div>
+</a>
+<div class="viewsanduser">
+<span style="font-weight:bold;"><a class="by-user" href="/channel?id=UCbCJmNKAL85O1VFeD6Wj60g">Bayashi TV</a><br/>154M views • 11 months ago</span>
+</div>
+<div class="postdiscription">Hi! I'm Bayashi The No.1 cooking TikTok creator in Japan!! 50million followers on my TikTok♪ バヤシ 日本No.1の料理 ...</div>
+</div>
+</div>
+<div id="loadvideos" class="btn btn-default" data-next="EqMDEg5jaGlja2VuIG51Z2dldBqQA0VnSVFBVWdVZ2dFTE1XZ3RRbFo0VTFwSVNFbUNBUXRHVjBOU1oyZE5jbE5SYTRJQkMwWjZhRlZoTjBoSVYzTk5nZ0VMY25GRWIwY3pTVmxqV2xtQ0FRczRORU53T1ZGZlFrWnpZNElCQzIwNFpHdHFkRTVsYzNOVmdnRUxhRTVUVW5aMWNVaFRVbU9DQVF0blJrRmFWbGRrTlVWa2E0SUJDMjh0Y0RkVkxYZDFWbll3Z2dFTGVrRklUM1JJTVdRNVp6U0NBUXRYWkd0b1JHTmhVSGcwWTRJQkMwcEJUbk5TZFRWelVXWlJnZ0VMWlZjeWFGbG1ia05tV0hPQ0FRdGFWMEV5ZDJOMVF6UktaNElCQzFaMVpVVlJOVXRzV1hscmdnRUxaWFl5ZVRSWmFGZHVhRVdDQVF0eE5WVnVNRVJrTUZSSlZZSUJDemh3WkhsQmFHcHdTRFJSZ2dFTFlYWjBVRzVIUjJWdVpWR0NBUXRQWm05a1RtUjFjbGxQWTdJQkJnb0VDQmNRQXVvQkFnZ0MYgeDoGCILc2VhcmNoLWZlZWQ%3D">Load More</div> </div>
+</div>
+</div>
+</div>
+<div id="footer" class="modal-footer panel-footer">
+<div class="container">
+<div class="row">
+<div class="col-md-6 footer-left">
+<a class="margin-right-10" href="/privacy">Privacy Policy</a>
+<a class="margin-right-10" href="/contact">Contact us</a>
+</div>
+<div class="col-md-6 footer-right">
+<p class="muted credit copyright" class="copywrite-text">Copyright &copy; 2023, All Rights Reserved!</p>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-54853494-1', 'auto');
+  ga('require', 'displayfeatures');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
