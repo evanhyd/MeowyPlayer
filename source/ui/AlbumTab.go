@@ -20,13 +20,16 @@ func newAlbumTab() *container.TabItem {
 	data := cbinding.MakeAlbumDataList()
 	client.GetCollectionData().Attach(&data)
 
+	albumAdderLocal := cwidget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), showAddLocalAlbumDialog)
+	albumAdderOnline := cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), showAddOnlineAlbumDialog)
+
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon(), container.NewBorder(
 		container.NewBorder(
 			nil,
 			container.NewGridWithRows(1, newAlbumTitleButton(&data, "Title"), newAlbumDateButton(&data, "Date")),
 			nil,
-			container.NewGridWithRows(1, newAlbumAdderLocalButton(&data), newAlbumAdderOnlineButton(&data)),
-			cwidget.NewAlbumSearchBar(&data),
+			container.NewGridWithRows(1, albumAdderLocal, albumAdderOnline),
+			newAlbumSearchBar(&data),
 		),
 		nil,
 		nil,
@@ -47,12 +50,15 @@ func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
 	}, fyne.NewSize(135.0, 165.0))
 }
 
-func newAlbumAdderLocalButton(data *cbinding.AlbumDataList) *widget.Button {
-	return cwidget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), func() { showErrorIfAny(client.AddAlbum()) })
-}
-
-func newAlbumAdderOnlineButton(data *cbinding.AlbumDataList) *widget.Button {
-	return cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), func() { /* to do */ })
+func newAlbumSearchBar(data *cbinding.AlbumDataList) *widget.Entry {
+	entry := widget.NewEntry()
+	entry.OnChanged = func(title string) {
+		title = strings.ToLower(title)
+		data.SetFilter(func(a resource.Album) bool {
+			return strings.Contains(strings.ToLower(a.Title), title)
+		})
+	}
+	return entry
 }
 
 func newAlbumTitleButton(data *cbinding.AlbumDataList, title string) *widget.Button {

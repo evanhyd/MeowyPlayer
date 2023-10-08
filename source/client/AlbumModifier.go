@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"meowyplayer.com/source/resource"
+	"meowyplayer.com/utility/assert"
 )
 
 func AddAlbum() error {
@@ -29,7 +30,7 @@ func AddAlbum() error {
 
 	//generate album
 	album := resource.Album{Date: time.Now(), Title: title}
-	inUse.Albums = append(inUse.Albums, album)
+	inUse.Albums.PushBack(album)
 
 	//generate album cover
 	iconColor := color.NRGBA{uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32())}
@@ -49,7 +50,7 @@ func AddAlbum() error {
 func DeleteAlbum(album *resource.Album) error {
 	collection := collectionData.Get()
 	index := slices.IndexFunc(collection.Albums, func(a resource.Album) bool { return a.Title == album.Title })
-	last := len(collection.Albums) - 1
+	assert.Ensure(func() bool { return index != -1 })
 
 	//remove album icon
 	if err := os.Remove(resource.CoverPath(album)); err != nil && !os.IsNotExist(err) {
@@ -57,8 +58,7 @@ func DeleteAlbum(album *resource.Album) error {
 	}
 
 	//pop from the collection
-	collection.Albums[index] = collection.Albums[last]
-	collection.Albums = collection.Albums[:last]
+	collection.Albums.Remove(index)
 	return reloadCollectionData()
 }
 

@@ -22,8 +22,8 @@ const (
 type MusicPlayer struct {
 	resource.PlayList
 	playMode    int
-	history     container.Vector[int]
-	randomQueue container.Vector[int]
+	history     container.Slice[int]
+	randomQueue container.Slice[int]
 
 	//channel to syncrhonize the commands
 	playListChan chan resource.PlayList

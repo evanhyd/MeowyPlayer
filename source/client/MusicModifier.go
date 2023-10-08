@@ -30,10 +30,11 @@ func AddLocalMusic(musicInfo fyne.URIReadCloser) error {
 	if err = os.WriteFile(resource.MusicPath(&music), data, os.ModePerm); err != nil {
 		return err
 	}
-	music.Length = estimateMP3DataLength(data)
 
+	//add to the album
+	music.Length = estimateMP3DataLength(data)
 	album := getSourceAlbum(albumData.Get())
-	album.MusicList = append(album.MusicList, music)
+	album.MusicList.PushBack(music)
 	if err := reloadCollectionData(); err != nil {
 		return err
 	}
@@ -42,12 +43,11 @@ func AddLocalMusic(musicInfo fyne.URIReadCloser) error {
 
 func DeleteMusic(music *resource.Music) error {
 	album := getSourceAlbum(albumData.Get())
-	index := slices.IndexFunc(album.MusicList, func(m resource.Music) bool { return m.SimpleTitle() == music.SimpleTitle() })
-	last := len(album.MusicList) - 1
 
-	//pop form the album
-	album.MusicList[index] = album.MusicList[last]
-	album.MusicList = album.MusicList[:last]
+	//remove from the collection, but not delete it from the music repo
+	index := slices.IndexFunc(album.MusicList, func(m resource.Music) bool { return m.SimpleTitle() == music.SimpleTitle() })
+	assert.Ensure(func() bool { return index != -1 })
+	album.MusicList.Remove(index)
 
 	if err := reloadCollectionData(); err != nil {
 		return err

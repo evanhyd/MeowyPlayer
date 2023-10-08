@@ -16,7 +16,7 @@ type Observer[T any] interface {
 A generic subject class.
 */
 type Subject[T any] struct {
-	observers container.Vector[Observer[T]]
+	observers container.Slice[Observer[T]]
 }
 
 func (s *Subject[T]) Attach(observer Observer[T]) {

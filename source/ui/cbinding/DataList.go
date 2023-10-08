@@ -8,7 +8,7 @@ import (
 
 type dataList[T any] struct {
 	pattern.Subject[[]T]
-	data   container.Vector[T]
+	data   container.Slice[T]
 	filter func(T) bool
 	sorter func(T, T) bool
 }
