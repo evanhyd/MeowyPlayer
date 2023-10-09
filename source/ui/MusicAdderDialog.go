@@ -34,7 +34,8 @@ func showAddLocalMusicDialog() {
 func showAddOnlineMusicDialog() {
 	var scraper scraper.VideoScraper = scraper.NewClipzagScraper()
 
-	changeScraperButton := cwidget.NewButtonWithIcon("", resource.DefaultIcon(), func() { showScraperSelectionDialog(&scraper) })
+	changeScraperButton := cwidget.NewButtonWithIcon("", resource.DefaultIcon(), func() {})
+
 	searchBar := widget.NewEntry()
 	searchBar.OnSubmitted = func(title string) {
 		result, err := scraper.Search(title)
@@ -147,9 +148,4 @@ func showAddOnlineMusicDialog() {
 	// ), player.GetMainWindow())
 	// onlineBrowserDialog.Resize(resource.GetMusicAddOnlineDialogSize())
 	// return onlineBrowserDialog
-}
-
-func showScraperSelectionDialog(scraper *scraper.VideoScraper) {
-	scraperSelectionDialog := dialog.NewCustom("Source", "( X )", nil, getWindow())
-	scraperSelectionDialog.Show()
 }
