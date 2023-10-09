@@ -6,35 +6,32 @@ import (
 )
 
 type DropDown struct {
-	widget.BaseWidget
-	currentOption fyne.CanvasObject
-	options       []*fyne.MenuItem
-	menu          *widget.Menu
+	Sign
+	menu *fyne.Menu
 }
 
-func NewDropDown() *DropDown {
-	dropDown := &DropDown{}
+func NewDropDown(title string, icon fyne.Resource) *DropDown {
+	dropDown := &DropDown{Sign{title: widget.NewLabel(title), icon: widget.NewIcon(icon)}, fyne.NewMenu("")}
 	dropDown.ExtendBaseWidget(dropDown)
 	return dropDown
 }
 
-func (d *DropDown) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(d.menu)
+func (d *DropDown) Add(title string, icon fyne.Resource, onSelected func()) {
+	item := fyne.NewMenuItem(title, func() {
+		d.title.SetText(title)
+		d.icon.SetResource(icon)
+		onSelected()
+	})
+	item.Icon = icon
+	d.menu.Items = append(d.menu.Items, item)
 }
 
-func (d *DropDown) Add(label string, object fyne.CanvasObject) {
-	d.options = append(d.options, fyne.NewMenuItem(label, func() {
-		d.currentOption = object
-		d.Refresh()
-	}))
+func (d *DropDown) Select(index int) {
+	d.menu.Items[index].Action()
 }
 
-func (d *DropDown) Tapped(*fyne.PointEvent) {
-	// fyne.NewMenu()
-	// widget.NewMenu()
-	// widget.NewPopUpMenu()
-	// rename := fyne.NewMenuItem("Rename", makeRenameDialog(album))
-	// cover := fyne.NewMenuItem("Cover", makeCoverDialog(album))
-	// delete := fyne.NewMenuItem("Delete", makeDeleteAlbumDialog(album))
-	// return widget.NewPopUpMenu(fyne.NewMenu("", rename, cover, delete), canvas)
+func (d *DropDown) Tapped(event *fyne.PointEvent) {
+	canvas := fyne.CurrentApp().Driver().CanvasForObject(d)
+	position := fyne.CurrentApp().Driver().AbsolutePositionForObject(d)
+	widget.ShowPopUpMenuAtPosition(d.menu, canvas, position)
 }

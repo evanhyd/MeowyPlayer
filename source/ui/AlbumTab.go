@@ -46,7 +46,7 @@ func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.ViewList[resource.A
 			view.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(&album) }
 			view.OnTappedSecondary = func(event *fyne.PointEvent) {
 				canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
-				newAlbumMenu(canvas, &album).ShowAtPosition(event.AbsolutePosition)
+				showAlbumMenu(&album, canvas, event.AbsolutePosition)
 			}
 			return view
 		},
@@ -86,11 +86,11 @@ func newAlbumDateButton(data *cbinding.AlbumDataList, title string) *widget.Butt
 	return button
 }
 
-func newAlbumMenu(canvas fyne.Canvas, album *resource.Album) *widget.PopUpMenu {
+func showAlbumMenu(album *resource.Album, canvas fyne.Canvas, pos fyne.Position) {
 	rename := fyne.NewMenuItem("Rename", makeRenameDialog(album))
 	cover := fyne.NewMenuItem("Cover", makeCoverDialog(album))
 	delete := fyne.NewMenuItem("Delete", makeDeleteAlbumDialog(album))
-	return widget.NewPopUpMenu(fyne.NewMenu("", rename, cover, delete), canvas)
+	widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", rename, cover, delete), canvas, pos)
 }
 
 func makeRenameDialog(album *resource.Album) func() {

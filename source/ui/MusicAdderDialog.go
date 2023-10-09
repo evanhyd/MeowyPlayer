@@ -32,41 +32,31 @@ func showAddLocalMusicDialog() {
 }
 
 func showAddOnlineMusicDialog() {
-	var scraper scraper.VideoScraper = scraper.NewClipzagScraper()
+	//scraper menu
+	var videoScraper scraper.VideoScraper
+	scraperMenu := cwidget.NewDropDown("", resource.DefaultIcon())
+	scraperMenu.Add("YouTube ", theme.AccountIcon(), func() { videoScraper = scraper.NewClipzagScraper() })
+	scraperMenu.Add("BiliBili", theme.ColorChromaticIcon(), func() { fmt.Println("not implemented...") })
+	scraperMenu.Select(0)
 
-	changeScraperButton := cwidget.NewButtonWithIcon("", resource.DefaultIcon(), func() {})
-
+	//search bar
 	searchBar := widget.NewEntry()
+	searchBar.SetPlaceHolder("Search Video")
+	searchBar.ActionItem = cwidget.NewButtonWithIcon("", theme.SearchIcon(), func() { searchBar.OnSubmitted(searchBar.Text) })
 	searchBar.OnSubmitted = func(title string) {
-		result, err := scraper.Search(title)
+		result, err := videoScraper.Search(title)
 		assert.NoErr(err, "failed to scrape the video info")
 		fmt.Println(result)
 	}
-	searchButton := cwidget.NewButtonWithIcon("", theme.SearchIcon(), func() { searchBar.OnSubmitted(searchBar.Text) })
 
-	onlineMusicDialog := dialog.NewCustom("Online Music", "( X )", container.NewBorder(
-		container.NewBorder(
-			nil,
-			nil,
-			changeScraperButton,
-			searchButton,
-			searchBar,
-		),
+	onlineMusicDialog := dialog.NewCustom("", "( X )", container.NewBorder(
+		container.NewBorder(nil, nil, scraperMenu, nil, searchBar),
 		nil,
 		nil,
 		nil,
 	), getWindow())
-
 	onlineMusicDialog.Resize(getWindow().Canvas().Size())
 	onlineMusicDialog.Show()
-
-	// youtubeResultData := cbinding.MakeYoutubeResultDataList()
-	// scraper := scraper.NewClipzagScraper()
-
-	// searchBar := widget.NewEntry()
-	// searchBar.SetPlaceHolder(">>")
-	// searchBar.OnSubmitted = func(s string) {}
-	// searchButton := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon(), func() { searchBar.OnSubmitted(searchBar.Text) })
 
 	// viewList := cwidget.NewYoutubeResultView()
 
