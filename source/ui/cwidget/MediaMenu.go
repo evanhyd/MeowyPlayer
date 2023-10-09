@@ -41,9 +41,9 @@ func NewMediaMenu() *MediaMenu {
 		NewProgressSlider(0.0, 1.0, 0.001, 0.0),
 		widget.NewLabel("00:00"),
 		newModeButton(nil, modeIcons, nil),
-		NewButtonWithIcon("", theme.MediaFastRewindIcon(), nil),
+		NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), nil),
 		NewButtonWithIcon("", theme.RadioButtonCheckedIcon(), nil),
-		NewButtonWithIcon("", theme.MediaFastForwardIcon(), nil),
+		NewButtonWithIcon("", theme.MediaSkipNextIcon(), nil),
 		newVolumeSlider(),
 	}
 	menu.ExtendBaseWidget(menu)
