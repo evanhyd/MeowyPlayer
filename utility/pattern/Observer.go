@@ -13,21 +13,30 @@ type Observer[T any] interface {
 }
 
 /*
-A generic subject class.
+A generic subject interface.
 */
-type Subject[T any] struct {
+type Subject[T any] interface {
+	Attach(Observer[T])
+	Detach(Observer[T])
+	NotifyAll(T)
+}
+
+/*
+A generic subject base class.
+*/
+type SubjectBase[T any] struct {
 	observers container.Slice[Observer[T]]
 }
 
-func (s *Subject[T]) Attach(observer Observer[T]) {
+func (s *SubjectBase[T]) Attach(observer Observer[T]) {
 	s.observers.PushBack(observer)
 }
 
-func (s *Subject[T]) Detach(observer Observer[T]) {
+func (s *SubjectBase[T]) Detach(observer Observer[T]) {
 	s.observers.Remove(slices.Index(s.observers, observer))
 }
 
-func (s *Subject[T]) NotifyAll(t T) {
+func (s *SubjectBase[T]) NotifyAll(t T) {
 	for _, observer := range s.observers {
 		go observer.Notify(t)
 	}
@@ -37,21 +46,17 @@ func (s *Subject[T]) NotifyAll(t T) {
 A generic value wrapper that notify the observers whenever the value gets set.
 */
 type Data[T any] struct {
-	Subject[*T]
+	SubjectBase[T]
 	value T
 }
 
-func (d *Data[T]) NotifyAll() {
-	d.Subject.NotifyAll(&d.value)
+func (d *Data[T]) Get() T {
+	return d.value
 }
 
-func (d *Data[T]) Set(v *T) {
-	d.value = *v
-	d.NotifyAll()
-}
-
-func (d *Data[T]) Get() *T {
-	return &d.value
+func (d *Data[T]) Set(v T) {
+	d.value = v
+	d.SubjectBase.NotifyAll(d.value)
 }
 
 /*

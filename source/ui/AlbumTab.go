@@ -39,16 +39,18 @@ func newAlbumTab() *container.TabItem {
 	))
 }
 
-func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
-	return cwidget.NewAlbumViewList(data, func(album resource.Album) fyne.CanvasObject {
-		view := cwidget.NewAlbumView(&album)
-		view.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(&album) }
-		view.OnTappedSecondary = func(event *fyne.PointEvent) {
-			canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
-			newAlbumMenu(canvas, &album).ShowAtPosition(event.AbsolutePosition)
-		}
-		return view
-	}, fyne.NewSize(135.0, 165.0))
+func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.ViewList[resource.Album] {
+	return cwidget.NewViewList[resource.Album](data, container.NewGridWrap(fyne.NewSize(135.0, 165.0)),
+		func(album resource.Album) fyne.CanvasObject {
+			view := cwidget.NewAlbumView(&album)
+			view.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(&album) }
+			view.OnTappedSecondary = func(event *fyne.PointEvent) {
+				canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
+				newAlbumMenu(canvas, &album).ShowAtPosition(event.AbsolutePosition)
+			}
+			return view
+		},
+	)
 }
 
 func newAlbumSearchBar(data *cbinding.AlbumDataList) *widget.Entry {

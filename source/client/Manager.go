@@ -8,9 +8,9 @@ import (
 	"meowyplayer.com/utility/pattern"
 )
 
-var collectionData pattern.Data[resource.Collection]
-var albumData pattern.Data[resource.Album]
-var playListData pattern.Data[resource.PlayList]
+var collectionData pattern.Data[*resource.Collection]
+var albumData pattern.Data[*resource.Album]
+var playListData pattern.Data[*resource.PlayList]
 
 // the album pointer parameter may refer to a temporary object from the view list
 // we need the original one from the collection
@@ -36,15 +36,15 @@ func reloadAlbumData() error {
 	return nil
 }
 
-func GetCollectionData() *pattern.Data[resource.Collection] {
+func GetCollectionData() *pattern.Data[*resource.Collection] {
 	return &collectionData
 }
 
-func GetAlbumData() *pattern.Data[resource.Album] {
+func GetAlbumData() *pattern.Data[*resource.Album] {
 	return &albumData
 }
 
-func GetPlayListData() *pattern.Data[resource.PlayList] {
+func GetPlayListData() *pattern.Data[*resource.PlayList] {
 	return &playListData
 }
 

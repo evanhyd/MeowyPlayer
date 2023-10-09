@@ -38,13 +38,15 @@ func newMusicTab() *container.TabItem {
 	))
 }
 
-func newMusicViewList(data *cbinding.MusicDataList) *cwidget.MusicViewList {
-	return cwidget.NewMusicViewList(data, func(music resource.Music) fyne.CanvasObject {
-		view := cwidget.NewMusicView(&music)
-		view.OnTapped = func(*fyne.PointEvent) { client.GetPlayListData().Set(resource.NewPlayList(data.GetAlbum(), &music)) }
-		view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(&music) }
-		return view
-	})
+func newMusicViewList(data *cbinding.MusicDataList) *cwidget.ViewList[resource.Music] {
+	return cwidget.NewViewList[resource.Music](data, container.NewVBox(),
+		func(music resource.Music) fyne.CanvasObject {
+			view := cwidget.NewMusicView(&music)
+			view.OnTapped = func(*fyne.PointEvent) { client.GetPlayListData().Set(resource.NewPlayList(data.GetAlbum(), &music)) }
+			view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(&music) }
+			return view
+		},
+	)
 }
 
 func showDeleteMusicDialog(music *resource.Music) {
