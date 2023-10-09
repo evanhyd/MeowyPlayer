@@ -9,7 +9,7 @@ import (
 
 type MusicViewList = viewList[resource.Music]
 
-func NewMusicViewList(data *cbinding.MusicDataList, makeView func(*resource.Music) fyne.CanvasObject) *MusicViewList {
+func NewMusicViewList(data *cbinding.MusicDataList, makeView func(resource.Music) fyne.CanvasObject) *MusicViewList {
 	list := &MusicViewList{display: container.NewVBox(), makeView: makeView}
 	data.Attach(list)
 	list.ExtendBaseWidget(list)

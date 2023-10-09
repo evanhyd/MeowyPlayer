@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"log"
 
 	"fyne.io/fyne/v2"
@@ -10,7 +11,10 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/client"
+	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cwidget"
+	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/utility/network/scraper"
 )
 
 func showAddLocalMusicDialog() {
@@ -28,12 +32,31 @@ func showAddLocalMusicDialog() {
 }
 
 func showAddOnlineMusicDialog() {
-	onlineMusicDialog := dialog.NewCustom("Online Music", "( X )", container.NewMax(
-		widget.NewAccordion(
-			widget.NewAccordionItem("a", cwidget.NewButtonWithIcon("b", theme.CheckButtonIcon(), nil)),
-			widget.NewAccordionItem("c", cwidget.NewButtonWithIcon("d", theme.ComputerIcon(), nil)),
+	var scraper scraper.VideoScraper = scraper.NewClipzagScraper()
+
+	changeScraperButton := cwidget.NewButtonWithIcon("", resource.DefaultIcon(), func() { showScraperSelectionDialog(&scraper) })
+	searchBar := widget.NewEntry()
+	searchBar.OnSubmitted = func(title string) {
+		result, err := scraper.Search(title)
+		assert.NoErr(err, "failed to scrape the video info")
+		fmt.Println(result)
+	}
+	searchButton := cwidget.NewButtonWithIcon("", theme.SearchIcon(), func() { searchBar.OnSubmitted(searchBar.Text) })
+
+	onlineMusicDialog := dialog.NewCustom("Online Music", "( X )", container.NewBorder(
+		container.NewBorder(
+			nil,
+			nil,
+			changeScraperButton,
+			searchButton,
+			searchBar,
 		),
+		nil,
+		nil,
+		nil,
 	), getWindow())
+
+	onlineMusicDialog.Resize(getWindow().Canvas().Size())
 	onlineMusicDialog.Show()
 
 	// youtubeResultData := cbinding.MakeYoutubeResultDataList()
@@ -124,4 +147,9 @@ func showAddOnlineMusicDialog() {
 	// ), player.GetMainWindow())
 	// onlineBrowserDialog.Resize(resource.GetMusicAddOnlineDialogSize())
 	// return onlineBrowserDialog
+}
+
+func showScraperSelectionDialog(scraper *scraper.VideoScraper) {
+	scraperSelectionDialog := dialog.NewCustom("Source", "( X )", nil, getWindow())
+	scraperSelectionDialog.Show()
 }

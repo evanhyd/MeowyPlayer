@@ -9,7 +9,7 @@ import (
 
 type AlbumViewList = viewList[resource.Album]
 
-func NewAlbumViewList(data *cbinding.AlbumDataList, makeView func(*resource.Album) fyne.CanvasObject, size fyne.Size) *AlbumViewList {
+func NewAlbumViewList(data *cbinding.AlbumDataList, makeView func(resource.Album) fyne.CanvasObject, size fyne.Size) *AlbumViewList {
 	list := &AlbumViewList{display: container.NewGridWrap(size), makeView: makeView}
 	data.Attach(list)
 	list.ExtendBaseWidget(list)

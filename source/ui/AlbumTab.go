@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/resource"
@@ -20,7 +21,7 @@ func newAlbumTab() *container.TabItem {
 	data := cbinding.MakeAlbumDataList()
 	client.GetCollectionData().Attach(&data)
 
-	albumAdderLocal := cwidget.NewButtonWithIcon("", resource.AlbumAdderLocalIcon(), showAddLocalAlbumDialog)
+	albumAdderLocal := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), showAddLocalAlbumDialog)
 	albumAdderOnline := cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), showAddOnlineAlbumDialog)
 
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon(), container.NewBorder(
@@ -39,12 +40,12 @@ func newAlbumTab() *container.TabItem {
 }
 
 func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.AlbumViewList {
-	return cwidget.NewAlbumViewList(data, func(album *resource.Album) fyne.CanvasObject {
-		view := cwidget.NewAlbumView(album)
-		view.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(album) }
+	return cwidget.NewAlbumViewList(data, func(album resource.Album) fyne.CanvasObject {
+		view := cwidget.NewAlbumView(&album)
+		view.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(&album) }
 		view.OnTappedSecondary = func(event *fyne.PointEvent) {
 			canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
-			newAlbumMenu(canvas, album).ShowAtPosition(event.AbsolutePosition)
+			newAlbumMenu(canvas, &album).ShowAtPosition(event.AbsolutePosition)
 		}
 		return view
 	}, fyne.NewSize(135.0, 165.0))

@@ -9,7 +9,7 @@ import (
 type viewList[T any] struct {
 	widget.BaseWidget
 	display  *fyne.Container
-	makeView func(*T) fyne.CanvasObject
+	makeView func(T) fyne.CanvasObject
 }
 
 func (v *viewList[T]) CreateRenderer() fyne.WidgetRenderer {
@@ -27,7 +27,7 @@ func (v *viewList[T]) Notify(data []T) {
 func (v *viewList[T]) makeViews(data []T) []fyne.CanvasObject {
 	views := make([]fyne.CanvasObject, len(data))
 	for i := range data {
-		views[i] = v.makeView(&data[i])
+		views[i] = v.makeView(data[i])
 	}
 	return views
 }

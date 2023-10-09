@@ -15,7 +15,7 @@ import (
 const (
 	RANDOM = iota
 	ORDERED
-	REPEAT
+	REPLAY
 	SIZE
 )
 
@@ -97,7 +97,7 @@ func (m *MusicPlayer) rollback() {
 	case ORDERED:
 		m.SetIndex((m.Index() - 1 + len(m.Album().MusicList)) % len(m.Album().MusicList))
 
-	case REPEAT:
+	case REPLAY:
 		//nothing
 	}
 }
@@ -116,7 +116,7 @@ func (m *MusicPlayer) skip() {
 	case ORDERED:
 		m.SetIndex((m.Index() + 1) % len(m.Album().MusicList))
 
-	case REPEAT:
+	case REPLAY:
 		//nothing
 	}
 }
@@ -125,7 +125,7 @@ func (m *MusicPlayer) Notify(play *resource.PlayList) {
 	m.playListChan <- *play
 }
 
-func (m *MusicPlayer) Start(menu *cwidget.CommandMenu) {
+func (m *MusicPlayer) Start(menu *cwidget.MediaMenu) {
 	//initialize oto mp3 context
 	context, ready, err := oto.NewContext(resource.SAMPLING_RATE, resource.NUM_OF_CHANNELS, resource.AUDIO_BIT_DEPTH)
 	assert.NoErr(err, "failed to start the music player")
@@ -151,6 +151,8 @@ WaitLoop:
 	for {
 		menu.SetMusic(m.Music())
 		mp3Controller := resource.NewMP3Controller(context, m.PlayList.Music())
+		mp3Controller.SetVolume(menu.Volume())
+
 		interrupted := false
 		fmt.Println("playing", m.Music().SimpleTitle())
 

@@ -36,7 +36,7 @@ func NewClipzagScraper() *ClipzagScraper {
 	return &ClipzagScraper{regex}
 }
 
-func (s *ClipzagScraper) Search(title string) ([]YoutubeResult, error) {
+func (s *ClipzagScraper) Search(title string) ([]VideoResult, error) {
 	content, err := s.getResponse(title)
 	if err != nil {
 		return nil, err
@@ -60,10 +60,10 @@ func (s *ClipzagScraper) getResponse(title string) (string, error) {
 	return builder.String(), nil
 }
 
-func (s *ClipzagScraper) scrapeContent(content string) []YoutubeResult {
+func (s *ClipzagScraper) scrapeContent(content string) []VideoResult {
 	//parse regex and prepare output buffers
 	matches := s.regex.FindAllStringSubmatch(content, -1)
-	results := make([]YoutubeResult, len(matches))
+	results := make([]VideoResult, len(matches))
 	log.Printf("scraping %v results...\n", len(matches))
 
 	//parse into the results
@@ -103,7 +103,7 @@ func (s *ClipzagScraper) scrapeContent(content string) []YoutubeResult {
 	*/
 }
 
-func (s *ClipzagScraper) parseMatch(match []string, dst *YoutubeResult) {
+func (s *ClipzagScraper) parseMatch(match []string, dst *VideoResult) {
 	thumbnail, err := fyne.LoadResourceFromURLString(`https://` + match[2])
 	assert.NoErr(err, "failed to download the thumbnail")
 
@@ -115,7 +115,7 @@ func (s *ClipzagScraper) parseMatch(match []string, dst *YoutubeResult) {
 		seconds = seconds*60 + t
 	}
 
-	*dst = YoutubeResult{
+	*dst = VideoResult{
 		VideoID:      match[1],
 		Thumbnail:    thumbnail,
 		Length:       time.Duration(seconds * int(time.Second)),

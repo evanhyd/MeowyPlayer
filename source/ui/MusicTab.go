@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/resource"
@@ -19,7 +20,7 @@ func newMusicTab() *container.TabItem {
 	data := cbinding.MakeMusicDataList()
 	client.GetAlbumData().Attach(&data)
 
-	musicAdderLocal := cwidget.NewButtonWithIcon("", resource.MusicAdderLocalIcon(), showAddLocalMusicDialog)
+	musicAdderLocal := cwidget.NewButtonWithIcon("", theme.FolderOpenIcon(), showAddLocalMusicDialog)
 	musicAdderOnline := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon(), showAddOnlineMusicDialog)
 
 	return container.NewTabItemWithIcon("Music", resource.MusicTabIcon(), container.NewBorder(
@@ -38,10 +39,10 @@ func newMusicTab() *container.TabItem {
 }
 
 func newMusicViewList(data *cbinding.MusicDataList) *cwidget.MusicViewList {
-	return cwidget.NewMusicViewList(data, func(m *resource.Music) fyne.CanvasObject {
-		view := cwidget.NewMusicView(m)
-		view.OnTapped = func(*fyne.PointEvent) { client.GetPlayListData().Set(resource.NewPlayList(data.GetAlbum(), m)) }
-		view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(m) }
+	return cwidget.NewMusicViewList(data, func(music resource.Music) fyne.CanvasObject {
+		view := cwidget.NewMusicView(&music)
+		view.OnTapped = func(*fyne.PointEvent) { client.GetPlayListData().Set(resource.NewPlayList(data.GetAlbum(), &music)) }
+		view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(&music) }
 		return view
 	})
 }

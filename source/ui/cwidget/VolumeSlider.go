@@ -19,7 +19,7 @@ func newVolumeSlider() *volumeSlider {
 	slider.Value = 0.5
 
 	volume := 0.0
-	button := NewButtonWithIcon("", theme.MediaMusicIcon(), func() {
+	button := NewButtonWithIcon("", theme.VolumeUpIcon(), func() {
 		if slider.Value == 0.0 {
 			slider.SetValue(volume)
 		} else {
@@ -38,7 +38,14 @@ func (v *volumeSlider) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (v *volumeSlider) SetOnChanged(onChanged func(volume float64)) {
-	v.slider.OnChanged = onChanged
+	v.slider.OnChanged = func(volume float64) {
+		onChanged(volume)
+		if v.slider.Value == 0.0 {
+			v.muteButton.SetIcon(theme.VolumeMuteIcon())
+		} else {
+			v.muteButton.SetIcon(theme.VolumeUpIcon())
+		}
+	}
 }
 
 func (v *volumeSlider) SetVolume(volume float64) {

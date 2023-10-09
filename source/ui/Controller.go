@@ -11,7 +11,7 @@ import (
 
 func newController() fyne.CanvasObject {
 	coverView := cwidget.NewCoverView(fyne.NewSize(128.0, 128.0))
-	controller := cwidget.NewCommandMenu()
+	controller := cwidget.NewMediaMenu()
 	musicPlayer := client.NewMusicPlayer()
 	controller.Bind(musicPlayer)
 	go musicPlayer.Start(controller)
