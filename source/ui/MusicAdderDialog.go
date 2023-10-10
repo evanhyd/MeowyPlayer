@@ -15,6 +15,7 @@ import (
 	"meowyplayer.com/source/ui/cwidget"
 	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/network/scraper"
+	"meowyplayer.com/utility/pattern"
 )
 
 func showAddLocalMusicDialog() {
@@ -31,12 +32,24 @@ func showAddLocalMusicDialog() {
 	fileReader.Show()
 }
 
+func newVideoResultViewList(dataSource pattern.Subject[[]scraper.VideoResult]) *cwidget.ViewList[scraper.VideoResult] {
+	return cwidget.NewViewList[scraper.VideoResult](dataSource, container.NewVBox(),
+		func(result scraper.VideoResult) fyne.CanvasObject {
+			return cwidget.NewVideoResultView(&result, fyne.NewSize(128.0*1.61803398875, 128.0))
+		},
+	)
+}
+
 func showAddOnlineMusicDialog() {
+	//video result data list
+	videoResultData := pattern.Data[[]scraper.VideoResult]{}
+	videoResultViewList := newVideoResultViewList(&videoResultData)
+
 	//scraper menu
 	var videoScraper scraper.VideoScraper
 	scraperMenu := cwidget.NewDropDown("", resource.DefaultIcon())
-	scraperMenu.Add("YouTube ", theme.AccountIcon(), func() { videoScraper = scraper.NewClipzagScraper() })
-	scraperMenu.Add("BiliBili", theme.ColorChromaticIcon(), func() { fmt.Println("not implemented...") })
+	scraperMenu.Add("YouTube", resource.YouTubeIcon(), func() { videoScraper = scraper.NewClipzagScraper() })
+	scraperMenu.Add("BiliBili", resource.BiliBiliIcon(), func() { fmt.Println("not implemented...") })
 	scraperMenu.Select(0)
 
 	//search bar
@@ -46,40 +59,18 @@ func showAddOnlineMusicDialog() {
 	searchBar.OnSubmitted = func(title string) {
 		result, err := videoScraper.Search(title)
 		assert.NoErr(err, "failed to scrape the video info")
-		fmt.Println(result)
+		videoResultData.Set(result)
 	}
 
-	onlineMusicDialog := dialog.NewCustom("", "( X )", container.NewBorder(
+	onlineMusicDialog := dialog.NewCustom("", "O", container.NewBorder(
 		container.NewBorder(nil, nil, scraperMenu, nil, searchBar),
 		nil,
 		nil,
 		nil,
+		videoResultViewList,
 	), getWindow())
 	onlineMusicDialog.Resize(getWindow().Canvas().Size())
 	onlineMusicDialog.Show()
-
-	// viewList := cwidget.NewYoutubeResultView()
-
-	// scroll := cwidget.NewList(
-	// 	func() fyne.CanvasObject {
-	// 		card := widget.NewCard("", "", nil)
-	// 		card.Image = canvas.NewImageFromResource(defaultIcon)
-	// 		card.Image.SetMinSize(resource.GetThumbnailIconSize())
-
-	// 		videoTitle := widget.NewLabel("")
-	// 		videoTitle.TextStyle = fyne.TextStyle{Bold: true, Monospace: true, Symbol: true}
-
-	// 		videoInfo := widget.NewLabel("")
-	// 		description := widget.NewLabel("")
-
-	// 		return container.NewBorder(
-	// 			nil,
-	// 			nil,
-	// 			card,
-	// 			nil,
-	// 			container.NewGridWithRows(3, videoTitle, videoInfo, description),
-	// 		)
-	// 	},
 
 	// 	func(result scraper.ClipzagResult, canvas fyne.CanvasObject) {
 	// 		borderItems := canvas.(*fyne.Container).Objects
@@ -102,19 +93,6 @@ func showAddOnlineMusicDialog() {
 	// 		}
 	// 	},
 	// )
-
-	// searchButton.OnTapped = func() {
-	// 	result, err := scraper.GetSearchResult(searchBar.Text)
-	// 	if err != nil {
-	// 		DisplayErrorIfAny(err)
-	// 		return
-	// 	}
-	// 	scroll.SetItems(result)
-	// }
-
-	// searchBar.OnSubmitted = func(title string) {
-	// 	searchButton.OnTapped()
-	// }
 
 	// scroll.SetOnSelected(func(result *scraper.ClipzagResult) {
 	// 	progress := dialog.NewCustom(result.VideoTitle(), "downloading", widget.NewProgressBarInfinite(), player.GetMainWindow())

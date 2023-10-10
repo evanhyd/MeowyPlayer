@@ -12,8 +12,8 @@ type Sign struct {
 	icon  *widget.Icon
 }
 
-func NewSign(icon fyne.Resource, title string) *Sign {
-	sign := &Sign{icon: widget.NewIcon(icon), title: widget.NewLabel(title)}
+func NewSign(title string, icon fyne.Resource) *Sign {
+	sign := &Sign{title: widget.NewLabel(title), icon: widget.NewIcon(icon)}
 	sign.ExtendBaseWidget(sign)
 	return sign
 }

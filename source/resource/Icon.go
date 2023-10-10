@@ -16,6 +16,8 @@ const (
 	iconNameMusicAdderOnline = "music_adder_online.png"
 	iconNameDefault          = "default.png"
 	iconRandom               = "random.png"
+	iconYouTube              = "youtube.png"
+	iconBiliBili             = "bilibili.png"
 )
 
 func getResource(resourcePath string) fyne.Resource {
@@ -61,4 +63,12 @@ func DefaultIcon() fyne.Resource {
 
 func RandomIcon() fyne.Resource {
 	return getIcon(iconRandom)
+}
+
+func YouTubeIcon() fyne.Resource {
+	return getIcon(iconYouTube)
+}
+
+func BiliBiliIcon() fyne.Resource {
+	return getIcon(iconBiliBili)
 }

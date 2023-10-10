@@ -31,7 +31,7 @@ func (m *MusicView) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewMax(m.title, m.highlight))
 }
 
-func (m *MusicView) MouseIn(event *desktop.MouseEvent) {
+func (m *MusicView) MouseIn(*desktop.MouseEvent) {
 	m.highlight.Show()
 	m.Refresh()
 }
