@@ -22,12 +22,11 @@ func NewAlbumView(album *resource.Album) *AlbumView {
 	view := &AlbumView{
 		cover: canvas.NewImageFromResource(album.Cover),
 		info:  widget.NewLabel(album.Description()),
-		title: widget.NewLabel(album.Title),
+		title: widget.NewLabelWithStyle(album.Title, fyne.TextAlignCenter, fyne.TextStyle{}),
 		name:  album.Title,
 	}
 	view.info.Hide()
 	view.info.Wrapping = fyne.TextWrapWord
-	view.title.Alignment = fyne.TextAlignCenter
 	view.title.Wrapping = fyne.TextTruncate
 	view.ExtendBaseWidget(view)
 	return view
@@ -38,14 +37,14 @@ func (a *AlbumView) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (a *AlbumView) MouseIn(event *desktop.MouseEvent) {
-	a.title.Text = ""
+	a.title.SetText("")
 	a.cover.Translucency = 0.8
 	a.info.Show()
 	a.Refresh()
 }
 
 func (a *AlbumView) MouseOut() {
-	a.title.Text = a.name
+	a.title.SetText(a.name)
 	a.cover.Translucency = 0.0
 	a.info.Hide()
 	a.Refresh()

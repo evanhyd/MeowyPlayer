@@ -24,12 +24,11 @@ func newModeButton(labels []string, icons []fyne.Resource, onTapped func(int)) *
 
 func (b *ModeButton) update() {
 	if b.mode < len(b.labels) {
-		b.Text = b.labels[b.mode]
+		b.SetText(b.labels[b.mode])
 	}
 	if b.mode < len(b.icons) {
-		b.Icon = b.icons[b.mode]
+		b.SetIcon(b.icons[b.mode])
 	}
-	b.Refresh()
 }
 
 func (b *ModeButton) Tapped(*fyne.PointEvent) {

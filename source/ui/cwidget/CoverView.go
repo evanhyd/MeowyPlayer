@@ -19,10 +19,9 @@ type CoverView struct {
 func NewCoverView(size fyne.Size) *CoverView {
 	view := &CoverView{
 		cover: canvas.NewImageFromResource(resource.DefaultIcon()),
-		title: widget.NewLabel(""),
+		title: widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{}),
 	}
 	view.cover.SetMinSize(size)
-	view.title.Alignment = fyne.TextAlignCenter
 	view.title.Wrapping = fyne.TextWrapWord
 	view.title.Hide()
 	view.ExtendBaseWidget(view)
@@ -35,7 +34,7 @@ func (c *CoverView) CreateRenderer() fyne.WidgetRenderer {
 
 func (c *CoverView) SetAlbum(album *resource.Album) {
 	c.cover.Resource = album.Cover
-	c.title.Text = album.Title
+	c.title.SetText(album.Title)
 	c.Refresh()
 }
 
