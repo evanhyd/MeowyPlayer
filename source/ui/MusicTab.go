@@ -14,11 +14,15 @@ import (
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cbinding"
 	"meowyplayer.com/source/ui/cwidget"
+	"meowyplayer.com/utility/pattern"
 )
 
 func newMusicTab() *container.TabItem {
 	data := cbinding.MakeMusicDataList()
 	client.GetAlbumData().Attach(&data)
+
+	searchBar := newMusicSearchBar(&data)
+	client.GetAlbumData().Attach(pattern.MakeCallback(func(*resource.Album) { searchBar.SetText("") }))
 
 	musicAdderLocal := cwidget.NewButtonWithIcon("", theme.FolderOpenIcon(), showAddLocalMusicDialog)
 	musicAdderOnline := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon(), showAddOnlineMusicDialog)
@@ -29,7 +33,7 @@ func newMusicTab() *container.TabItem {
 			container.NewGridWithRows(1, newMusicTitleButton(&data, "Title"), newMusicDateButton(&data, "Date")),
 			nil,
 			container.NewGridWithRows(1, musicAdderLocal, musicAdderOnline),
-			newMusicSearchBar(&data),
+			searchBar,
 		),
 		nil,
 		nil,

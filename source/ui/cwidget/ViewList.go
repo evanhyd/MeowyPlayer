@@ -10,18 +10,19 @@ import (
 type ViewList[T any] struct {
 	widget.BaseWidget
 	display  *fyne.Container
+	scroll   *container.Scroll
 	makeView func(T) fyne.CanvasObject
 }
 
-func NewViewList[T any](dataList pattern.Subject[[]T], container *fyne.Container, makeView func(T) fyne.CanvasObject) *ViewList[T] {
-	viewList := &ViewList[T]{display: container, makeView: makeView}
+func NewViewList[T any](dataList pattern.Subject[[]T], display *fyne.Container, makeView func(T) fyne.CanvasObject) *ViewList[T] {
+	viewList := &ViewList[T]{display: display, scroll: container.NewScroll(display), makeView: makeView}
 	dataList.Attach(viewList)
 	viewList.ExtendBaseWidget(viewList)
 	return viewList
 }
 
 func (v *ViewList[T]) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewScroll(v.display))
+	return widget.NewSimpleRenderer(v.scroll)
 }
 
 func (v *ViewList[T]) Notify(data []T) {
@@ -30,6 +31,8 @@ func (v *ViewList[T]) Notify(data []T) {
 	for _, view := range views {
 		v.display.Add(view)
 	}
+	v.scroll.Offset = fyne.NewPos(0, 0)
+	v.Refresh()
 }
 
 func (v *ViewList[T]) makeViews(data []T) []fyne.CanvasObject {
