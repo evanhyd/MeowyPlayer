@@ -20,7 +20,7 @@ func getSourceAlbum(album *resource.Album) *resource.Album {
 }
 
 func reloadCollectionData() error {
-	if err := json.Write(resource.CollectionPath(), collectionData.Get()); err != nil {
+	if err := json.WriteFile(resource.CollectionPath(), collectionData.Get()); err != nil {
 		return err
 	}
 	collection, err := LoadFromLocalCollection()
@@ -50,7 +50,7 @@ func GetPlayListData() *pattern.Data[*resource.PlayList] {
 
 func LoadFromLocalCollection() (resource.Collection, error) {
 	inUse := resource.Collection{}
-	if err := json.Read(resource.CollectionPath(), &inUse); err != nil {
+	if err := json.ReadFile(resource.CollectionPath(), &inUse); err != nil {
 		return inUse, err
 	}
 

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func Write(fileName string, object any) error {
+func WriteFile(fileName string, object any) error {
 	data, err := json.MarshalIndent(object, "", "  ")
 	if err != nil {
 		return err
@@ -13,7 +13,7 @@ func Write(fileName string, object any) error {
 	return os.WriteFile(fileName, data, os.ModePerm)
 }
 
-func Read(fileName string, object any) error {
+func ReadFile(fileName string, object any) error {
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		return err

@@ -14,6 +14,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/utility/network/fileformat"
 )
 
 type ClipzagScraper struct {
@@ -21,7 +22,7 @@ type ClipzagScraper struct {
 }
 
 func NewClipzagScraper() *ClipzagScraper {
-	const resultPattern = `<a class="title-color" href="watch\?v=(.+)">\n` + //videoID
+	const pattern = `<a class="title-color" href="watch\?v=(.+)">\n` + //videoID
 		`<div class="video-thumbs">\n` +
 		`<img class="videosthumbs-style" data-thumb-m data-thumb="//(.+)" src="//.+"><span class="duration">(.+)</span></div>\n` + //thumbnail, length
 		`<div class="title-style" title="(.+)">.+</div>\n` + //title
@@ -31,20 +32,20 @@ func NewClipzagScraper() *ClipzagScraper {
 		`</div>\n` +
 		`<div class="postdiscription">(.+)</div>` //description
 
-	regex, err := regexp.Compile(resultPattern)
+	regex, err := regexp.Compile(pattern)
 	assert.NoErr(err, "failed to compile Clipzag scraper regex")
 	return &ClipzagScraper{regex}
 }
 
-func (s *ClipzagScraper) Search(title string) ([]VideoResult, error) {
-	content, err := s.getResponse(title)
+func (s *ClipzagScraper) Search(title string) ([]fileformat.VideoResult, error) {
+	content, err := s.getContent(title)
 	if err != nil {
 		return nil, err
 	}
 	return s.scrapeContent(content), nil
 }
 
-func (s *ClipzagScraper) getResponse(title string) (string, error) {
+func (s *ClipzagScraper) getContent(title string) (string, error) {
 	url := `https://clipzag.com/search?` + url.Values{"q": {title}, "order": {"relevance"}}.Encode()
 	log.Printf("scraping from %v\n", url)
 	resp, err := http.Get(url)
@@ -53,17 +54,14 @@ func (s *ClipzagScraper) getResponse(title string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	builder := &strings.Builder{}
-	if _, err := io.Copy(builder, resp.Body); err != nil {
-		return "", err
-	}
-	return builder.String(), nil
+	data, err := io.ReadAll(resp.Body)
+	return string(data), err
 }
 
-func (s *ClipzagScraper) scrapeContent(content string) []VideoResult {
+func (s *ClipzagScraper) scrapeContent(content string) []fileformat.VideoResult {
 	//parse regex and prepare output buffers
 	matches := s.regex.FindAllStringSubmatch(content, -1)
-	results := make([]VideoResult, len(matches))
+	results := make([]fileformat.VideoResult, len(matches))
 	log.Printf("scraping %v results...\n", len(matches))
 
 	//parse into the results
@@ -103,7 +101,7 @@ func (s *ClipzagScraper) scrapeContent(content string) []VideoResult {
 	*/
 }
 
-func (s *ClipzagScraper) parseMatch(match []string, dst *VideoResult) {
+func (s *ClipzagScraper) parseMatch(match []string, dst *fileformat.VideoResult) {
 	thumbnail, err := fyne.LoadResourceFromURLString(`https://` + match[2])
 	assert.NoErr(err, "failed to download the thumbnail")
 
@@ -115,7 +113,7 @@ func (s *ClipzagScraper) parseMatch(match []string, dst *VideoResult) {
 		seconds = seconds*60 + t
 	}
 
-	*dst = VideoResult{
+	*dst = fileformat.VideoResult{
 		VideoID:      match[1],
 		Thumbnail:    thumbnail,
 		Length:       time.Duration(seconds * int(time.Second)),

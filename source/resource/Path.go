@@ -41,7 +41,7 @@ func MakeNecessaryPath() {
 	_, err := os.Stat(CollectionPath())
 	if os.IsNotExist(err) {
 		//create default collection
-		assert.NoErr(json.Write(CollectionPath(), &Collection{Date: time.Now(), Albums: nil}), "failed to create default collection")
+		assert.NoErr(json.WriteFile(CollectionPath(), &Collection{Date: time.Now(), Albums: nil}), "failed to create default collection")
 	} else {
 		assert.NoErr(err, "failed to fetch collection path stats")
 	}

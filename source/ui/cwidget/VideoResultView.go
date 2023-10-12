@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/utility/network/scraper"
+	"meowyplayer.com/utility/network/fileformat"
 )
 
 type VideoResultView struct {
@@ -22,7 +22,7 @@ type VideoResultView struct {
 	highlight    *canvas.Rectangle
 }
 
-func NewVideoResultView(result *scraper.VideoResult, size fyne.Size) *VideoResultView {
+func NewVideoResultView(result *fileformat.VideoResult, size fyne.Size) *VideoResultView {
 	const kConversionFactor = 60
 	mins := int(result.Length.Minutes()) % kConversionFactor
 	secs := int(result.Length.Seconds()) % kConversionFactor

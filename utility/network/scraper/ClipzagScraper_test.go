@@ -10,13 +10,11 @@ import (
 //go test -race -run NameOfThatTestFunc .
 
 func TestChickenNugget(t *testing.T) {
-	var scraper scraper.VideoScraper = scraper.NewClipzagScraper()
-	SearchQuery(scraper, "chicken nugget", t)
+	SearchQuery(scraper.NewClipzagScraper(), "chicken nugget", t)
 }
 
 func TestMonogatari(t *testing.T) {
-	var scraper scraper.VideoScraper = scraper.NewClipzagScraper()
-	SearchQuery(scraper, "renai circulation", t)
+	SearchQuery(scraper.NewClipzagScraper(), "renai circulation", t)
 }
 
 func SearchQuery(scraper scraper.VideoScraper, title string, t *testing.T) {

@@ -14,6 +14,7 @@ import (
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui/cwidget"
 	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/utility/network/fileformat"
 	"meowyplayer.com/utility/network/scraper"
 	"meowyplayer.com/utility/pattern"
 )
@@ -32,9 +33,9 @@ func showAddLocalMusicDialog() {
 	fileReader.Show()
 }
 
-func newVideoResultViewList(dataSource pattern.Subject[[]scraper.VideoResult]) *cwidget.ViewList[scraper.VideoResult] {
-	return cwidget.NewViewList[scraper.VideoResult](dataSource, container.NewVBox(),
-		func(result scraper.VideoResult) fyne.CanvasObject {
+func newVideoResultViewList(dataSource pattern.Subject[[]fileformat.VideoResult]) *cwidget.ViewList[fileformat.VideoResult] {
+	return cwidget.NewViewList[fileformat.VideoResult](dataSource, container.NewVBox(),
+		func(result fileformat.VideoResult) fyne.CanvasObject {
 			return cwidget.NewVideoResultView(&result, fyne.NewSize(128.0*1.61803398875, 128.0))
 		},
 	)
@@ -42,7 +43,7 @@ func newVideoResultViewList(dataSource pattern.Subject[[]scraper.VideoResult]) *
 
 func showAddOnlineMusicDialog() {
 	//video result data list
-	videoResultData := pattern.Data[[]scraper.VideoResult]{}
+	videoResultData := pattern.Data[[]fileformat.VideoResult]{}
 	videoResultViewList := newVideoResultViewList(&videoResultData)
 
 	//scraper menu
