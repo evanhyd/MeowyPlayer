@@ -82,7 +82,7 @@ func showAddOnlineMusicDialog() {
 		videoResultData.Set(result)
 	}
 
-	onlineMusicDialog := dialog.NewCustom("", "O", container.NewBorder(
+	onlineMusicDialog := dialog.NewCustom("", "X", container.NewBorder(
 		container.NewBorder(nil, nil, platformMenu, nil, searchBar),
 		nil,
 		nil,
