@@ -102,9 +102,11 @@ func (s *ClipzagScraper) scrapeContent(content string) []fileformat.VideoResult 
 }
 
 func (s *ClipzagScraper) parseMatch(match []string, dst *fileformat.VideoResult) {
+	//download thumbnail
 	thumbnail, err := fyne.LoadResourceFromURLString(`https://` + match[2])
 	assert.NoErr(err, "failed to download the thumbnail")
 
+	//calculate video length
 	times := strings.Split(match[3], ":")
 	seconds := 0
 	for _, time := range times {
