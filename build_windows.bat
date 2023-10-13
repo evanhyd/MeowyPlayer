@@ -1,4 +1,4 @@
-rm -rf out
+rmdir /s /q out
 mkdir out
 go build -ldflags -H=windowsgui -o out/meowyplayer.exe
-cp -r asset out
+xcopy /E /I /Y asset out\asset
