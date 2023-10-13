@@ -1,6 +1,7 @@
 package downloader_test
 
 import (
+	"os"
 	"testing"
 
 	"meowyplayer.com/utility/network/downloader"
@@ -22,9 +23,14 @@ func TestIntoTheLight(t *testing.T) {
 	DownloadQuery(downloader.NewY2MateDownloader(), &fileformat.VideoResult{Title: "Into The Light", VideoID: "uYO7zbc-wJ0"}, t)
 }
 
+func TestLoveStory(t *testing.T) {
+	DownloadQuery(downloader.NewY2MateDownloader(), &fileformat.VideoResult{Title: "Love Story", VideoID: "8xg3vE8Ie_E"}, t)
+}
+
 func DownloadQuery(downloader downloader.MusicDownloader, video *fileformat.VideoResult, t *testing.T) {
-	_, err := downloader.Download(video)
+	data, err := downloader.Download(video)
 	if err != nil {
 		t.Fatalf("%v\n", err)
 	}
+	os.WriteFile(video.Title, data, 0777)
 }
