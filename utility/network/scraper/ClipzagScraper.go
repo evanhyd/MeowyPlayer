@@ -47,7 +47,7 @@ func (s *ClipzagScraper) Search(title string) ([]fileformat.VideoResult, error) 
 
 func (s *ClipzagScraper) getContent(title string) (string, error) {
 	url := `https://clipzag.com/search?` + url.Values{"q": {title}, "order": {"relevance"}}.Encode()
-	log.Printf("scraping from %v\n", url)
+	log.Printf("[Clipzag] scraping from %v\n", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -62,7 +62,7 @@ func (s *ClipzagScraper) scrapeContent(content string) []fileformat.VideoResult 
 	//parse regex and prepare output buffers
 	matches := s.regex.FindAllStringSubmatch(content, -1)
 	results := make([]fileformat.VideoResult, len(matches))
-	log.Printf("scraping %v results...\n", len(matches))
+	log.Printf("[Clipzag] detected %v results...\n", len(matches))
 
 	//parse into the results
 	wg := sync.WaitGroup{}
@@ -77,7 +77,7 @@ func (s *ClipzagScraper) scrapeContent(content string) []fileformat.VideoResult 
 	}
 	wg.Wait()
 
-	log.Println("scraping completed")
+	log.Printf("[Clipzag] scraping completed\n")
 	return results
 
 	//This code doesn't work well, since the output of the channel is not in order

@@ -13,6 +13,9 @@ func WriteFile(fileName string, object any) error {
 	return os.WriteFile(fileName, data, os.ModePerm)
 }
 
+/*
+Expect object to be a pointer type
+*/
 func ReadFile(fileName string, object any) error {
 	data, err := os.ReadFile(fileName)
 	if err != nil {

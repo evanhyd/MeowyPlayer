@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui"
@@ -22,7 +26,20 @@ func main() {
 	logger.Initiate()
 	resource.MakeNecessaryPath()
 
+	//initiate app configuration
+	fyne.SetCurrentApp(app.NewWithID("MeowyPlayer"))
+	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
+
+	//create window
 	window := ui.NewMainWindow()
+
+	//create system tray
+	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
+		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
+		desktop.SetSystemTrayIcon(resource.WindowIcon())
+	}
+
+	//load local config
 	inUse, err := client.LoadFromLocalCollection()
 	assert.NoErr(err, "failed to load from local collection")
 	client.GetCollectionData().Set(&inUse)

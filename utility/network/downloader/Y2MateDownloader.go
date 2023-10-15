@@ -30,7 +30,7 @@ type Y2MateDownloader struct {
 }
 
 func NewY2MateDownloader() *Y2MateDownloader {
-	const keyPattern = `"f":"mp3","q":"128kbps","q_text":"MP3 - 128kbps","k":"([\w\/\\]+)"`
+	const keyPattern = `"f":"mp3","q":"128kbps","q_text":"MP3 - 128kbps","k":"([\w\/\\\+=]+)"`
 	keyRegex, err := regexp.Compile(keyPattern)
 	assert.NoErr(err, "failed to compile Y2Mate downloader key regex")
 	return &Y2MateDownloader{keyRegex}
@@ -42,7 +42,7 @@ func (d *Y2MateDownloader) Download(video *fileformat.VideoResult) ([]byte, erro
 		return nil, err
 	}
 
-	defer log.Printf("completed downloading\n")
+	defer log.Printf("[Y2mate] downloading %v completed\n", video.Title)
 	return d.getMusicContent(video, key)
 }
 
@@ -51,7 +51,7 @@ func (d *Y2MateDownloader) getConverterKey(video *fileformat.VideoResult) (strin
 		converterUrl = `https://www.y2mate.com/mates/analyzeV2/ajax`
 		youtubeUrl   = `https://www.youtube.com/watch?`
 	)
-	log.Printf("fetching y2mate converter key...\n")
+	log.Printf("[Y2mate] fetching %v converter key...\n", video.Title)
 
 	//request the content that contains converter key
 	videoUrl := youtubeUrl + url.Values{"v": {video.VideoID}}.Encode()
@@ -78,7 +78,7 @@ func (d *Y2MateDownloader) getConverterKey(video *fileformat.VideoResult) (strin
 func (d *Y2MateDownloader) getMusicContent(video *fileformat.VideoResult, converterKey string) ([]byte, error) {
 	const dbURL = `https://www.y2mate.com/mates/convertV2/index`
 
-	log.Printf("downloading music file...\n")
+	log.Printf("[Y2mate] fetching music file: %v...\n", video.Title)
 
 	//request for video -> mp3 conversion
 	queryData := url.Values{"vid": {video.VideoID}, "k": {converterKey}}

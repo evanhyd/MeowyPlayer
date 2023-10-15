@@ -1,31 +1,18 @@
 package ui
 
 import (
+	"log"
+
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/theme"
 	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/utility/pattern"
 )
 
 func NewMainWindow() fyne.Window {
-	const windowTitle = "MeowyPlayer"
-	windowSize := fyne.NewSize(770.0, 650.0)
-
-	//create window
-	fyne.SetCurrentApp(app.NewWithID(windowTitle))
-	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
-	window := newWindow(windowTitle, windowSize)
-
-	//create system tray
-	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
-		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
-		desktop.SetSystemTrayIcon(resource.WindowIcon())
-	}
+	window := newWindow("MeowyPlayer", fyne.NewSize(770.0, 650.0))
 
 	//create item tabs
 	albumTab := newAlbumTab()
@@ -59,5 +46,6 @@ func getWindow() fyne.Window {
 func showErrorIfAny(err error) {
 	if err != nil {
 		dialog.ShowError(err, getWindow())
+		log.Println(err)
 	}
 }
