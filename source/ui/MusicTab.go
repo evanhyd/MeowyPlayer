@@ -19,10 +19,10 @@ import (
 
 func newMusicTab() *container.TabItem {
 	data := cbinding.MakeMusicDataList()
-	client.GetAlbumData().Attach(&data)
+	client.GetInstance().AddAlbumListener(&data)
 
 	searchBar := newMusicSearchBar(&data)
-	client.GetAlbumData().Attach(pattern.MakeCallback(func(*resource.Album) { searchBar.SetText("") }))
+	client.GetInstance().AddAlbumListener(pattern.MakeCallback(func(resource.Album) { searchBar.SetText("") }))
 
 	musicAdderLocal := cwidget.NewButtonWithIcon("", theme.FolderOpenIcon(), showAddLocalMusicDialog)
 	musicAdderOnline := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon(), showAddOnlineMusicDialog)
@@ -46,7 +46,9 @@ func newMusicViewList(data *cbinding.MusicDataList) *cwidget.ViewList[resource.M
 	return cwidget.NewViewList[resource.Music](data, container.NewVBox(),
 		func(music resource.Music) fyne.CanvasObject {
 			view := cwidget.NewMusicView(&music)
-			view.OnTapped = func(*fyne.PointEvent) { client.GetPlayListData().Set(resource.NewPlayList(data.GetAlbum(), &music)) }
+			view.OnTapped = func(*fyne.PointEvent) {
+				client.GetInstance().SetPlayList(resource.NewPlayList(data.GetMusicList(), &music))
+			}
 			view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(&music) }
 			return view
 		},
@@ -56,8 +58,8 @@ func newMusicViewList(data *cbinding.MusicDataList) *cwidget.ViewList[resource.M
 func showDeleteMusicDialog(music *resource.Music) {
 	dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", music.Title), func(delete bool) {
 		if delete {
-			log.Printf("delete %v from the album %v\n", music.Title, client.GetAlbumData().Get().Title)
-			showErrorIfAny(client.DeleteMusic(music))
+			log.Printf("delete %v from the album %v\n", music.Title, client.GetInstance().GetAlbum().Title)
+			showErrorIfAny(client.GetInstance().DeleteMusic(*music))
 		}
 	}, getWindow())
 }

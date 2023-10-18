@@ -40,8 +40,8 @@ func main() {
 	}
 
 	//load local config
-	inUse, err := client.LoadFromLocalCollection()
+	collection, err := client.LoadFromLocalCollection()
 	assert.NoErr(err, "failed to load from local collection")
-	client.GetCollectionData().Set(&inUse)
+	client.GetInstance().SetCollection(collection)
 	window.ShowAndRun()
 }

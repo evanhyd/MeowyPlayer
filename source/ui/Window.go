@@ -20,7 +20,8 @@ func NewMainWindow() fyne.Window {
 	tabs := container.NewAppTabs(albumTab, musicTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
 	tabs.DisableItem(musicTab)
-	client.GetAlbumData().Attach(pattern.MakeCallback(func(*resource.Album) {
+
+	client.GetInstance().AddAlbumListener(pattern.MakeCallback(func(resource.Album) {
 		tabs.EnableItem(musicTab)
 		tabs.Select(musicTab)
 	}))

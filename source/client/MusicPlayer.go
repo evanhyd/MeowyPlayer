@@ -75,7 +75,7 @@ func (m *MusicPlayer) CommandMode(mode int) {
 func (m *MusicPlayer) setPlayMode(playMode int) {
 	if playMode == RANDOM {
 		m.history.Clear()
-		m.randomQueue = rand.Perm(len(m.Album().MusicList))
+		m.randomQueue = rand.Perm(m.MusicCount())
 	}
 	m.playMode = playMode
 }
@@ -95,7 +95,7 @@ func (m *MusicPlayer) rollback() {
 		}
 
 	case ORDERED:
-		m.SetIndex((m.Index() - 1 + len(m.Album().MusicList)) % len(m.Album().MusicList))
+		m.SetIndex((m.Index() - 1 + m.MusicCount()) % m.MusicCount())
 
 	case REPLAY:
 		//nothing
@@ -107,22 +107,22 @@ func (m *MusicPlayer) skip() {
 	case RANDOM:
 		//generate new queue if run out of music
 		if m.randomQueue.Empty() {
-			m.randomQueue = rand.Perm(len(m.Album().MusicList))
+			m.randomQueue = rand.Perm(m.MusicCount())
 		}
 		m.history.PushBack(m.Index())
 		m.SetIndex(*m.randomQueue.Back())
 		m.randomQueue.PopBack()
 
 	case ORDERED:
-		m.SetIndex((m.Index() + 1) % len(m.Album().MusicList))
+		m.SetIndex((m.Index() + 1) % m.MusicCount())
 
 	case REPLAY:
 		//nothing
 	}
 }
 
-func (m *MusicPlayer) Notify(play *resource.PlayList) {
-	m.playListChan <- *play
+func (m *MusicPlayer) Notify(play resource.PlayList) {
+	m.playListChan <- play
 }
 
 func (m *MusicPlayer) Start(menu *cwidget.MediaMenu) {

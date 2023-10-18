@@ -16,11 +16,12 @@ func newController() fyne.CanvasObject {
 	controller.Bind(musicPlayer)
 	go musicPlayer.Start(controller)
 
-	client.GetPlayListData().Attach(pattern.MakeCallback(func(p *resource.PlayList) {
-		coverView.SetAlbum(p.Album())
-		coverView.OnTapped = func(*fyne.PointEvent) { client.GetAlbumData().Set(p.Album()) }
+	client.GetInstance().AddPlayListListener(pattern.MakeCallback(func(p resource.PlayList) {
+		album := client.GetInstance().GetAlbum()
+		coverView.SetAlbum(&album)
+		coverView.OnTapped = func(*fyne.PointEvent) { client.GetInstance().SetAlbum(album) }
 	}))
-	client.GetPlayListData().Attach(musicPlayer)
+	client.GetInstance().AddPlayListListener(musicPlayer)
 
 	return container.NewBorder(nil, nil, coverView, nil, controller)
 }

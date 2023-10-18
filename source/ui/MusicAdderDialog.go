@@ -24,7 +24,7 @@ func showAddLocalMusicDialog() {
 		if err != nil {
 			showErrorIfAny(err)
 		} else if result != nil {
-			log.Printf("add %v from local to %v\n", result.URI().Name(), client.GetAlbumData().Get().Title)
+			log.Printf("add %v from local to %v\n", result.URI().Name(), client.GetInstance().GetAlbum().Title)
 			showErrorIfAny(client.AddMusicFromURIReader(result))
 		}
 	}, getWindow())

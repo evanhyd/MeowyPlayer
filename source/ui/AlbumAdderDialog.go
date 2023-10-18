@@ -7,7 +7,7 @@ import (
 )
 
 func showAddLocalAlbumDialog() {
-	showErrorIfAny(client.AddAlbum())
+	showErrorIfAny(client.AddRandomAlbum())
 }
 
 func showAddOnlineAlbumDialog() {

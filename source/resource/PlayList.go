@@ -6,22 +6,21 @@ import (
 )
 
 type PlayList struct {
-	album Album
-	index int
+	musicList []Music
+	index     int
 }
 
-func NewPlayList(album *Album, music *Music) *PlayList {
-	index := slices.Index(album.MusicList, *music)
-	assert.Ensure(func() bool { return index != -1 })
-	return &PlayList{*album, index}
-}
-
-func (p *PlayList) Album() *Album {
-	return &p.album
+func NewPlayList(musicList []Music, music *Music) *PlayList {
+	index := slices.Index(musicList, *music)
+	return &PlayList{musicList, index}
 }
 
 func (p *PlayList) Music() *Music {
-	return &p.album.MusicList[p.index]
+	return &p.musicList[p.index]
+}
+
+func (p *PlayList) MusicCount() int {
+	return len(p.musicList)
 }
 
 func (p *PlayList) Index() int {
@@ -29,6 +28,6 @@ func (p *PlayList) Index() int {
 }
 
 func (p *PlayList) SetIndex(musicIndex int) {
-	assert.Ensure(func() bool { return 0 <= musicIndex && musicIndex < len(p.album.MusicList) })
+	assert.Ensure(func() bool { return 0 <= musicIndex && musicIndex < len(p.musicList) })
 	p.index = musicIndex
 }

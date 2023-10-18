@@ -1,21 +1,22 @@
 package cbinding
 
-import "meowyplayer.com/source/resource"
+import (
+	"golang.org/x/exp/maps"
+	"meowyplayer.com/source/resource"
+)
 
 type MusicDataList struct {
 	dataList[resource.Music]
-	album resource.Album
 }
 
 func MakeMusicDataList() MusicDataList {
-	return MusicDataList{makeDataList[resource.Music](), resource.Album{}}
+	return MusicDataList{makeDataList[resource.Music]()}
 }
 
-func (m *MusicDataList) Notify(album *resource.Album) {
-	m.album = *album
-	m.dataList.Notify(album.MusicList)
+func (m *MusicDataList) Notify(album resource.Album) {
+	m.dataList.Notify(maps.Values(album.MusicList))
 }
 
-func (m *MusicDataList) GetAlbum() *resource.Album {
-	return &m.album
+func (m *MusicDataList) GetMusicList() []resource.Music {
+	return m.data
 }
