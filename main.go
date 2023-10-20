@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/theme"
 	"meowyplayer.com/source/client"
 	"meowyplayer.com/source/resource"
 	"meowyplayer.com/source/ui"
@@ -28,7 +27,7 @@ func main() {
 
 	//initiate app configuration
 	fyne.SetCurrentApp(app.NewWithID("MeowyPlayer"))
-	fyne.CurrentApp().Settings().SetTheme(theme.DarkTheme())
+	fyne.CurrentApp().Settings().SetTheme(resource.VanillaTheme())
 
 	//create window
 	window := ui.NewMainWindow()
