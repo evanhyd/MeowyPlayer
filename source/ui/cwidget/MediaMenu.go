@@ -34,7 +34,7 @@ type MediaMenu struct {
 }
 
 func NewMediaMenu() *MediaMenu {
-	modeIcons := []fyne.Resource{resource.RandomIcon(), theme.MailForwardIcon(), theme.ViewRefreshIcon()}
+	modeIcons := []fyne.Resource{resource.RandomIcon, theme.MailForwardIcon(), theme.ViewRefreshIcon()}
 	menu := &MediaMenu{
 		widget.BaseWidget{},
 		widget.NewLabel(""),

@@ -36,7 +36,7 @@ func main() {
 	//create system tray
 	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
-		desktop.SetSystemTrayIcon(resource.WindowIcon())
+		desktop.SetSystemTrayIcon(resource.WindowIcon)
 	}
 
 	//load local config

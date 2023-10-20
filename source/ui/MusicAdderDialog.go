@@ -59,12 +59,12 @@ func showAddOnlineMusicDialog() {
 		},
 	)
 
-	platformMenu := cwidget.NewDropDown("", resource.DefaultIcon())
-	platformMenu.Add("YouTube", resource.YouTubeIcon(), func() {
+	platformMenu := cwidget.NewDropDown("", resource.DefaultIcon)
+	platformMenu.Add("YouTube", resource.YouTubeIcon, func() {
 		videoScraper = scraper.NewClipzagScraper()
 		musicDownloader = downloader.NewY2MateDownloader()
 	})
-	platformMenu.Add("BiliBili", resource.BiliBiliIcon(), func() {
+	platformMenu.Add("BiliBili", resource.BiliBiliIcon, func() {
 		fmt.Println("not implemented...")
 	})
 	platformMenu.Select(0)

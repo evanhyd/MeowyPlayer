@@ -15,5 +15,7 @@
 # MeowyPlayer's resource directories
 album/**
 music/**
+source/resource/Font.go
+source/resource/Icon.go
 out/**
 log.txt

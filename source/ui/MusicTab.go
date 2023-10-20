@@ -25,9 +25,9 @@ func newMusicTab() *container.TabItem {
 	client.GetInstance().AddAlbumListener(pattern.MakeCallback(func(resource.Album) { searchBar.SetText("") }))
 
 	musicAdderLocal := cwidget.NewButtonWithIcon("", theme.FolderOpenIcon(), showAddLocalMusicDialog)
-	musicAdderOnline := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon(), showAddOnlineMusicDialog)
+	musicAdderOnline := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon, showAddOnlineMusicDialog)
 
-	return container.NewTabItemWithIcon("Music", resource.MusicTabIcon(), container.NewBorder(
+	return container.NewTabItemWithIcon("Music", resource.MusicTabIcon, container.NewBorder(
 		container.NewBorder(
 			nil,
 			container.NewGridWithRows(1, newMusicTitleButton(&data, "Title"), newMusicDateButton(&data, "Date")),

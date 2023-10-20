@@ -33,7 +33,7 @@ func NewMainWindow() fyne.Window {
 func newWindow(title string, size fyne.Size) fyne.Window {
 	window := fyne.CurrentApp().NewWindow(title)
 	window.SetMaster()
-	window.SetIcon(resource.WindowIcon())
+	window.SetIcon(resource.WindowIcon)
 	window.SetCloseIntercept(window.Hide)
 	window.Resize(size)
 	window.CenterOnScreen()

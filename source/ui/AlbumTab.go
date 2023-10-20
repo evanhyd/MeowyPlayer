@@ -21,9 +21,9 @@ func newAlbumTab() *container.TabItem {
 	client.GetInstance().AddCollectionListener(&data)
 
 	albumAdderLocal := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), showAddLocalAlbumDialog)
-	albumAdderOnline := cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon(), showAddOnlineAlbumDialog)
+	albumAdderOnline := cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon, showAddOnlineAlbumDialog)
 
-	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon(), container.NewBorder(
+	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon, container.NewBorder(
 		container.NewBorder(
 			nil,
 			container.NewGridWithRows(1, newAlbumTitleButton(&data, "Title"), newAlbumDateButton(&data, "Date")),

@@ -6,9 +6,10 @@ import (
 	"os"
 	"sync"
 
+	"meowyplayer.com/utility/assert"
+
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
-	"meowyplayer.com/utility/assert"
 )
 
 type MP3Controller struct {

@@ -18,7 +18,7 @@ type CoverView struct {
 
 func NewCoverView(size fyne.Size) *CoverView {
 	view := &CoverView{
-		cover: canvas.NewImageFromResource(resource.DefaultIcon()),
+		cover: canvas.NewImageFromResource(resource.DefaultIcon),
 		title: widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{}),
 	}
 	view.cover.SetMinSize(size)

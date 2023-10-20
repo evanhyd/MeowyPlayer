@@ -1,8 +1,9 @@
 package resource
 
 import (
-	"golang.org/x/exp/slices"
 	"meowyplayer.com/utility/assert"
+
+	"golang.org/x/exp/slices"
 )
 
 type PlayList struct {
