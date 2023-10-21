@@ -3,9 +3,9 @@ package ui
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"meowyplayer.com/source/client"
-	"meowyplayer.com/source/resource"
-	"meowyplayer.com/source/ui/cwidget"
+	"meowyplayer.com/core/client"
+	"meowyplayer.com/core/resource"
+	"meowyplayer.com/core/ui/cwidget"
 	"meowyplayer.com/utility/pattern"
 )
 

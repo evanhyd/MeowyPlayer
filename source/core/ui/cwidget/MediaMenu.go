@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/core/resource"
 )
 
 type MediaCommander interface {

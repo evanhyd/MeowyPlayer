@@ -6,8 +6,8 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"meowyplayer.com/source/client"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/core/client"
+	"meowyplayer.com/core/resource"
 	"meowyplayer.com/utility/pattern"
 )
 

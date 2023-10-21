@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/core/resource"
 	"meowyplayer.com/utility/json"
 	"meowyplayer.com/utility/pattern"
 )

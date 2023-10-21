@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/oto/v2"
-	"meowyplayer.com/source/resource"
-	"meowyplayer.com/source/ui/cwidget"
+	"meowyplayer.com/core/resource"
+	"meowyplayer.com/core/ui/cwidget"
 	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/container"
 )

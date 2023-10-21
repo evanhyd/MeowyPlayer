@@ -13,7 +13,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"github.com/hajimehoshi/go-mp3"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/core/resource"
 	"meowyplayer.com/utility/json"
 	"meowyplayer.com/utility/network/fileformat"
 )

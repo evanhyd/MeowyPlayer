@@ -7,7 +7,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/core/resource"
 )
 
 type MusicView struct {

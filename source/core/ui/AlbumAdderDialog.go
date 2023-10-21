@@ -3,7 +3,7 @@ package ui
 import (
 	"fmt"
 
-	"meowyplayer.com/source/client"
+	"meowyplayer.com/core/client"
 )
 
 func showAddLocalAlbumDialog() {

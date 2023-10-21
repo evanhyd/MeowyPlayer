@@ -7,9 +7,9 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
-	"meowyplayer.com/source/client"
-	"meowyplayer.com/source/resource"
-	"meowyplayer.com/source/ui"
+	"meowyplayer.com/core/client"
+	"meowyplayer.com/core/resource"
+	"meowyplayer.com/core/ui"
 	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/logger"
 )

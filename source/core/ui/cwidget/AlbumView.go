@@ -6,7 +6,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/core/resource"
 )
 
 type AlbumView struct {

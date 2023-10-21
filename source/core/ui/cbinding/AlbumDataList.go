@@ -2,7 +2,7 @@ package cbinding
 
 import (
 	"golang.org/x/exp/maps"
-	"meowyplayer.com/source/resource"
+	"meowyplayer.com/core/resource"
 )
 
 type AlbumDataList struct {

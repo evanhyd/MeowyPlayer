@@ -10,10 +10,10 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/source/client"
-	"meowyplayer.com/source/resource"
-	"meowyplayer.com/source/ui/cbinding"
-	"meowyplayer.com/source/ui/cwidget"
+	"meowyplayer.com/core/client"
+	"meowyplayer.com/core/resource"
+	"meowyplayer.com/core/ui/cbinding"
+	"meowyplayer.com/core/ui/cwidget"
 )
 
 func newAlbumTab() *container.TabItem {
