@@ -67,9 +67,9 @@ func main() {
 
 	switch platform {
 	case "windows":
-		runCmdWithDir("source", "go", "build", "-ldflags", "-H=windowsgui", "-o", "meowyplayer.exe", "main.go")
+		runCmdWithDir("source", "go", "build", "-ldflags", "-H=windowsgui", "-o", filepath.Join("..", "meowyplayer.exe"), "main.go")
 	case "linux", "darwin":
-		runCmdWithDir("source", "go", "build", "-o", "meowyplayer", "main.go")
+		runCmdWithDir("source", "go", "build", "-o", filepath.Join("..", "meowyplayer"), "main.go")
 	default:
 		panic("unknown platform")
 	}
