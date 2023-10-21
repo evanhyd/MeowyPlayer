@@ -40,14 +40,12 @@ func (a *AlbumView) MouseIn(event *desktop.MouseEvent) {
 	a.title.SetText("")
 	a.cover.Translucency = 0.8
 	a.info.Show()
-	a.Refresh()
 }
 
 func (a *AlbumView) MouseOut() {
 	a.title.SetText(a.name)
 	a.cover.Translucency = 0.0
 	a.info.Hide()
-	a.Refresh()
 }
 
 func (a *AlbumView) MouseMoved(*desktop.MouseEvent) {

@@ -53,12 +53,10 @@ func (d *DropDown) Tapped(event *fyne.PointEvent) {
 
 func (d *DropDown) MouseIn(*desktop.MouseEvent) {
 	d.highlight.Show()
-	d.Refresh()
 }
 
 func (d *DropDown) MouseOut() {
 	d.highlight.Hide()
-	d.Refresh()
 }
 
 func (d *DropDown) MouseMoved(*desktop.MouseEvent) {

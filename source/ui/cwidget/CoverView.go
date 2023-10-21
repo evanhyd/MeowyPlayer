@@ -41,13 +41,11 @@ func (c *CoverView) SetAlbum(album *resource.Album) {
 func (c *CoverView) MouseIn(*desktop.MouseEvent) {
 	c.cover.Translucency = 0.8
 	c.title.Show()
-	c.Refresh()
 }
 
 func (c *CoverView) MouseOut() {
 	c.cover.Translucency = 0.0
 	c.title.Hide()
-	c.Refresh()
 }
 
 func (c *CoverView) MouseMoved(*desktop.MouseEvent) {
