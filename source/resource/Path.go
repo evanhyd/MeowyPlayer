@@ -47,8 +47,8 @@ func MakeNecessaryPath() {
 	assert.NoErr(os.MkdirAll(filepath.Join(musicFolderPath), os.ModePerm), "failed to create music folder")
 
 	if _, err := os.Stat(CollectionPath()); os.IsNotExist(err) {
-		//create default collection
-		assert.NoErr(json.WriteFile(CollectionPath(), &Collection{Date: time.Now(), Albums: nil}), "failed to create default collection file")
+		// create default collection
+		assert.NoErr(json.WriteFile(CollectionPath(), &Collection{Date: time.Now(), Albums: make(map[string]Album)}), "failed to create default collection file")
 	} else {
 		assert.NoErr(err, "failed to fetch collection file info")
 	}
