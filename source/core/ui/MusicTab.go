@@ -77,22 +77,22 @@ func newMusicSearchBar(data *cbinding.MusicDataList) *widget.Entry {
 
 // make data sort by music title
 func newMusicTitleButton(data *cbinding.MusicDataList, title string) *widget.Button {
-	reverse := false
+	reverse := -1
 	return cwidget.NewButton(title, func() {
-		reverse = !reverse
-		data.SetSorter(func(a1, a2 resource.Music) bool {
-			return (strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) < 0) != reverse
+		reverse = -reverse
+		data.SetSorter(func(a1, a2 resource.Music) int {
+			return strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) * reverse
 		})
 	})
 }
 
 // make data sort by music date
 func newMusicDateButton(data *cbinding.MusicDataList, title string) *widget.Button {
-	reverse := true
+	reverse := 1
 	button := cwidget.NewButton(title, func() {
-		reverse = !reverse
-		data.SetSorter(func(a1, a2 resource.Music) bool {
-			return a1.Date.After(a2.Date) != reverse
+		reverse = -reverse
+		data.SetSorter(func(a1, a2 resource.Music) int {
+			return a1.Date.Compare(a2.Date) * reverse
 		})
 	})
 	button.OnTapped()

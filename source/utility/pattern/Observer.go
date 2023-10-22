@@ -1,7 +1,8 @@
 package pattern
 
 import (
-	"golang.org/x/exp/slices"
+	"slices"
+
 	"meowyplayer.com/utility/container"
 )
 

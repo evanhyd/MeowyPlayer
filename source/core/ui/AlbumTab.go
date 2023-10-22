@@ -64,21 +64,21 @@ func newAlbumSearchBar(data *cbinding.AlbumDataList) *widget.Entry {
 }
 
 func newAlbumTitleButton(data *cbinding.AlbumDataList, title string) *widget.Button {
-	reverse := false
+	order := -1
 	return cwidget.NewButton(title, func() {
-		reverse = !reverse
-		data.SetSorter(func(a1, a2 resource.Album) bool {
-			return (strings.ToLower(a1.Title) < strings.ToLower(a2.Title)) != reverse
+		order = -order
+		data.SetSorter(func(a1, a2 resource.Album) int {
+			return strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) * order
 		})
 	})
 }
 
 func newAlbumDateButton(data *cbinding.AlbumDataList, title string) *widget.Button {
-	reverse := true
+	order := 1
 	button := cwidget.NewButton(title, func() {
-		reverse = !reverse
-		data.SetSorter(func(a1, a2 resource.Album) bool {
-			return a1.Date.After(a2.Date) != reverse
+		order = -order
+		data.SetSorter(func(a1, a2 resource.Album) int {
+			return a1.Date.Compare(a2.Date) * order
 		})
 	})
 	button.OnTapped()

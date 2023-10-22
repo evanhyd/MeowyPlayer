@@ -13,24 +13,23 @@ import (
 )
 
 const (
-	collectionFolderPath = "collection"
-	coverFolderPath      = "cover"
-	musicFolderPath      = "music"
-	assetFolderPath      = "asset"
-
-	collectionFile = "collection.json"
+	collectionFolder = "collection"
+	coverFolder      = "cover"
+	musicFolder      = "music"
+	assetFolder      = "asset"
+	collectionFile   = "collection.json"
 )
 
 func CollectionPath() string {
-	return filepath.Join(collectionFolderPath, collectionFile)
+	return filepath.Join(collectionFolder, collectionFile)
 }
 
 func CoverPath(album *Album) string {
-	return filepath.Join(collectionFolderPath, coverFolderPath, album.Title+".png")
+	return filepath.Join(collectionFolder, coverFolder, album.Title+".png")
 }
 
 func MusicPath(music *Music) string {
-	return filepath.Join(musicFolderPath, music.Title)
+	return filepath.Join(musicFolder, music.Title)
 }
 
 func GetCover(album *Album) fyne.Resource {
@@ -43,8 +42,8 @@ func GetCover(album *Album) fyne.Resource {
 }
 
 func MakeNecessaryPath() {
-	assert.NoErr(os.MkdirAll(filepath.Join(collectionFolderPath, coverFolderPath), 0777), "failed to create cover folder")
-	assert.NoErr(os.MkdirAll(filepath.Join(musicFolderPath), 0777), "failed to create music folder")
+	assert.NoErr(os.MkdirAll(filepath.Join(collectionFolder, coverFolder), 0777), "failed to create cover folder")
+	assert.NoErr(os.MkdirAll(filepath.Join(musicFolder), 0777), "failed to create music folder")
 
 	if _, err := os.Stat(CollectionPath()); os.IsNotExist(err) {
 		// create default collection
