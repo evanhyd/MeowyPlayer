@@ -13,10 +13,10 @@ import (
 	"meowyplayer.com/utility/pattern"
 )
 
-var state *ClientState = NewClientState()
+var state ClientState = ClientState{}
 
 func GetInstance() *ClientState {
-	return state
+	return &state
 }
 
 type ClientState struct {
@@ -25,10 +25,6 @@ type ClientState struct {
 	albumEvent pattern.SubjectBase[resource.Album]
 	albumKey   string //keep the key instead of a copy
 	playList   pattern.Data[resource.PlayList]
-}
-
-func NewClientState() *ClientState {
-	return &ClientState{}
 }
 
 func (s *ClientState) save() error {
