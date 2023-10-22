@@ -13,20 +13,20 @@ import (
 )
 
 const (
-	albumFolderPath = "album"
-	coverFolderPath = "cover"
-	musicFolderPath = "music"
-	assetFolderPath = "asset"
+	collectionFolderPath = "collection"
+	coverFolderPath      = "cover"
+	musicFolderPath      = "music"
+	assetFolderPath      = "asset"
 
 	collectionFile = "collection.json"
 )
 
 func CollectionPath() string {
-	return filepath.Join(albumFolderPath, collectionFile)
+	return filepath.Join(collectionFolderPath, collectionFile)
 }
 
 func CoverPath(album *Album) string {
-	return filepath.Join(albumFolderPath, coverFolderPath, album.Title+".png")
+	return filepath.Join(collectionFolderPath, coverFolderPath, album.Title+".png")
 }
 
 func MusicPath(music *Music) string {
@@ -43,8 +43,8 @@ func GetCover(album *Album) fyne.Resource {
 }
 
 func MakeNecessaryPath() {
-	assert.NoErr(os.MkdirAll(filepath.Join(albumFolderPath, coverFolderPath), os.ModePerm), "failed to create cover folder")
-	assert.NoErr(os.MkdirAll(filepath.Join(musicFolderPath), os.ModePerm), "failed to create music folder")
+	assert.NoErr(os.MkdirAll(filepath.Join(collectionFolderPath, coverFolderPath), 0777), "failed to create cover folder")
+	assert.NoErr(os.MkdirAll(filepath.Join(musicFolderPath), 0777), "failed to create music folder")
 
 	if _, err := os.Stat(CollectionPath()); os.IsNotExist(err) {
 		// create default collection

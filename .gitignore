@@ -13,7 +13,7 @@
 *.out
 
 # MeowyPlayer's resource directories
-album/**
+collection/**
 music/**
 source/core/resource/Font.go
 source/core/resource/Icon.go

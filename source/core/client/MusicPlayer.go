@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -154,47 +153,39 @@ WaitLoop:
 		mp3Controller.SetVolume(menu.Volume())
 
 		interrupted := false
-		fmt.Println("playing", m.Music().SimpleTitle())
 
 	CONTROL_LOOP:
 		for mp3Controller.PlayOrPause(); !mp3Controller.IsOver(); {
 			select {
 			case playList := <-m.playListChan:
-				fmt.Println("new playlist")
 				m.setPlayList(playList)
 				interrupted = true
 				break CONTROL_LOOP
 
 			case <-m.skipCMD:
-				fmt.Println("skip")
 				m.skip()
 				interrupted = true
 				break CONTROL_LOOP
 
 			case <-m.rollbackCMD:
-				fmt.Println("rollback")
 				m.rollback()
 				interrupted = true
 				break CONTROL_LOOP
 
 			case <-m.playCMD:
-				fmt.Println("play/pause")
 				mp3Controller.PlayOrPause()
 
 			case playMode := <-m.modeCMD:
-				fmt.Println("mode", playMode)
 				m.setPlayMode(playMode)
 
 			case percent := <-m.progressCMD:
-				fmt.Println("progress", percent)
 				mp3Controller.Pause()
 				time.Sleep(10 * time.Millisecond) //mp3 library has race condition
 				mp3Controller.SetProgress(percent)
 				mp3Controller.Play()
 
 			case volume := <-m.volumeCMD:
-				fmt.Println("set volume")
-				mp3Controller.SetVolume(volume)
+				mp3Controller.SetVolume(volume * volume) //x^2 feels more natural
 
 			default:
 				time.Sleep(100 * time.Millisecond)
