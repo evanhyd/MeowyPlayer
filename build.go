@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,17 +32,21 @@ func runCmdWithDir(dir string, command string, args ...string) {
 }
 
 func main() {
-	fynePath := filepath.Join(os.Getenv("GOPATH"), "bin", "fyne")
+	//set up paths
+	fyneFile := filepath.Join(build.Default.GOPATH, "bin", "fyne")
+	resourcePath := filepath.Join("source", "core", "resource")
+	iconFile := filepath.Join(resourcePath, "Icon.go")
+	fontFile := filepath.Join(resourcePath, "Font.go")
 
-	bundleResource := func(file string, name string, resource string) {
-		runCmd(fynePath, "bundle", "-o", file, "--package", "resource", "--name", name, resource)
+	bundleResource := func(outputFile, name, sourceFile string) {
+		runCmd(fyneFile, "bundle", "-o", outputFile, "--package", "resource", "--name", name, sourceFile)
 	}
 
-	appendResource := func(file string, name string, resource string) {
-		runCmd(fynePath, "bundle", "-o", file, "--append", "--name", name, resource)
+	appendResource := func(outputFile, name, sourceFile string) {
+		runCmd(fyneFile, "bundle", "-o", outputFile, "--append", "--name", name, sourceFile)
 	}
 
-	iconFile := filepath.Join("source", "core", "resource", "Icon.go")
+	//bundle the resources
 	bundleResource(iconFile, "MissingIcon", filepath.Join("asset", "missing_asset.png"))
 	appendResource(iconFile, "WindowIcon", filepath.Join("asset", "icon.ico"))
 	appendResource(iconFile, "AlbumTabIcon", filepath.Join("asset", "album_tab.png"))
@@ -53,7 +58,6 @@ func main() {
 	appendResource(iconFile, "YouTubeIcon", filepath.Join("asset", "youtube.png"))
 	appendResource(iconFile, "BiliBiliIcon", filepath.Join("asset", "bilibili.png"))
 
-	fontFile := filepath.Join("source", "core", "resource", "Font.go")
 	bundleResource(fontFile, "RegularFont", filepath.Join("asset", "regular_font.ttf"))
 	appendResource(fontFile, "BoldFont", filepath.Join("asset", "bold_font.ttf"))
 	appendResource(fontFile, "ItalicFont", filepath.Join("asset", "italic_font.ttf"))
