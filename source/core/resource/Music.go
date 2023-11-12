@@ -12,9 +12,11 @@ const (
 )
 
 type Music struct {
-	Date   time.Time     `json:"date"`
-	Title  string        `json:"title"`
-	Length time.Duration `json:"length"`
+	Date     time.Time     `json:"date"`
+	Title    string        `json:"title"`
+	Length   time.Duration `json:"length"`
+	Platform string        `json:"platform"`
+	ID       string        `json:"id"`
 }
 
 // return title without the extension string

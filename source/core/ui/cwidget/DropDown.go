@@ -28,7 +28,7 @@ func NewDropDown(title string, icon fyne.Resource) *DropDown {
 }
 
 func (d *DropDown) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewMax(d.sign, d.highlight))
+	return widget.NewSimpleRenderer(container.NewStack(d.sign, d.highlight))
 }
 
 func (d *DropDown) Add(title string, icon fyne.Resource, onSelected func()) {

@@ -23,7 +23,7 @@ type VideoResultView struct {
 	highlight    *canvas.Rectangle
 }
 
-func NewVideoResultView(result *fileformat.VideoResult, size fyne.Size, onDownload func(videoResult *fileformat.VideoResult)) *VideoResultView {
+func NewVideoResultView(result *fileformat.VideoResult, size fyne.Size, onDownload func(*fileformat.VideoResult)) *VideoResultView {
 	const kConversionFactor = 60
 	mins := int(result.Length.Minutes()) % kConversionFactor
 	secs := int(result.Length.Seconds()) % kConversionFactor
@@ -52,7 +52,7 @@ func NewVideoResultView(result *fileformat.VideoResult, size fyne.Size, onDownlo
 }
 
 func (v *VideoResultView) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewMax(
+	return widget.NewSimpleRenderer(container.NewStack(
 		v.highlight,
 		container.NewBorder(
 			nil,

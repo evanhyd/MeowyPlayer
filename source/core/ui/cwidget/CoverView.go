@@ -28,26 +28,26 @@ func NewCoverView(size fyne.Size) *CoverView {
 	return view
 }
 
-func (c *CoverView) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewMax(c.cover, c.title))
+func (v *CoverView) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewStack(v.cover, v.title))
 }
 
-func (c *CoverView) SetAlbum(album *resource.Album) {
-	c.cover.Resource = album.Cover
-	c.title.SetText(album.Title)
-	c.Refresh()
+func (v *CoverView) SetAlbum(album *resource.Album) {
+	v.cover.Resource = album.Cover
+	v.title.SetText(album.Title)
+	v.Refresh()
 }
 
-func (c *CoverView) MouseIn(*desktop.MouseEvent) {
-	c.cover.Translucency = 0.8
-	c.title.Show()
+func (v *CoverView) MouseIn(*desktop.MouseEvent) {
+	v.cover.Translucency = 0.8
+	v.title.Show()
 }
 
-func (c *CoverView) MouseOut() {
-	c.cover.Translucency = 0.0
-	c.title.Hide()
+func (v *CoverView) MouseOut() {
+	v.cover.Translucency = 0.0
+	v.title.Hide()
 }
 
-func (c *CoverView) MouseMoved(*desktop.MouseEvent) {
+func (v *CoverView) MouseMoved(*desktop.MouseEvent) {
 	//satisfy MouseMovement interface
 }

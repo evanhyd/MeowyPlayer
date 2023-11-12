@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/core/client"
+	"meowyplayer.com/core/player"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/core/ui/cbinding"
 	"meowyplayer.com/core/ui/cwidget"
@@ -19,10 +20,10 @@ import (
 
 func newMusicTab() *container.TabItem {
 	data := cbinding.MakeMusicDataList()
-	client.GetInstance().AddAlbumListener(&data)
+	client.Manager().AddAlbumListener(&data)
 
 	searchBar := newMusicSearchBar(&data)
-	client.GetInstance().AddAlbumListener(pattern.MakeCallback(func(resource.Album) { searchBar.SetText("") }))
+	client.Manager().AddAlbumListener(pattern.MakeCallback(func(resource.Album) { searchBar.SetText("") }))
 
 	musicAdderLocal := cwidget.NewButtonWithIcon("", theme.FolderOpenIcon(), showAddLocalMusicDialog)
 	musicAdderOnline := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon, showAddOnlineMusicDialog)
@@ -43,11 +44,11 @@ func newMusicTab() *container.TabItem {
 }
 
 func newMusicViewList(data *cbinding.MusicDataList) *cwidget.ViewList[resource.Music] {
-	return cwidget.NewViewList[resource.Music](data, container.NewVBox(),
+	return cwidget.NewViewList(data, container.NewVBox(),
 		func(music resource.Music) fyne.CanvasObject {
 			view := cwidget.NewMusicView(&music)
 			view.OnTapped = func(*fyne.PointEvent) {
-				client.GetInstance().SetPlayList(resource.NewPlayList(data.GetMusicList(), &music))
+				client.Manager().SetPlayList(player.NewPlayList(data.MusicList(), &music))
 			}
 			view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(&music) }
 			return view
@@ -58,8 +59,8 @@ func newMusicViewList(data *cbinding.MusicDataList) *cwidget.ViewList[resource.M
 func showDeleteMusicDialog(music *resource.Music) {
 	dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", music.Title), func(delete bool) {
 		if delete {
-			log.Printf("delete %v from the album %v\n", music.Title, client.GetInstance().GetAlbum().Title)
-			showErrorIfAny(client.GetInstance().DeleteMusic(*music))
+			log.Printf("delete %v from the album %v\n", music.Title, client.Manager().Album().Title)
+			showErrorIfAny(client.Manager().DeleteMusic(*music))
 		}
 	}, getWindow())
 }

@@ -2,8 +2,6 @@ package pattern
 
 import (
 	"slices"
-
-	"meowyplayer.com/utility/container"
 )
 
 /*
@@ -26,15 +24,17 @@ type Subject[T any] interface {
 A generic subject base class.
 */
 type SubjectBase[T any] struct {
-	observers container.Slice[Observer[T]]
+	observers []Observer[T]
 }
 
 func (s *SubjectBase[T]) Attach(observer Observer[T]) {
-	s.observers.PushBack(observer)
+	s.observers = append(s.observers, observer)
 }
 
 func (s *SubjectBase[T]) Detach(observer Observer[T]) {
-	s.observers.Remove(slices.Index(s.observers, observer))
+	index := slices.Index(s.observers, observer)
+	s.observers[index] = s.observers[len(s.observers)-1]
+	s.observers = s.observers[:len(s.observers)-1]
 }
 
 func (s *SubjectBase[T]) NotifyAll(t T) {

@@ -7,6 +7,7 @@ import (
 )
 
 type VideoResult struct {
+	Platform     string
 	VideoID      string
 	ChannelID    string
 	ChannelTitle string

@@ -1,13 +1,12 @@
 package ui
 
 import (
-	"log"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"meowyplayer.com/core/client"
 	"meowyplayer.com/core/resource"
+	"meowyplayer.com/utility/logger"
 	"meowyplayer.com/utility/pattern"
 )
 
@@ -17,11 +16,12 @@ func NewMainWindow() fyne.Window {
 	//create item tabs
 	albumTab := newAlbumTab()
 	musicTab := newMusicTab()
-	tabs := container.NewAppTabs(albumTab, musicTab)
+	accountTab := newClientTab()
+	tabs := container.NewAppTabs(albumTab, musicTab, accountTab)
 	tabs.SetTabLocation(container.TabLocationLeading)
 	tabs.DisableItem(musicTab)
 
-	client.GetInstance().AddAlbumListener(pattern.MakeCallback(func(resource.Album) {
+	client.Manager().AddAlbumListener(pattern.MakeCallback(func(resource.Album) {
 		tabs.EnableItem(musicTab)
 		tabs.Select(musicTab)
 	}))
@@ -32,11 +32,9 @@ func NewMainWindow() fyne.Window {
 
 func newWindow(title string, size fyne.Size) fyne.Window {
 	window := fyne.CurrentApp().NewWindow(title)
-	window.SetMaster()
-	window.SetIcon(resource.WindowIcon)
 	window.SetCloseIntercept(window.Hide)
-	window.Resize(size)
 	window.CenterOnScreen()
+	window.Resize(size)
 	return window
 }
 
@@ -46,7 +44,7 @@ func getWindow() fyne.Window {
 
 func showErrorIfAny(err error) {
 	if err != nil {
+		logger.Error(err, 1)
 		dialog.ShowError(err, getWindow())
-		log.Println(err)
 	}
 }

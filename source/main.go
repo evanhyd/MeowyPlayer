@@ -10,7 +10,6 @@ import (
 	"meowyplayer.com/core/client"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/core/ui"
-	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/logger"
 )
 
@@ -18,7 +17,7 @@ func main() {
 	// redirect panic message
 	defer func() {
 		if err := recover(); err != nil {
-			logger.Error(fmt.Errorf("%v\n%v", err, string(debug.Stack())), "caught panic error", 1)
+			logger.Error(fmt.Errorf("%v\n%v", err, string(debug.Stack())), 1)
 		}
 	}()
 
@@ -28,6 +27,7 @@ func main() {
 	//initiate app configuration
 	fyne.SetCurrentApp(app.NewWithID("MeowyPlayer"))
 	fyne.CurrentApp().Settings().SetTheme(resource.VanillaTheme())
+	fyne.CurrentApp().SetIcon(resource.WindowIcon)
 
 	//create window
 	window := ui.NewMainWindow()
@@ -35,12 +35,12 @@ func main() {
 	//create system tray
 	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
-		desktop.SetSystemTrayIcon(resource.WindowIcon)
 	}
 
 	//load local config
-	collection, err := client.LoadFromLocalCollection()
-	assert.NoErr(err, "failed to load from local collection")
-	client.GetInstance().SetCollection(collection)
+	if err := client.Manager().Load(); err != nil {
+		logger.Error(err, 0)
+		return
+	}
 	window.ShowAndRun()
 }

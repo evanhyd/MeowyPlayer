@@ -2,6 +2,7 @@ package logger
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ func Initiate() {
 	if *fileLog {
 		file, err := os.OpenFile(kLogFileName, os.O_CREATE|os.O_APPEND, 0777)
 		if err != nil {
-			Error(err, "failed to initiate logger", 1)
+			Error(fmt.Errorf("%v %v", err.Error(), "failed to initiate logger"), 0)
 		}
 		loggers = append(loggers, file)
 	}
@@ -35,9 +36,16 @@ func Initiate() {
 	log.SetOutput(io.MultiWriter(loggers...))
 }
 
-func Error(err error, message string, frameRewind int) {
-	_, file, line, ok := runtime.Caller(frameRewind)
+func Error(err error, stackRewind int) {
+	_, file, line, ok := runtime.Caller(stackRewind + 1)
 	if ok {
-		log.Printf("error occured at: %s:%d\n%v: %v\n", file, line, message, err)
+		log.Printf("%s[%d] - %v\n", file, line, err)
+	}
+}
+
+func Fatal(err error, stackRewind int) {
+	_, file, line, ok := runtime.Caller(stackRewind + 1)
+	if ok {
+		log.Panicf("%s[%d] - %v\n", file, line, err)
 	}
 }

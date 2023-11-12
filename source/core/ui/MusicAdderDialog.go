@@ -24,8 +24,8 @@ func showAddLocalMusicDialog() {
 		if err != nil {
 			showErrorIfAny(err)
 		} else if result != nil {
-			log.Printf("add %v from local to %v\n", result.URI().Name(), client.GetInstance().GetAlbum().Title)
-			showErrorIfAny(client.AddMusicFromURIReader(result))
+			log.Printf("add %v from local to %v\n", result.URI().Name(), client.Manager().Album().Title)
+			showErrorIfAny(client.Manager().AddMusicFromURIReader(result))
 		}
 	}, getWindow())
 	fileReader.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
@@ -33,8 +33,8 @@ func showAddLocalMusicDialog() {
 	fileReader.Show()
 }
 
-func newVideoResultViewList(dataSource pattern.Subject[[]fileformat.VideoResult], onDownload func(videoResult *fileformat.VideoResult)) *cwidget.ViewList[fileformat.VideoResult] {
-	return cwidget.NewViewList[fileformat.VideoResult](dataSource, container.NewVBox(),
+func newVideoResultViewList(data pattern.Subject[[]fileformat.VideoResult], onDownload func(*fileformat.VideoResult)) *cwidget.ViewList[fileformat.VideoResult] {
+	return cwidget.NewViewList(data, container.NewVBox(),
 		func(result fileformat.VideoResult) fyne.CanvasObject {
 			return cwidget.NewVideoResultView(&result, fyne.NewSize(128.0*1.61803398875, 128.0), onDownload)
 		},
@@ -46,19 +46,7 @@ func showAddOnlineMusicDialog() {
 	var videoScraper scraper.VideoScraper
 	var musicDownloader downloader.MusicDownloader
 
-	//video result data list
-	videoResultData := pattern.Data[[]fileformat.VideoResult]{}
-	videoResultViewList := newVideoResultViewList(&videoResultData,
-		func(videoResult *fileformat.VideoResult) {
-			musicData, err := musicDownloader.Download(videoResult)
-			if err != nil {
-				showErrorIfAny(err)
-				return
-			}
-			showErrorIfAny(client.AddMusicFromDownloader(videoResult, musicData))
-		},
-	)
-
+	//platform selector
 	platformMenu := cwidget.NewDropDown("", resource.DefaultIcon)
 	platformMenu.Add("YouTube", resource.YouTubeIcon, func() {
 		videoScraper = scraper.NewClipzagScraper()
@@ -69,11 +57,24 @@ func showAddOnlineMusicDialog() {
 	})
 	platformMenu.Select(0)
 
+	//video result view list
+	videoResultData := pattern.Data[[]fileformat.VideoResult]{}
+	videoResultViewList := newVideoResultViewList(&videoResultData,
+		func(videoResult *fileformat.VideoResult) {
+			musicData, err := musicDownloader.Download(videoResult)
+			if err != nil {
+				showErrorIfAny(err)
+				return
+			}
+			showErrorIfAny(client.Manager().AddMusicFromDownloader(videoResult, musicData))
+		},
+	)
+
 	//search bar
-	searchBar := widget.NewEntry()
-	searchBar.SetPlaceHolder("Search Video")
-	searchBar.ActionItem = cwidget.NewButtonWithIcon("", theme.SearchIcon(), func() { searchBar.OnSubmitted(searchBar.Text) })
-	searchBar.OnSubmitted = func(title string) {
+	searchEntry := widget.NewEntry()
+	searchEntry.SetPlaceHolder("Search Video")
+	searchEntry.ActionItem = cwidget.NewButtonWithIcon("", theme.SearchIcon(), func() { searchEntry.OnSubmitted(searchEntry.Text) })
+	searchEntry.OnSubmitted = func(title string) {
 		result, err := videoScraper.Search(title)
 		if err != nil {
 			showErrorIfAny(err)
@@ -83,7 +84,7 @@ func showAddOnlineMusicDialog() {
 	}
 
 	onlineMusicDialog := dialog.NewCustom("", "X", container.NewBorder(
-		container.NewBorder(nil, nil, platformMenu, nil, searchBar),
+		container.NewBorder(nil, nil, platformMenu, nil, searchEntry),
 		nil,
 		nil,
 		nil,

@@ -1,4 +1,4 @@
-package client
+package player
 
 import (
 	"math/rand"
@@ -7,8 +7,8 @@ import (
 	"github.com/hajimehoshi/oto/v2"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/core/ui/cwidget"
-	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/container"
+	"meowyplayer.com/utility/logger"
 )
 
 const (
@@ -19,13 +19,13 @@ const (
 )
 
 type MusicPlayer struct {
-	resource.PlayList
+	PlayList
 	playMode    int
 	history     container.Slice[int]
 	randomQueue container.Slice[int]
 
 	//channel to syncrhonize the commands
-	playListChan chan resource.PlayList
+	playListChan chan PlayList
 	progressCMD  chan float64
 	volumeCMD    chan float64
 	playCMD      chan struct{}
@@ -37,7 +37,7 @@ type MusicPlayer struct {
 func NewMusicPlayer() *MusicPlayer {
 	return &MusicPlayer{
 		playMode:     RANDOM,
-		playListChan: make(chan resource.PlayList),
+		playListChan: make(chan PlayList),
 		progressCMD:  make(chan float64, 16),
 		volumeCMD:    make(chan float64, 16),
 		playCMD:      make(chan struct{}, 16),
@@ -79,7 +79,7 @@ func (m *MusicPlayer) setPlayMode(playMode int) {
 	m.playMode = playMode
 }
 
-func (m *MusicPlayer) setPlayList(playList resource.PlayList) {
+func (m *MusicPlayer) setPlayList(playList PlayList) {
 	m.PlayList = playList
 	m.setPlayMode(m.playMode)
 }
@@ -120,15 +120,20 @@ func (m *MusicPlayer) skip() {
 	}
 }
 
-func (m *MusicPlayer) Notify(play resource.PlayList) {
+func (m *MusicPlayer) Notify(play PlayList) {
 	m.playListChan <- play
 }
 
 func (m *MusicPlayer) Start(menu *cwidget.MediaMenu) {
 	//initialize oto mp3 context
 	context, ready, err := oto.NewContext(resource.SAMPLING_RATE, resource.NUM_OF_CHANNELS, resource.AUDIO_BIT_DEPTH)
-	assert.NoErr(err, "failed to start the music player")
+	if err != nil {
+		logger.Error(err, 0)
+	}
 	<-ready
+
+	//initialize loop timer
+	idleTimer := time.Tick(1 * time.Second)
 
 	//wait for the user to click the music
 WaitLoop:
@@ -149,7 +154,7 @@ WaitLoop:
 
 	for {
 		menu.SetMusic(m.Music())
-		mp3Controller := resource.NewMP3Controller(context, m.PlayList.Music())
+		mp3Controller := NewMP3Controller(context, m.PlayList.Music())
 		mp3Controller.SetVolume(menu.Volume())
 
 		interrupted := false
@@ -187,8 +192,7 @@ WaitLoop:
 			case volume := <-m.volumeCMD:
 				mp3Controller.SetVolume(volume * volume) //x^2 feels more natural
 
-			default:
-				time.Sleep(100 * time.Millisecond)
+			case <-idleTimer:
 			}
 			menu.UpdateProgress(m.PlayList.Music().Length, mp3Controller.CurrentProgressPercent())
 		}

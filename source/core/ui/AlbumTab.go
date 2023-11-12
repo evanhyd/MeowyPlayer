@@ -18,7 +18,7 @@ import (
 
 func newAlbumTab() *container.TabItem {
 	data := cbinding.MakeAlbumDataList()
-	client.GetInstance().AddCollectionListener(&data)
+	client.Manager().AddCollectionListener(&data)
 
 	albumAdderLocal := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), showAddLocalAlbumDialog)
 	albumAdderOnline := cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon, showAddOnlineAlbumDialog)
@@ -42,7 +42,7 @@ func newAlbumViewList(data *cbinding.AlbumDataList) *cwidget.ViewList[resource.A
 	return cwidget.NewViewList(data, container.NewGridWrap(fyne.NewSize(135.0, 165.0)),
 		func(album resource.Album) fyne.CanvasObject {
 			view := cwidget.NewAlbumView(&album)
-			view.OnTapped = func(*fyne.PointEvent) { client.GetInstance().SetAlbum(album) }
+			view.OnTapped = func(*fyne.PointEvent) { client.Manager().SetAlbum(album) }
 			view.OnTappedSecondary = func(event *fyne.PointEvent) {
 				canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
 				showAlbumMenu(&album, canvas, event.AbsolutePosition)
@@ -97,7 +97,7 @@ func makeRenameDialog(album *resource.Album) func() {
 	return func() {
 		dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(rename bool) {
 			if rename {
-				showErrorIfAny(client.GetInstance().UpdateAlbumTitle(*album, entry.Text))
+				showErrorIfAny(client.Manager().UpdateAlbumTitle(*album, entry.Text))
 			}
 		}, getWindow())
 	}
@@ -109,7 +109,7 @@ func makeCoverDialog(album *resource.Album) func() {
 			if err != nil {
 				showErrorIfAny(err)
 			} else if result != nil {
-				showErrorIfAny(client.GetInstance().UpdateAlbumCover(*album, result.URI().Path()))
+				showErrorIfAny(client.Manager().UpdateAlbumCover(*album, result.URI().Path()))
 			}
 		}, getWindow())
 		fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
@@ -122,7 +122,7 @@ func makeDeleteAlbumDialog(album *resource.Album) func() {
 	return func() {
 		dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title), func(delete bool) {
 			if delete {
-				showErrorIfAny(client.GetInstance().DeleteAlbum(*album))
+				showErrorIfAny(client.Manager().DeleteAlbum(*album))
 			}
 		}, getWindow())
 	}

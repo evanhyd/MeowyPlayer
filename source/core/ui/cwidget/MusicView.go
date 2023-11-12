@@ -27,20 +27,20 @@ func NewMusicView(music *resource.Music) *MusicView {
 	return view
 }
 
-func (m *MusicView) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewMax(m.title, m.highlight))
+func (v *MusicView) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewStack(v.title, v.highlight))
 }
 
-func (m *MusicView) MouseIn(*desktop.MouseEvent) {
-	m.highlight.Show()
-	m.Refresh()
+func (v *MusicView) MouseIn(*desktop.MouseEvent) {
+	v.highlight.Show()
+	v.Refresh()
 }
 
-func (m *MusicView) MouseOut() {
-	m.highlight.Hide()
-	m.Refresh()
+func (v *MusicView) MouseOut() {
+	v.highlight.Hide()
+	v.Refresh()
 }
 
-func (m *MusicView) MouseMoved(*desktop.MouseEvent) {
+func (v *MusicView) MouseMoved(*desktop.MouseEvent) {
 	//satisfy MouseMovement interface
 }

@@ -3,13 +3,12 @@ package cbinding
 import (
 	"slices"
 
-	"meowyplayer.com/utility/container"
 	"meowyplayer.com/utility/pattern"
 )
 
 type dataList[T any] struct {
 	pattern.SubjectBase[[]T]
-	data   container.Slice[T]
+	data   []T
 	filter func(T) bool
 	sorter func(T, T) int
 }
@@ -35,5 +34,13 @@ func (d *dataList[T]) Notify(data []T) {
 
 func (d *dataList[T]) updateBinding() {
 	slices.SortStableFunc(d.data, d.sorter)
-	d.NotifyAll(d.data.Filter(d.filter))
+
+	remain := make([]T, 0, len(d.data))
+	for _, v := range d.data {
+		if d.filter(v) {
+			remain = append(remain, v)
+		}
+	}
+
+	d.NotifyAll(remain)
 }

@@ -32,22 +32,22 @@ func NewAlbumView(album *resource.Album) *AlbumView {
 	return view
 }
 
-func (a *AlbumView) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewBorder(nil, a.title, nil, nil, container.NewMax(a.cover, a.info)))
+func (v *AlbumView) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewBorder(nil, v.title, nil, nil, container.NewStack(v.cover, v.info)))
 }
 
-func (a *AlbumView) MouseIn(event *desktop.MouseEvent) {
-	a.title.SetText("")
-	a.cover.Translucency = 0.8
-	a.info.Show()
+func (v *AlbumView) MouseIn(event *desktop.MouseEvent) {
+	v.title.SetText("")
+	v.cover.Translucency = 0.8
+	v.info.Show()
 }
 
-func (a *AlbumView) MouseOut() {
-	a.title.SetText(a.name)
-	a.cover.Translucency = 0.0
-	a.info.Hide()
+func (v *AlbumView) MouseOut() {
+	v.title.SetText(v.name)
+	v.cover.Translucency = 0.0
+	v.info.Hide()
 }
 
-func (a *AlbumView) MouseMoved(*desktop.MouseEvent) {
+func (v *AlbumView) MouseMoved(*desktop.MouseEvent) {
 	//satisfy MouseMovement interface
 }

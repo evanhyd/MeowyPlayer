@@ -42,6 +42,7 @@ func (t *vanillaTheme) Font(textStyle fyne.TextStyle) fyne.Resource {
 		return ItalicFont
 	}
 
+	// font pack bloats up the binary
 	// if textStyle.Monospace {
 	// 	return t.monospace
 	// }

@@ -1,4 +1,4 @@
-package resource
+package player
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"os"
 	"sync"
 
-	"meowyplayer.com/utility/assert"
+	"meowyplayer.com/core/resource"
 
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
@@ -18,11 +18,9 @@ type MP3Controller struct {
 	oto.Player
 }
 
-func NewMP3Controller(context *oto.Context, music *Music) *MP3Controller {
-	mp3Data, err := os.ReadFile(MusicPath(music))
-	assert.NoErr(err, "failed to load mp3 file")
-	mp3Decoder, err := mp3.NewDecoder(bytes.NewReader(mp3Data))
-	assert.NoErr(err, "failed to decode mp3 data")
+func NewMP3Controller(context *oto.Context, music *resource.Music) *MP3Controller {
+	mp3Data, _ := os.ReadFile(resource.MusicPath(music))
+	mp3Decoder, _ := mp3.NewDecoder(bytes.NewReader(mp3Data))
 	return &MP3Controller{Decoder: mp3Decoder, Player: context.NewPlayer(mp3Decoder)}
 }
 

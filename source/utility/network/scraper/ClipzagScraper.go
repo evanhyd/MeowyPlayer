@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
-	"meowyplayer.com/utility/assert"
 	"meowyplayer.com/utility/network/fileformat"
 )
 
@@ -32,93 +31,85 @@ func NewClipzagScraper() *ClipzagScraper {
 		`</div>\n` +
 		`<div class="postdiscription">(.+)</div>` //description
 
-	regex, err := regexp.Compile(pattern)
-	assert.NoErr(err, "failed to compile Clipzag scraper regex")
-	return &ClipzagScraper{regex}
+	return &ClipzagScraper{regexp.MustCompilePOSIX(pattern)}
 }
 
 func (s *ClipzagScraper) Search(title string) ([]fileformat.VideoResult, error) {
-	content, err := s.getContent(title)
+	page, err := s.fetchPage(title)
 	if err != nil {
 		return nil, err
 	}
-	return s.scrapeContent(content), nil
+	return s.scrapePage(page)
 }
 
-func (s *ClipzagScraper) getContent(title string) (string, error) {
+func (s *ClipzagScraper) fetchPage(title string) (string, error) {
 	url := `https://clipzag.com/search?` + url.Values{"q": {title}, "order": {"relevance"}}.Encode()
 	log.Printf("[Clipzag] scraping from %v\n", url)
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-
 	data, err := io.ReadAll(resp.Body)
 	return string(data), err
 }
 
-func (s *ClipzagScraper) scrapeContent(content string) []fileformat.VideoResult {
+func (s *ClipzagScraper) scrapePage(content string) ([]fileformat.VideoResult, error) {
 	//parse regex and prepare output buffers
 	matches := s.regex.FindAllStringSubmatch(content, -1)
 	results := make([]fileformat.VideoResult, len(matches))
-	log.Printf("[Clipzag] detected %v results...\n", len(matches))
+	errors := make(chan error, len(matches))
+
+	log.Printf("[Clipzag] found %v results\n", len(matches))
 
 	//parse into the results
 	wg := sync.WaitGroup{}
 	wg.Add(len(matches))
-	for i, match := range matches {
-		i := i
-		match := match
-		go func() {
-			defer wg.Done()
-			s.parseMatch(match, &results[i])
-		}()
+
+	go func() {
+		for i := range matches {
+			go func(match []string, result *fileformat.VideoResult) {
+				defer wg.Done()
+				s.parseMatch(match, result, errors)
+			}(matches[i], &results[i])
+		}
+		wg.Wait()
+		close(errors)
+	}()
+
+	for err := range errors {
+		if err != nil {
+			return nil, err
+		}
 	}
-	wg.Wait()
-
-	log.Printf("[Clipzag] scraping completed\n")
-	return results
-
-	//This code doesn't work well, since the output of the channel is not in order
-	//This can cause unwanted result appear on the top of the search results
-	/*
-		//parse matches into results concurrently
-		matches := s.regex.FindAllStringSubmatch(content, -1)
-		log.Printf("scraping %v results...\n", len(matches))
-		resultChan := make(chan YoutubeResult, len(matches))
-		for _, match := range matches {
-			go s.parseMatch(match, resultChan)
-		}
-
-		//collect results
-		results := make([]YoutubeResult, 0, len(matches))
-		for range matches {
-			results = append(results, <-resultChan)
-		}
-
-		return results
-	*/
+	return results, nil
 }
 
-func (s *ClipzagScraper) parseMatch(match []string, dst *fileformat.VideoResult) {
+func (s *ClipzagScraper) parseMatch(match []string, dst *fileformat.VideoResult, errors chan<- error) {
 	//download thumbnail
 	thumbnail, err := fyne.LoadResourceFromURLString(`https://` + match[2])
-	assert.NoErr(err, "failed to download the thumbnail")
+	if err != nil {
+		errors <- err
+	}
 
 	//calculate video length
-	times := strings.Split(match[3], ":")
-	seconds := 0
-	for _, time := range times {
-		t, err := strconv.Atoi(time)
-		assert.NoErr(err, "invalid time conversion")
-		seconds = seconds*60 + t
+	hourMinSec := strings.Split(match[3], ":")
+	totalSecond := int64(0)
+	for _, time := range hourMinSec {
+		t, err := strconv.ParseInt(time, 10, 64)
+		if err != nil {
+			errors <- err
+			return
+		}
+		totalSecond = totalSecond*60 + t
 	}
 
 	*dst = fileformat.VideoResult{
+		Platform:     "YouTube",
 		VideoID:      match[1],
 		Thumbnail:    thumbnail,
-		Length:       time.Duration(seconds * int(time.Second)),
+		Length:       time.Duration(totalSecond * int64(time.Second)),
 		Title:        html.UnescapeString(match[4]),
 		ChannelID:    match[5],
 		ChannelTitle: html.UnescapeString(match[6]),

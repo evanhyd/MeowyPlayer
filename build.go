@@ -19,9 +19,9 @@ func runCmd(command string, args ...string) {
 	}
 }
 
-func runCmdWithDir(dir string, command string, args ...string) {
+func runCmdAt(basePath string, command string, args ...string) {
 	cmd := exec.Command(command, args...)
-	cmd.Dir = dir
+	cmd.Dir = basePath
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -71,9 +71,9 @@ func main() {
 
 	switch platform {
 	case "windows":
-		runCmdWithDir("source", "go", "build", "-ldflags", "-H=windowsgui", "-o", filepath.Join("..", "meowyplayer.exe"), "main.go")
+		runCmdAt("source", "go", "build", "-ldflags", "-H=windowsgui", "-o", filepath.Join("..", "meowyplayer.exe"), "main.go")
 	case "linux", "darwin":
-		runCmdWithDir("source", "go", "build", "-o", filepath.Join("..", "meowyplayer"), "main.go")
+		runCmdAt("source", "go", "build", "-o", filepath.Join("..", "meowyplayer"), "main.go")
 	default:
 		panic("unknown platform")
 	}

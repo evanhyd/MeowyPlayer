@@ -3,7 +3,6 @@ package cwidget
 import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
-	"meowyplayer.com/utility/assert"
 )
 
 type ModeButton struct {
@@ -15,7 +14,6 @@ type ModeButton struct {
 }
 
 func newModeButton(labels []string, icons []fyne.Resource, onTapped func(int)) *ModeButton {
-	assert.Ensure(func() bool { return len(labels) > 0 || len(icons) > 0 })
 	button := &ModeButton{widget.Button{Importance: widget.LowImportance}, labels, icons, 0, onTapped}
 	button.update()
 	button.ExtendBaseWidget(button)
