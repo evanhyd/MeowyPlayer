@@ -33,14 +33,6 @@ func showAddLocalMusicDialog() {
 	fileReader.Show()
 }
 
-func newVideoResultViewList(data pattern.Subject[[]fileformat.VideoResult], onDownload func(*fileformat.VideoResult)) *cwidget.ViewList[fileformat.VideoResult] {
-	return cwidget.NewViewList(data, container.NewVBox(),
-		func(result fileformat.VideoResult) fyne.CanvasObject {
-			return cwidget.NewVideoResultView(&result, fyne.NewSize(128.0*1.61803398875, 128.0), onDownload)
-		},
-	)
-}
-
 func showAddOnlineMusicDialog() {
 	//scraper menu
 	var videoScraper scraper.VideoScraper
@@ -59,14 +51,17 @@ func showAddOnlineMusicDialog() {
 
 	//video result view list
 	videoResultData := pattern.Data[[]fileformat.VideoResult]{}
-	videoResultViewList := newVideoResultViewList(&videoResultData,
-		func(videoResult *fileformat.VideoResult) {
-			musicData, err := musicDownloader.Download(videoResult)
-			if err != nil {
-				showErrorIfAny(err)
-				return
-			}
-			showErrorIfAny(client.Manager().AddMusicFromDownloader(videoResult, musicData))
+	videoResultViewList := cwidget.NewViewList(&videoResultData, container.NewVBox(),
+		func(result fileformat.VideoResult) fyne.CanvasObject {
+			return cwidget.NewVideoResultView(&result, fyne.NewSize(128.0*1.61803398875, 128.0),
+				func(videoResult *fileformat.VideoResult) {
+					musicData, err := musicDownloader.Download(videoResult)
+					if err != nil {
+						showErrorIfAny(err)
+						return
+					}
+					showErrorIfAny(client.Manager().AddMusicFromDownloader(videoResult, musicData))
+				})
 		},
 	)
 

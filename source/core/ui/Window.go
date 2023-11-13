@@ -11,6 +11,14 @@ import (
 )
 
 func NewMainWindow() fyne.Window {
+	newWindow := func(title string, size fyne.Size) fyne.Window {
+		window := fyne.CurrentApp().NewWindow(title)
+		window.SetCloseIntercept(window.Hide)
+		window.CenterOnScreen()
+		window.Resize(size)
+		return window
+	}
+
 	window := newWindow("MeowyPlayer", fyne.NewSize(770.0, 650.0))
 
 	//create item tabs
@@ -27,14 +35,6 @@ func NewMainWindow() fyne.Window {
 	}))
 
 	window.SetContent(container.NewBorder(nil, newController(), nil, nil, tabs))
-	return window
-}
-
-func newWindow(title string, size fyne.Size) fyne.Window {
-	window := fyne.CurrentApp().NewWindow(title)
-	window.SetCloseIntercept(window.Hide)
-	window.CenterOnScreen()
-	window.Resize(size)
 	return window
 }
 

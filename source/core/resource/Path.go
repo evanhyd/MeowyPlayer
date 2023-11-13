@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
@@ -36,7 +35,7 @@ func MusicPath(music *Music) string {
 func Cover(album *Album) fyne.Resource {
 	asset, err := fyne.LoadResourceFromPath(CoverPath(album))
 	if err != nil {
-		log.Println(err)
+		logger.Error(err, 1)
 		return MissingIcon
 	}
 	return asset
