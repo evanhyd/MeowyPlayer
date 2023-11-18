@@ -50,7 +50,6 @@ func main() {
 	bundleResource(iconFile, "MissingIcon", filepath.Join("asset", "missing_asset.png"))
 	appendResource(iconFile, "WindowIcon", filepath.Join("asset", "icon.ico"))
 	appendResource(iconFile, "AlbumTabIcon", filepath.Join("asset", "album_tab.png"))
-	appendResource(iconFile, "AlbumAdderOnlineIcon", filepath.Join("asset", "album_adder_online.png"))
 	appendResource(iconFile, "MusicTabIcon", filepath.Join("asset", "music_tab.png"))
 	appendResource(iconFile, "MusicAdderOnlineIcon", filepath.Join("asset", "music_adder_online.png"))
 	appendResource(iconFile, "DefaultIcon", filepath.Join("asset", "default.png"))

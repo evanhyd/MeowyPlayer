@@ -4,19 +4,18 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
-	"sync"
 
 	"meowyplayer.com/core/resource"
-	"meowyplayer.com/utility/logger"
 	"meowyplayer.com/utility/uzip"
 )
 
-func (c *clientManager) ClientRequestList(account *resource.Account) ([]resource.CollectionInfo, error) {
+func RequestList(account *resource.Account) ([]resource.CollectionInfo, error) {
 	serverUrl, err := url.JoinPath(Config().ServerUrl, "list")
 	if err != nil {
 		return nil, err
@@ -33,7 +32,7 @@ func (c *clientManager) ClientRequestList(account *resource.Account) ([]resource
 	return infos, err
 }
 
-func (c *clientManager) ClientRequestUpload(account *resource.Account) error {
+func RequestUpload(account *resource.Account) error {
 	serverUrl, err := url.JoinPath(Config().ServerUrl, "upload")
 	if err != nil {
 		return err
@@ -67,7 +66,7 @@ func (c *clientManager) ClientRequestUpload(account *resource.Account) error {
 	return err
 }
 
-func (c *clientManager) downloadCollection(serverUrl string) error {
+func downloadCollection(serverUrl string) error {
 	resp, err := http.Get(serverUrl)
 	if err != nil {
 		return err
@@ -82,8 +81,8 @@ func (c *clientManager) downloadCollection(serverUrl string) error {
 		return err
 	}
 
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
+	Manager().accessLock.Lock()
+	defer Manager().accessLock.Unlock()
 
 	if err := os.RemoveAll(resource.CollectionPath()); err != nil {
 		return err
@@ -91,43 +90,25 @@ func (c *clientManager) downloadCollection(serverUrl string) error {
 	if err := uzip.Extract(resource.CollectionPath(), reader); err != nil {
 		return err
 	}
-	return c.load()
+	return Manager().load()
 }
 
-func (c *clientManager) syncMusic() error {
-	var retErr error
-	wg := sync.WaitGroup{}
-	for _, album := range c.collection.Get().Albums {
-		for _, music := range album.MusicList {
-			if !isMusicExist(&music) {
-				wg.Add(1)
-				go func(music *resource.Music) {
-					defer wg.Done()
-					if err := DownloadMusicFromMusic(music); err != nil {
-						retErr = err
-						logger.Error(err, 0)
-					}
-				}(&music)
-			}
-		}
-	}
-	wg.Wait()
-	return retErr
-}
-
-func (c *clientManager) ClientRequestDownload(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
+func RequestDownload(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
 	serverUrl, err := url.JoinPath(Config().ServerUrl, "download")
 	if err != nil {
 		return err
 	}
 	serverUrl += "?" + url.Values{"collection": {collectionInfo.Title}}.Encode()
-	if err := c.downloadCollection(serverUrl); err != nil {
+	if err := downloadCollection(serverUrl); err != nil {
 		return err
 	}
-	return c.syncMusic()
+	if unsynced := SyncCollection(); unsynced != 0 {
+		return fmt.Errorf("unable to sync %v music", unsynced)
+	}
+	return nil
 }
 
-func (c *clientManager) ClientRequestRemove(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
+func RequestRemove(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
 	// serverUrl, err := url.JoinPath(Config().ServerUrl, "remove")
 	// if err != nil {
 	// 	return err

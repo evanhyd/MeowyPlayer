@@ -24,7 +24,7 @@ func showAddLocalMusicDialog() {
 			showErrorIfAny(err)
 		} else if result != nil {
 			log.Printf("add %v from local to %v\n", result.URI().Name(), client.Manager().Album().Title)
-			showErrorIfAny(client.Manager().AddMusicFromURIReader(result))
+			showErrorIfAny(client.AddMusicFromURIReader(client.Manager().Album(), result))
 		}
 	}, getWindow())
 	fileReader.SetFilter(storage.NewExtensionFileFilter([]string{".mp3"}))
@@ -47,7 +47,7 @@ func showAddOnlineMusicDialog() {
 	videoResultViewList := cwidget.NewViewList(&videoResultData, container.NewVBox(),
 		func(video fileformat.VideoResult) fyne.CanvasObject {
 			return cwidget.NewVideoResultView(&video, fyne.NewSize(207, 128), func() {
-				showErrorIfAny(client.DownloadMusicFromVideo(&video))
+				showErrorIfAny(client.DownloadMusic(client.Manager().Album(), &video))
 			})
 		},
 	)

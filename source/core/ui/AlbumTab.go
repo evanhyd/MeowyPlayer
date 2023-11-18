@@ -112,15 +112,22 @@ func newAlbumTab() *container.TabItem {
 	data := cbinding.MakeAlbumDataList()
 	client.Manager().AddCollectionListener(&data)
 
-	albumAdderLocal := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), showAddLocalAlbumDialog)
-	albumAdderOnline := cwidget.NewButtonWithIcon("", resource.AlbumAdderOnlineIcon, showAddOnlineAlbumDialog)
+	addAlbumIcon := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), func() { showErrorIfAny(client.AddRandomAlbum()) })
+	syncMusicButton := cwidget.NewButtonWithIcon("", theme.ViewRefreshIcon(), func() {
+		progress := dialog.NewCustomWithoutButtons("syncing", widget.NewProgressBarInfinite(), getWindow())
+		progress.Show()
+		defer progress.Hide()
+		if unsynced := client.SyncCollection(); unsynced > 0 {
+			showErrorIfAny(fmt.Errorf("unabled to sync %v music", unsynced))
+		}
+	})
 
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon, container.NewBorder(
 		container.NewBorder(
 			nil,
 			container.NewGridWithRows(1, newAlbumTitleButton(&data, "Title"), newAlbumDateButton(&data, "Date")),
 			nil,
-			container.NewGridWithRows(1, albumAdderLocal, albumAdderOnline),
+			container.NewGridWithRows(1, addAlbumIcon, syncMusicButton),
 			newAlbumSearchBar(&data),
 		),
 		nil,

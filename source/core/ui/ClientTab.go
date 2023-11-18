@@ -27,8 +27,8 @@ func newClientTab() *container.TabItem {
 			return cwidget.NewCollectionInfoView(&info, func() {
 				progress := dialog.NewCustomWithoutButtons("downloading", widget.NewProgressBarInfinite(), getWindow())
 				progress.Show()
-				showErrorIfAny(client.Manager().ClientRequestDownload(&account, &info))
-				progress.Hide()
+				defer progress.Hide()
+				showErrorIfAny(client.RequestDownload(&account, &info))
 			})
 		},
 	)
@@ -41,7 +41,7 @@ func newClientTab() *container.TabItem {
 		progress.Show()
 		defer progress.Hide()
 		client.Config().SetServer(url)
-		infos, err := client.Manager().ClientRequestList(&account)
+		infos, err := client.RequestList(&account)
 		if err != nil {
 			showErrorIfAny(err)
 			return
@@ -54,7 +54,7 @@ func newClientTab() *container.TabItem {
 	uploadButton := cwidget.NewButtonWithIcon("upload", theme.UploadIcon(), func() {
 		progress := dialog.NewCustomWithoutButtons("uploading", widget.NewProgressBarInfinite(), getWindow())
 		progress.Show()
-		showErrorIfAny(client.Manager().ClientRequestUpload(&account))
+		showErrorIfAny(client.RequestUpload(&account))
 		progress.Hide()
 	})
 

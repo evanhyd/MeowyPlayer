@@ -1,23 +1,16 @@
 package client
 
 import (
-	"bytes"
 	"fmt"
-	"image"
-	"image/color"
-	"image/png"
 	"log"
-	"math/rand"
 	"os"
 	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
-	"github.com/hajimehoshi/go-mp3"
 	"meowyplayer.com/core/player"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/utility/logger"
-	"meowyplayer.com/utility/network/fileformat"
 	"meowyplayer.com/utility/pattern"
 	"meowyplayer.com/utility/ujson"
 )
@@ -69,10 +62,6 @@ func (c *clientManager) load() error {
 
 	c.collection.Set(collection)
 	return nil
-}
-
-func (c *clientManager) TempCollection() resource.Collection {
-	return c.collection.Get()
 }
 
 func (c *clientManager) Album() resource.Album {
@@ -137,32 +126,24 @@ func (c *clientManager) addAlbum(album resource.Album) error {
 	}
 }
 
-func (c *clientManager) AddRandomAlbum() error {
-	//generate album cover
-	iconColor := color.NRGBA{uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32()), uint8(rand.Uint32())}
-	iconImage := image.NewNRGBA(image.Rect(0, 0, 1, 1))
-	iconImage.SetNRGBA(0, 0, iconColor)
-	imageData := bytes.Buffer{}
-	if err := png.Encode(&imageData, iconImage); err != nil {
+func (c *clientManager) DeleteAlbum(album resource.Album) error {
+	c.accessLock.Lock()
+	defer c.accessLock.Unlock()
+
+	album.Title = resource.SanatizeFileName(c.albumTitle)
+	log.Println("delete", album.Title)
+
+	//delete album icon
+	if err := os.RemoveAll(resource.CoverPath(&album)); err != nil {
 		return err
 	}
 
-	//generate album
-	album := resource.Album{
-		Date:      time.Now(),
-		Title:     "",
-		MusicList: make(map[string]resource.Music),
-		Cover:     fyne.NewStaticResource("", imageData.Bytes()),
-	}
-
-	// try 100 possible titles until it fits in
-	for i := 0; i < 100; i++ {
-		album.Title = fmt.Sprintf("Album %v", i)
-		if err := c.addAlbum(album); err == nil {
-			return nil
-		}
-	}
-	return fmt.Errorf("failed to add new album")
+	//delete album from the collection
+	collection := c.collection.Get()
+	collection.Date = time.Now()
+	delete(collection.Albums, album.Title)
+	c.collection.Set(collection)
+	return c.save()
 }
 
 func (c *clientManager) UpdateAlbumTitle(toRename resource.Album, newTitle string) error {
@@ -236,34 +217,14 @@ func (c *clientManager) UpdateAlbumCover(album resource.Album, iconPath string) 
 	return c.save()
 }
 
-func (c *clientManager) DeleteAlbum(album resource.Album) error {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
-
-	album.Title = resource.SanatizeFileName(c.albumTitle)
-	log.Println("delete", album.Title)
-
-	//delete album icon
-	if err := os.RemoveAll(resource.CoverPath(&album)); err != nil {
-		return err
-	}
-
-	//delete album from the collection
-	collection := c.collection.Get()
-	collection.Date = time.Now()
-	delete(collection.Albums, album.Title)
-	c.collection.Set(collection)
-	return c.save()
-}
-
-func (c *clientManager) addMusic(music resource.Music, musicData []byte) error {
+func (c *clientManager) addMusic(toAlbum resource.Album, music resource.Music, musicData []byte) error {
 	c.accessLock.Lock()
 	defer c.accessLock.Unlock()
 
 	//album must exist
-	album, exist := c.collection.Get().Albums[c.albumTitle]
+	album, exist := c.collection.Get().Albums[toAlbum.Title]
 	if !exist {
-		return fmt.Errorf("failed to add the music to a non-existed album: %v", c.albumTitle)
+		return fmt.Errorf("failed to add the music to a non-existed album: %v", toAlbum.Title)
 	}
 
 	//write data to the music repo
@@ -280,39 +241,6 @@ func (c *clientManager) addMusic(music resource.Music, musicData []byte) error {
 	c.collection.Set(collection)
 	c.albumEvent.NotifyAll(album)
 	return c.save()
-}
-
-func (c *clientManager) AddMusicFromDownloader(videoResult *fileformat.VideoResult, musicData []byte) error {
-	music := resource.Music{
-		Date:     time.Now(),
-		Title:    resource.SanatizeFileName(videoResult.Title) + ".mp3",
-		Length:   videoResult.Length,
-		Platform: videoResult.Platform,
-		ID:       videoResult.VideoID,
-	}
-	return c.addMusic(music, musicData)
-}
-
-func (c *clientManager) AddMusicFromURIReader(musicInfo fyne.URIReadCloser) error {
-	estimateMP3DataLength := func(data []byte) (time.Duration, error) {
-		decoder, err := mp3.NewDecoder(bytes.NewReader(data))
-		if err != nil {
-			return 0, err
-		}
-		seconds := float64(decoder.Length()) / float64(resource.SAMPLING_RATE) / float64(resource.NUM_OF_CHANNELS) / float64(resource.AUDIO_BIT_DEPTH)
-		return time.Duration(seconds * float64(time.Second)), nil
-	}
-
-	musicData, err := os.ReadFile(musicInfo.URI().Path())
-	if err != nil {
-		return err
-	}
-	length, err := estimateMP3DataLength(musicData)
-	if err != nil {
-		return err
-	}
-	music := resource.Music{Date: time.Now(), Title: musicInfo.URI().Name(), Length: length}
-	return c.addMusic(music, musicData)
 }
 
 func (s *clientManager) DeleteMusic(music resource.Music) error {
