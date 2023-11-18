@@ -3,6 +3,7 @@ package resource
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"meowyplayer.com/utility/logger"
@@ -15,6 +16,23 @@ const (
 	assetPath      = "asset"
 	collectionFile = "collection.json"
 )
+
+func SanatizeFileName(filename string) string {
+	//sanitize music title
+	sanitizer := strings.NewReplacer(
+		"<", "",
+		">", "",
+		":", "",
+		"\"", "",
+		"/", "",
+		"\\", "",
+		"|", "",
+		"?", "",
+		"*", "",
+		"~", "",
+	)
+	return sanitizer.Replace(filename)
+}
 
 func CollectionPath() string {
 	return collectionPath

@@ -11,15 +11,11 @@ import (
 )
 
 func NewMainWindow() fyne.Window {
-	newWindow := func(title string, size fyne.Size) fyne.Window {
-		window := fyne.CurrentApp().NewWindow(title)
-		window.SetCloseIntercept(window.Hide)
-		window.CenterOnScreen()
-		window.Resize(size)
-		return window
-	}
-
-	window := newWindow("MeowyPlayer", fyne.NewSize(770.0, 650.0))
+	//create window
+	window := fyne.CurrentApp().NewWindow("MeowyPlayer")
+	window.SetCloseIntercept(window.Hide)
+	window.CenterOnScreen()
+	window.Resize(fyne.NewSize(770.0, 650.0))
 
 	//create item tabs
 	albumTab := newAlbumTab()

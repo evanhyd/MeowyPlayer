@@ -38,7 +38,7 @@ func main() {
 	}
 
 	//load local config
-	if err := client.Manager().Load(); err != nil {
+	if err := client.Manager().Initialize(); err != nil {
 		logger.Error(err, 0)
 		return
 	}

@@ -8,8 +8,11 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"sync"
 
 	"meowyplayer.com/core/resource"
+	"meowyplayer.com/utility/logger"
 	"meowyplayer.com/utility/uzip"
 )
 
@@ -64,21 +67,12 @@ func (c *clientManager) ClientRequestUpload(account *resource.Account) error {
 	return err
 }
 
-func (c *clientManager) ClientRequestDownload(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
-	serverUrl, err := url.JoinPath(Config().ServerUrl, "download")
-	if err != nil {
-		return err
-	}
-	serverUrl += "?" + url.Values{"collection": {collectionInfo.Title}}.Encode()
-
-	//download collection
+func (c *clientManager) downloadCollection(serverUrl string) error {
 	resp, err := http.Get(serverUrl)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-
-	//unzip collection
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -91,10 +85,46 @@ func (c *clientManager) ClientRequestDownload(account *resource.Account, collect
 	c.accessLock.Lock()
 	defer c.accessLock.Unlock()
 
+	if err := os.RemoveAll(resource.CollectionPath()); err != nil {
+		return err
+	}
 	if err := uzip.Extract(resource.CollectionPath(), reader); err != nil {
 		return err
 	}
-	return c.Load()
+	return c.load()
+}
+
+func (c *clientManager) syncMusic() error {
+	var retErr error
+	wg := sync.WaitGroup{}
+	for _, album := range c.collection.Get().Albums {
+		for _, music := range album.MusicList {
+			if !isMusicExist(&music) {
+				wg.Add(1)
+				go func(music *resource.Music) {
+					defer wg.Done()
+					if err := DownloadMusicFromMusic(music); err != nil {
+						retErr = err
+						logger.Error(err, 0)
+					}
+				}(&music)
+			}
+		}
+	}
+	wg.Wait()
+	return retErr
+}
+
+func (c *clientManager) ClientRequestDownload(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
+	serverUrl, err := url.JoinPath(Config().ServerUrl, "download")
+	if err != nil {
+		return err
+	}
+	serverUrl += "?" + url.Values{"collection": {collectionInfo.Title}}.Encode()
+	if err := c.downloadCollection(serverUrl); err != nil {
+		return err
+	}
+	return c.syncMusic()
 }
 
 func (c *clientManager) ClientRequestRemove(account *resource.Account, collectionInfo *resource.CollectionInfo) error {

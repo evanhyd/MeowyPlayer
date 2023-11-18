@@ -13,7 +13,6 @@ import (
 	"meowyplayer.com/core/client"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/core/ui/cwidget"
-	"meowyplayer.com/utility/network/downloader"
 	"meowyplayer.com/utility/network/fileformat"
 	"meowyplayer.com/utility/network/scraper"
 	"meowyplayer.com/utility/pattern"
@@ -36,32 +35,20 @@ func showAddLocalMusicDialog() {
 func showAddOnlineMusicDialog() {
 	//scraper menu
 	var videoScraper scraper.VideoScraper
-	var musicDownloader downloader.MusicDownloader
 
 	//platform selector
 	platformMenu := cwidget.NewDropDown("", resource.DefaultIcon)
-	platformMenu.Add("YouTube", resource.YouTubeIcon, func() {
-		videoScraper = scraper.NewClipzagScraper()
-		musicDownloader = downloader.NewY2MateDownloader()
-	})
-	platformMenu.Add("BiliBili", resource.BiliBiliIcon, func() {
-		fmt.Println("not implemented...")
-	})
+	platformMenu.Add("YouTube", resource.YouTubeIcon, func() { videoScraper = scraper.NewClipzagScraper() })
+	platformMenu.Add("BiliBili", resource.BiliBiliIcon, func() { fmt.Println("not implemented...") })
 	platformMenu.Select(0)
 
 	//video result view list
 	videoResultData := pattern.Data[[]fileformat.VideoResult]{}
 	videoResultViewList := cwidget.NewViewList(&videoResultData, container.NewVBox(),
-		func(result fileformat.VideoResult) fyne.CanvasObject {
-			return cwidget.NewVideoResultView(&result, fyne.NewSize(128.0*1.61803398875, 128.0),
-				func(videoResult *fileformat.VideoResult) {
-					musicData, err := musicDownloader.Download(videoResult)
-					if err != nil {
-						showErrorIfAny(err)
-						return
-					}
-					showErrorIfAny(client.Manager().AddMusicFromDownloader(videoResult, musicData))
-				})
+		func(video fileformat.VideoResult) fyne.CanvasObject {
+			return cwidget.NewVideoResultView(&video, fyne.NewSize(207, 128), func() {
+				showErrorIfAny(client.DownloadMusicFromVideo(&video))
+			})
 		},
 	)
 
@@ -70,12 +57,12 @@ func showAddOnlineMusicDialog() {
 	searchEntry.SetPlaceHolder("Search Video")
 	searchEntry.ActionItem = cwidget.NewButtonWithIcon("", theme.SearchIcon(), func() { searchEntry.OnSubmitted(searchEntry.Text) })
 	searchEntry.OnSubmitted = func(title string) {
-		result, err := videoScraper.Search(title)
+		videos, err := videoScraper.Search(title)
 		if err != nil {
 			showErrorIfAny(err)
 			return
 		}
-		videoResultData.Set(result)
+		videoResultData.Set(videos)
 	}
 
 	onlineMusicDialog := dialog.NewCustom("", "X", container.NewBorder(

@@ -21,7 +21,7 @@ type CollectionInfoView struct {
 	highlight *canvas.Rectangle
 }
 
-func NewCollectionInfoView(info *resource.CollectionInfo, onDownload func(*resource.CollectionInfo)) *CollectionInfoView {
+func NewCollectionInfoView(info *resource.CollectionInfo, onDownload func()) *CollectionInfoView {
 	view := &CollectionInfoView{
 		title:     widget.NewLabel(fmt.Sprintf("%v %v %.1f mb", info.Title, info.Date.Format(time.DateTime), float64(info.Size)/1024/1024)),
 		download:  NewButtonWithIcon("", theme.DownloadIcon(), nil),
@@ -31,7 +31,7 @@ func NewCollectionInfoView(info *resource.CollectionInfo, onDownload func(*resou
 	view.download.OnTapped = func() {
 		view.download.Disable()
 		view.download.SetIcon(theme.MoreHorizontalIcon())
-		onDownload(info)
+		onDownload()
 		view.download.SetIcon(theme.DownloadIcon())
 		view.download.Enable()
 	}

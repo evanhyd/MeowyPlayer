@@ -24,31 +24,28 @@ type y2mateConverterResponse struct {
 	Dlink    string `json:"dlink"`
 }
 
-type Y2MateDownloader struct {
+type y2MateDownloader struct {
 	keyRegex *regexp.Regexp
 }
 
-func NewY2MateDownloader() *Y2MateDownloader {
+func NewY2MateDownloader() *y2MateDownloader {
 	const keyPattern = `"f":"mp3","q":"128kbps","q_text":"MP3 - 128kbps","k":"([\w\/\\\+=]+)"`
-	return &Y2MateDownloader{regexp.MustCompile(keyPattern)}
+	return &y2MateDownloader{regexp.MustCompile(keyPattern)}
 }
 
-func (d *Y2MateDownloader) Download(video *fileformat.VideoResult) ([]byte, error) {
+func (d *y2MateDownloader) Download(video *fileformat.VideoResult) ([]byte, error) {
 	key, err := d.parseConverterKey(video)
 	if err != nil {
 		return nil, err
 	}
-
-	defer log.Printf("[Y2mate] downloading %v completed\n", video.Title)
 	return d.downloadContent(video, key)
 }
 
-func (d *Y2MateDownloader) parseConverterKey(video *fileformat.VideoResult) (string, error) {
+func (d *y2MateDownloader) parseConverterKey(video *fileformat.VideoResult) (string, error) {
 	const (
 		converterUrl = `https://www.y2mate.com/mates/analyzeV2/ajax`
 		youtubeUrl   = `https://www.youtube.com/watch?`
 	)
-	log.Printf("[Y2mate] fetching %v converter key...\n", video.Title)
 
 	//request the content that contains converter key
 	videoUrl := youtubeUrl + url.Values{"v": {video.VideoID}}.Encode()
@@ -67,15 +64,15 @@ func (d *Y2MateDownloader) parseConverterKey(video *fileformat.VideoResult) (str
 
 	matches := d.keyRegex.FindStringSubmatch(string(data))
 	if matches == nil {
-		return "", fmt.Errorf("couldn't get the converter key: %v", video.Title)
+		return "", fmt.Errorf("couldn't get converter key: %v", video.Title)
 	}
 	return matches[1], nil
 }
 
-func (d *Y2MateDownloader) downloadContent(video *fileformat.VideoResult, converterKey string) ([]byte, error) {
+func (d *y2MateDownloader) downloadContent(video *fileformat.VideoResult, converterKey string) ([]byte, error) {
 	const dbURL = `https://www.y2mate.com/mates/convertV2/index`
 
-	log.Printf("[Y2mate] fetching music file: %v...\n", video.Title)
+	log.Printf("[Y2mate] fetching %v with key %v\n", video.Title, converterKey)
 
 	//request for video -> mp3 conversion
 	queryData := url.Values{"vid": {video.VideoID}, "k": {converterKey}}

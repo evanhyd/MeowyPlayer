@@ -23,7 +23,7 @@ type VideoResultView struct {
 	highlight    *canvas.Rectangle
 }
 
-func NewVideoResultView(result *fileformat.VideoResult, size fyne.Size, onDownload func(*fileformat.VideoResult)) *VideoResultView {
+func NewVideoResultView(result *fileformat.VideoResult, size fyne.Size, onDownload func()) *VideoResultView {
 	const kConversionFactor = 60
 	mins := int(result.Length.Minutes()) % kConversionFactor
 	secs := int(result.Length.Seconds()) % kConversionFactor
@@ -43,7 +43,7 @@ func NewVideoResultView(result *fileformat.VideoResult, size fyne.Size, onDownlo
 		view.download.Disable()
 		go func() {
 			view.download.SetIcon(theme.MoreHorizontalIcon())
-			onDownload(result)
+			onDownload()
 			view.download.SetIcon(theme.ConfirmIcon())
 		}()
 	}

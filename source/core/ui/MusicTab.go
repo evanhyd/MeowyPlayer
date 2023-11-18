@@ -67,9 +67,7 @@ func newMusicTab() *container.TabItem {
 		return cwidget.NewViewList(data, container.NewVBox(),
 			func(music resource.Music) fyne.CanvasObject {
 				view := cwidget.NewMusicView(&music)
-				view.OnTapped = func(*fyne.PointEvent) {
-					client.Manager().SetPlayList(player.NewPlayList(data.MusicList(), &music))
-				}
+				view.OnTapped = func(*fyne.PointEvent) { client.Manager().SetPlayList(player.NewPlayList(data.MusicList(), &music)) }
 				view.OnTappedSecondary = func(*fyne.PointEvent) { showDeleteMusicDialog(&music) }
 				return view
 			},
@@ -77,11 +75,9 @@ func newMusicTab() *container.TabItem {
 	}
 
 	data := cbinding.MakeMusicDataList()
-	client.Manager().AddAlbumListener(&data)
-
 	searchBar := newMusicSearchBar(&data)
+	client.Manager().AddAlbumListener(&data)
 	client.Manager().AddAlbumListener(pattern.MakeCallback(func(resource.Album) { searchBar.SetText("") }))
-
 	musicAdderLocal := cwidget.NewButtonWithIcon("", theme.FolderOpenIcon(), showAddLocalMusicDialog)
 	musicAdderOnline := cwidget.NewButtonWithIcon("", resource.MusicAdderOnlineIcon, showAddOnlineMusicDialog)
 

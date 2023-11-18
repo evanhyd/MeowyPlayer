@@ -24,12 +24,16 @@ func newClientTab() *container.TabItem {
 	infoData := pattern.Data[[]resource.CollectionInfo]{}
 	infoViewList := cwidget.NewViewList(&infoData, container.NewVBox(),
 		func(info resource.CollectionInfo) fyne.CanvasObject {
-			return cwidget.NewCollectionInfoView(&info, func(info *resource.CollectionInfo) {
-				showErrorIfAny(client.Manager().ClientRequestDownload(&account, info))
+			return cwidget.NewCollectionInfoView(&info, func() {
+				progress := dialog.NewCustomWithoutButtons("downloading", widget.NewProgressBarInfinite(), getWindow())
+				progress.Show()
+				showErrorIfAny(client.Manager().ClientRequestDownload(&account, &info))
+				progress.Hide()
 			})
 		},
 	)
 
+	//server ip
 	serverEntry := widget.NewEntry()
 	serverEntry.ActionItem = cwidget.NewButtonWithIcon("", theme.ComputerIcon(), func() { serverEntry.OnSubmitted(serverEntry.Text) })
 	serverEntry.OnSubmitted = func(url string) {
