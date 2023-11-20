@@ -15,8 +15,8 @@ import (
 	"meowyplayer.com/utility/uzip"
 )
 
-func RequestList(account *resource.Account) ([]resource.CollectionInfo, error) {
-	serverUrl, err := url.JoinPath(Config().ServerUrl, "list")
+func RequestList() ([]resource.CollectionInfo, error) {
+	serverUrl, err := url.JoinPath(Config().ServerUrl(), "list")
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +32,8 @@ func RequestList(account *resource.Account) ([]resource.CollectionInfo, error) {
 	return infos, err
 }
 
-func RequestUpload(account *resource.Account) error {
-	serverUrl, err := url.JoinPath(Config().ServerUrl, "upload")
+func RequestUpload() error {
+	serverUrl, err := url.JoinPath(Config().ServerUrl(), "upload")
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func RequestUpload(account *resource.Account) error {
 
 	writeFields := func() error {
 		defer fieldWriter.Close()
-		fieldPart, err := fieldWriter.CreateFormFile("collection", account.Name+".zip")
+		fieldPart, err := fieldWriter.CreateFormFile("collection", Config().Name()+".zip")
 		if err != nil {
 			return err
 		}
@@ -93,8 +93,8 @@ func downloadCollection(serverUrl string) error {
 	return Manager().load()
 }
 
-func RequestDownload(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
-	serverUrl, err := url.JoinPath(Config().ServerUrl, "download")
+func RequestDownload(collectionInfo *resource.CollectionInfo) error {
+	serverUrl, err := url.JoinPath(Config().ServerUrl(), "download")
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func RequestDownload(account *resource.Account, collectionInfo *resource.Collect
 	return nil
 }
 
-func RequestRemove(account *resource.Account, collectionInfo *resource.CollectionInfo) error {
+func RequestRemove(collectionInfo *resource.CollectionInfo) error {
 	// serverUrl, err := url.JoinPath(Config().ServerUrl, "remove")
 	// if err != nil {
 	// 	return err

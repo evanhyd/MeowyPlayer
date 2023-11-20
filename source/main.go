@@ -37,10 +37,17 @@ func main() {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
 	}
 
-	//load local config
+	//load music collection
 	if err := client.Manager().Initialize(); err != nil {
 		logger.Error(err, 0)
 		return
 	}
+
+	//load user config
+	if err := client.Config().Initialize(); err != nil {
+		logger.Error(err, 0)
+		return
+	}
+
 	window.ShowAndRun()
 }

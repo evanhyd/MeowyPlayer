@@ -19,4 +19,5 @@ source/core/resource/Font.go
 source/core/resource/Icon.go
 out/**
 log.txt
+config.json
 meowyplayer*

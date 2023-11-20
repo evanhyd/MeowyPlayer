@@ -10,11 +10,13 @@ import (
 )
 
 const (
+	musicPath = "music"
+
 	collectionPath = "collection"
-	coverPath      = "cover"
-	musicPath      = "music"
-	assetPath      = "asset"
 	collectionFile = "collection.json"
+	coverPath      = "cover"
+
+	configFile = "config.json"
 )
 
 func SanatizeFileName(filename string) string {
@@ -34,6 +36,10 @@ func SanatizeFileName(filename string) string {
 	return sanitizer.Replace(filename)
 }
 
+func MusicPath(music *Music) string {
+	return filepath.Join(musicPath, music.Title)
+}
+
 func CollectionPath() string {
 	return collectionPath
 }
@@ -46,10 +52,6 @@ func CoverPath(album *Album) string {
 	return filepath.Join(collectionPath, coverPath, album.Title+".png")
 }
 
-func MusicPath(music *Music) string {
-	return filepath.Join(musicPath, music.Title)
-}
-
 func Cover(album *Album) fyne.Resource {
 	asset, err := fyne.LoadResourceFromPath(CoverPath(album))
 	if err != nil {
@@ -57,6 +59,10 @@ func Cover(album *Album) fyne.Resource {
 		return MissingIcon
 	}
 	return asset
+}
+
+func ConfigFile() string {
+	return configFile
 }
 
 func MakeNecessaryPath() {

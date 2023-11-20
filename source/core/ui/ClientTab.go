@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"log"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
@@ -15,10 +13,12 @@ import (
 )
 
 func newClientTab() *container.TabItem {
-	account := resource.Account{Name: "UnboxTheCat", ID: "0x00000000"}
-	accountView := cwidget.NewAccountView()
-	accountView.SetAccount(&account)
-	accountView.SetOnAutoBackup(func(b bool) { log.Println("backup:", b) })
+	//username
+	userNameEntry := widget.NewEntry()
+	userNameEntry.SetPlaceHolder("username")
+	userNameEntry.ActionItem = cwidget.NewButtonWithIcon("", theme.DocumentSaveIcon(), func() { userNameEntry.OnSubmitted(userNameEntry.Text) })
+	userNameEntry.OnSubmitted = func(name string) { client.Config().SetName(name) }
+	client.Config().AddListener(pattern.MakeCallback(func(config resource.Config) { userNameEntry.SetText(config.Name) }))
 
 	//collection info list
 	infoData := pattern.Data[[]resource.CollectionInfo]{}
@@ -28,38 +28,39 @@ func newClientTab() *container.TabItem {
 				progress := dialog.NewCustomWithoutButtons("downloading", widget.NewProgressBarInfinite(), getWindow())
 				progress.Show()
 				defer progress.Hide()
-				showErrorIfAny(client.RequestDownload(&account, &info))
+				showErrorIfAny(client.RequestDownload(&info))
 			})
 		},
 	)
 
 	//server ip
 	serverEntry := widget.NewEntry()
+	serverEntry.SetPlaceHolder("server url")
 	serverEntry.ActionItem = cwidget.NewButtonWithIcon("", theme.ComputerIcon(), func() { serverEntry.OnSubmitted(serverEntry.Text) })
 	serverEntry.OnSubmitted = func(url string) {
 		progress := dialog.NewCustomWithoutButtons("listing", widget.NewProgressBarInfinite(), getWindow())
 		progress.Show()
 		defer progress.Hide()
-		client.Config().SetServer(url)
-		infos, err := client.RequestList(&account)
+		client.Config().SetServerUrl(url)
+		infos, err := client.RequestList()
 		if err != nil {
 			showErrorIfAny(err)
 			return
 		}
 		infoData.Set(infos)
 	}
-	serverEntry.SetPlaceHolder("server url")
-	serverEntry.SetText(client.Config().ServerUrl)
+	client.Config().AddListener(pattern.MakeCallback(func(config resource.Config) { serverEntry.SetText(config.ServerUrl) }))
 
+	//upload config
 	uploadButton := cwidget.NewButtonWithIcon("upload", theme.UploadIcon(), func() {
 		progress := dialog.NewCustomWithoutButtons("uploading", widget.NewProgressBarInfinite(), getWindow())
 		progress.Show()
-		showErrorIfAny(client.RequestUpload(&account))
+		showErrorIfAny(client.RequestUpload())
 		progress.Hide()
 	})
 
 	return container.NewTabItemWithIcon("Client", theme.AccountIcon(), container.NewGridWithColumns(2,
-		accountView,
+		container.NewVBox(userNameEntry),
 		container.NewBorder(serverEntry, uploadButton, nil, nil, infoViewList),
 	))
 }

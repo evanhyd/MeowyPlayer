@@ -6,7 +6,7 @@ import (
 )
 
 func WriteFile(fileName string, object any) error {
-	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0777)
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
 	if err != nil {
 		return err
 	}
