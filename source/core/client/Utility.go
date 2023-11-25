@@ -49,8 +49,8 @@ func AddRandomAlbum() error {
 }
 
 func isMusicFileExist(music *resource.Music) bool {
-	_, err := os.Stat(resource.MusicPath(music))
-	return err == nil
+	stat, err := os.Stat(resource.MusicPath(music))
+	return err == nil && stat.Size() > 0
 }
 
 func AddMusicFromURIReader(album resource.Album, musicInfo fyne.URIReadCloser) error {
@@ -120,7 +120,7 @@ func SyncCollection() int32 {
 					defer wg.Done()
 					if err := CloneMusic(album, music); err != nil {
 						unsynced.Add(1)
-						logger.Error(err, 0)
+						logger.Error(err, 1)
 					}
 				}(album, music)
 			}

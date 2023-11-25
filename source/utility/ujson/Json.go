@@ -22,5 +22,6 @@ func ReadFile(fileName string, object any) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 	return json.NewDecoder(file).Decode(object)
 }

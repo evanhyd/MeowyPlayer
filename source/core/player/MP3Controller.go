@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"meowyplayer.com/core/resource"
+	"meowyplayer.com/utility/logger"
 
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
@@ -19,8 +20,14 @@ type MP3Controller struct {
 }
 
 func NewMP3Controller(context *oto.Context, music *resource.Music) *MP3Controller {
-	mp3Data, _ := os.ReadFile(resource.MusicPath(music))
-	mp3Decoder, _ := mp3.NewDecoder(bytes.NewReader(mp3Data))
+	mp3Data, err := os.ReadFile(resource.MusicPath(music))
+	if err != nil {
+		logger.Error(err, 0)
+	}
+	mp3Decoder, err := mp3.NewDecoder(bytes.NewReader(mp3Data))
+	if err != nil {
+		logger.Error(err, 0)
+	}
 	return &MP3Controller{Decoder: mp3Decoder, Player: context.NewPlayer(mp3Decoder)}
 }
 
