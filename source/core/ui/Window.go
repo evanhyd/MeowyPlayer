@@ -15,7 +15,7 @@ func NewMainWindow() fyne.Window {
 	window := fyne.CurrentApp().NewWindow("MeowyPlayer")
 	window.SetCloseIntercept(window.Hide)
 	window.CenterOnScreen()
-	window.Resize(fyne.NewSize(770.0, 650.0))
+	window.Resize(fyne.NewSize(600.0, 650.0))
 
 	//create item tabs
 	albumTab := newAlbumTab()
