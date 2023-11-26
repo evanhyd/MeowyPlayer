@@ -22,7 +22,7 @@
   
 ## Personal Backup Server
 ✔️ Backup music collection in just 1 click.<br />
-✔️ Share music collection with friends in a private or public server.<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+✔️ Share music collection with friends in a [customized server](https://github.com/evanhyd/MeowyPlayerServer).<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 
 ---
 
