@@ -32,5 +32,5 @@
   The MeowyPlayer project started in July 2021 and has been re-written 4 times, each iteration introduces new feature and UI improvement.  
 
 # Build
-go 1.21.0+ and required library 
+Require go 1.21.0+   
 - Run `go run build.go`
