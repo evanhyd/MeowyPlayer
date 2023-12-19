@@ -26,11 +26,15 @@
 
 ---
 
-# Why MeowyPlayer
-
-  It was a tranquil summer night in 2021. I was sitting in my room doing competitive programming while listening to my friend's music recommendation on YouTube. Just when I was planning to add the music to my Spotify playlist, the Spotify search engine surprisingly couldn't find the music I was looking for. In fact, popular platforms like Spotify or YouTube Music suffer from regional license restriction issues, which means there's a high chance that you won't be able to find a game OST that you like. Out of frustration, I started this ambitious project for the pure sake of listening to the music I like wherever and whenever I want. Not that I encourage pirating music, but not being able to listen to my favourite video game OST during a workout just really makes me frustrated.  
-  The MeowyPlayer project started in July 2021 and has been re-written 4 times, each iteration introduces new feature and UI improvement.  
-
 # Build
 Require go 1.21.0+   
 - Run `go run build.go`
+
+---  
+
+# Why MeowyPlayer
+
+  It was a tranquil summer night in 2021. I was sitting in my room doing competitive programming while listening to my friend's music recommendation on YouTube. Just when I was planning to add the music to my Spotify playlist, the Spotify search engine surprisingly couldn't find the music I was looking for. In fact, popular platforms like Spotify or YouTube Music suffer from regional license restriction issues, which means there's a decent chance that you won't find the game OST you like. There are plenty of solutions to these: VPN, premium membership, or physically moving to the region. But being a broke student who could barely afford his tuition (I am still broke), it was a death sentence to me.    
+  Out of frustration, I started this ambitious project for the pure sake of listening to music wherever and whenever I like. Not that I encourage pirating music, but not being able to listen to my favourite video game OST during a workout just really makes me frustrated. The MeowyPlayer project started in July 2021 and has been re-written 4 times as of December 2023, with each iteration introducing new features and UI improvement.
+
+ Do you like this project? Consider [donation](https://www.buymeacoffee.com/unboxthecat) to help me fight the inflation.
