@@ -1,7 +1,9 @@
 package client
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"sync"
@@ -31,12 +33,12 @@ type clientManager struct {
 
 func (c *clientManager) Initialize() error {
 	_, err := os.Stat(resource.CollectionFile())
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
 
 	//create default collection
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		collection := resource.Collection{Date: time.Now(), Albums: make(map[string]resource.Album)}
 		if err := ujson.WriteFile(resource.CollectionFile(), collection); err != nil {
 			return err

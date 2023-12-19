@@ -9,15 +9,15 @@ import (
 
 type ViewList[T any] struct {
 	widget.BaseWidget
-	display  *fyne.Container
+	items    *fyne.Container
 	scroll   *container.Scroll
 	makeView func(T) fyne.CanvasObject
 }
 
-func NewViewList[T any](dataList pattern.Subject[[]T], display *fyne.Container, makeView func(T) fyne.CanvasObject) *ViewList[T] {
-	viewList := &ViewList[T]{display: display, scroll: container.NewScroll(display), makeView: makeView}
-	dataList.Attach(viewList)
+func NewViewList[T any](dataList pattern.Subject[[]T], items *fyne.Container, makeView func(T) fyne.CanvasObject) *ViewList[T] {
+	viewList := &ViewList[T]{items: items, scroll: container.NewScroll(items), makeView: makeView}
 	viewList.ExtendBaseWidget(viewList)
+	dataList.Attach(viewList)
 	return viewList
 }
 
@@ -26,19 +26,10 @@ func (v *ViewList[T]) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (v *ViewList[T]) Notify(data []T) {
-	v.display.RemoveAll()
-	views := v.makeViews(data)
-	for _, view := range views {
-		v.display.Add(view)
+	v.items.RemoveAll()
+	for i := range data {
+		v.items.Add(v.makeView(data[i]))
 	}
 	v.scroll.Offset = fyne.NewPos(0, 0)
 	v.Refresh()
-}
-
-func (v *ViewList[T]) makeViews(data []T) []fyne.CanvasObject {
-	views := make([]fyne.CanvasObject, len(data))
-	for i := range data {
-		views[i] = v.makeView(data[i])
-	}
-	return views
 }

@@ -21,3 +21,11 @@ func NewSign(title string, icon fyne.Resource) *Sign {
 func (s *Sign) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(nil, nil, s.icon, nil, s.title))
 }
+
+func (s *Sign) SetTitle(title string) {
+	s.title.SetText(title)
+}
+
+func (s *Sign) SetIcon(icon fyne.Resource) {
+	s.icon.SetResource(icon)
+}

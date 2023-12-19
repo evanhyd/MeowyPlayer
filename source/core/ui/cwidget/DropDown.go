@@ -33,8 +33,8 @@ func (d *DropDown) CreateRenderer() fyne.WidgetRenderer {
 
 func (d *DropDown) Add(title string, icon fyne.Resource, onSelected func()) {
 	item := fyne.NewMenuItem(title, func() {
-		d.sign.title.SetText(title)
-		d.sign.icon.SetResource(icon)
+		d.sign.SetTitle(title)
+		d.sign.SetIcon(icon)
 		onSelected()
 	})
 	item.Icon = icon

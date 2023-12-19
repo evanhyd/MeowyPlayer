@@ -34,13 +34,11 @@ func (d *dataList[T]) Notify(data []T) {
 
 func (d *dataList[T]) updateBinding() {
 	slices.SortStableFunc(d.data, d.sorter)
-
-	remain := make([]T, 0, len(d.data))
-	for _, v := range d.data {
-		if d.filter(v) {
-			remain = append(remain, v)
+	remain := []T{}
+	for i := range d.data {
+		if d.filter(d.data[i]) {
+			remain = append(remain, d.data[i])
 		}
 	}
-
 	d.NotifyAll(remain)
 }

@@ -27,7 +27,7 @@ func NewAlbumView(album *resource.Album) *AlbumView {
 	}
 	view.info.Hide()
 	view.info.Wrapping = fyne.TextWrapWord
-	view.title.Wrapping = fyne.TextTruncate
+	view.title.Truncation = fyne.TextTruncateEllipsis
 	view.ExtendBaseWidget(view)
 	return view
 }

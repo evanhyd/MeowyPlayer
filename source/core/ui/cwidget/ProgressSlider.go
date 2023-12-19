@@ -7,12 +7,12 @@ import (
 
 type ProgressSlider struct {
 	widget.Slider
-	OnReleased    func(float64)
-	isUserControl bool
+	OnReleased        func(float64)
+	isBeingControlled bool
 }
 
-func NewProgressSlider(min, max, step, value float64) *ProgressSlider {
-	progressSlider := &ProgressSlider{Slider: widget.Slider{Value: value, Min: min, Max: max, Step: step}}
+func NewProgressSlider(step float64) *ProgressSlider {
+	progressSlider := &ProgressSlider{Slider: widget.Slider{Min: 0.0, Max: 1.0, Step: step}}
 	progressSlider.ExtendBaseWidget(progressSlider)
 	return progressSlider
 }
@@ -25,7 +25,7 @@ func (s *ProgressSlider) Tapped(e *fyne.PointEvent) {
 }
 
 func (s *ProgressSlider) Dragged(e *fyne.DragEvent) {
-	s.isUserControl = true
+	s.isBeingControlled = true
 	s.Slider.Dragged(e)
 }
 
@@ -33,11 +33,11 @@ func (s *ProgressSlider) DragEnd() {
 	if s.OnReleased != nil {
 		s.OnReleased(s.Value)
 	}
-	s.isUserControl = false
+	s.isBeingControlled = false
 }
 
 func (s *ProgressSlider) SetValue(percent float64) {
-	if !s.isUserControl {
+	if !s.isBeingControlled {
 		s.Slider.SetValue(percent)
 	}
 }

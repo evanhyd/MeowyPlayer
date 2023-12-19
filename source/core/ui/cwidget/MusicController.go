@@ -12,16 +12,16 @@ import (
 	"meowyplayer.com/core/resource"
 )
 
-type MediaCommander interface {
-	CommandProgress(float64)
-	CommandVolume(float64)
-	CommandPlay()
-	CommandRollback()
-	CommandSkip()
-	CommandMode(int)
+type MediaController interface {
+	OnProgress(percent float64)
+	OnVolume(volume float64)
+	OnPlay()
+	OnRollback()
+	OnSkip()
+	OnMode(mode int)
 }
 
-type MediaMenu struct {
+type MusicController struct {
 	widget.BaseWidget
 	title          *widget.Label
 	progressSlider *ProgressSlider
@@ -33,12 +33,12 @@ type MediaMenu struct {
 	volumeSlider   *volumeSlider
 }
 
-func NewMediaMenu() *MediaMenu {
+func NewMusicController() *MusicController {
 	modeIcons := []fyne.Resource{resource.RandomIcon, theme.MailForwardIcon(), theme.ViewRefreshIcon()}
-	menu := &MediaMenu{
+	menu := &MusicController{
 		widget.BaseWidget{},
 		widget.NewLabel(""),
-		NewProgressSlider(0.0, 1.0, 0.001, 0.0),
+		NewProgressSlider(0.001),
 		widget.NewLabel("00:00"),
 		newModeButton(nil, modeIcons, nil),
 		NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), nil),
@@ -50,7 +50,7 @@ func NewMediaMenu() *MediaMenu {
 	return menu
 }
 
-func (c *MediaMenu) CreateRenderer() fyne.WidgetRenderer {
+func (c *MusicController) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
 		c.title,
 		container.NewGridWithRows(1, layout.NewSpacer(), container.NewHBox(layout.NewSpacer(), c.modeButton, c.rollbackButton, c.playButton, c.skipButton), layout.NewSpacer(), c.volumeSlider),
@@ -60,21 +60,21 @@ func (c *MediaMenu) CreateRenderer() fyne.WidgetRenderer {
 	))
 }
 
-func (c *MediaMenu) Bind(commander MediaCommander) {
-	c.progressSlider.OnReleased = func(percent float64) { commander.CommandProgress(percent) }
-	c.playButton.OnTapped = func() { commander.CommandPlay() }
-	c.skipButton.OnTapped = func() { commander.CommandSkip() }
-	c.rollbackButton.OnTapped = func() { commander.CommandRollback() }
-	c.modeButton.OnTapped = func(mode int) { commander.CommandMode(mode) }
-	c.volumeSlider.SetOnChanged(func(volume float64) { commander.CommandVolume(volume) })
+func (c *MusicController) Bind(controller MediaController) {
+	c.progressSlider.OnReleased = controller.OnProgress
+	c.playButton.OnTapped = controller.OnPlay
+	c.skipButton.OnTapped = controller.OnSkip
+	c.rollbackButton.OnTapped = controller.OnRollback
+	c.modeButton.OnTapped = controller.OnMode
+	c.volumeSlider.SetOnChanged(controller.OnVolume)
 }
 
-func (c *MediaMenu) SetMusic(music *resource.Music) {
+func (c *MusicController) SetMusic(music *resource.Music) {
 	c.title.SetText(music.SimpleTitle())
 	c.progressSlider.SetValue(0.0)
 }
 
-func (c *MediaMenu) UpdateProgress(length time.Duration, percent float64) {
+func (c *MusicController) UpdateProgress(length time.Duration, percent float64) {
 	const kConversionFactor = 60
 	length = time.Duration(float64(length) * percent)
 	mins := int(length.Minutes()) % kConversionFactor
@@ -83,6 +83,6 @@ func (c *MediaMenu) UpdateProgress(length time.Duration, percent float64) {
 	c.progressSlider.SetValue(percent)
 }
 
-func (c *MediaMenu) Volume() float64 {
+func (c *MusicController) Volume() float64 {
 	return c.volumeSlider.Volume()
 }

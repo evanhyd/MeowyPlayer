@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"log"
 
 	"fyne.io/fyne/v2"
@@ -39,14 +38,14 @@ func showAddOnlineMusicDialog() {
 	//platform selector
 	platformMenu := cwidget.NewDropDown("", resource.DefaultIcon)
 	platformMenu.Add("YouTube", resource.YouTubeIcon, func() { videoScraper = scraper.NewClipzagScraper() })
-	platformMenu.Add("BiliBili", resource.BiliBiliIcon, func() { fmt.Println("not implemented...") })
+	platformMenu.Add("BiliBili", resource.BiliBiliIcon, func() { log.Println("not implemented...") })
 	platformMenu.Select(0)
 
 	//video result view list
 	videoResultData := pattern.Data[[]fileformat.VideoResult]{}
 	videoResultViewList := cwidget.NewViewList(&videoResultData, container.NewVBox(),
 		func(video fileformat.VideoResult) fyne.CanvasObject {
-			return cwidget.NewVideoResultView(&video, fyne.NewSize(207, 128), func() {
+			return cwidget.NewVideoView(&video, fyne.NewSize(207, 128), func() {
 				showErrorIfAny(client.DownloadMusic(client.Manager().Album(), &video))
 			})
 		},

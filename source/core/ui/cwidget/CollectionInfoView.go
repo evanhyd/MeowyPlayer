@@ -42,13 +42,7 @@ func NewCollectionInfoView(info *resource.CollectionInfo, onDownload func()) *Co
 func (v *CollectionInfoView) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewStack(
 		v.highlight,
-		container.NewBorder(
-			nil,
-			nil,
-			nil,
-			v.download,
-			v.title,
-		),
+		container.NewBorder(nil, nil, nil, v.download, v.title),
 	))
 }
 

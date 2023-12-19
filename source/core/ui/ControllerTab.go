@@ -9,10 +9,10 @@ import (
 	"meowyplayer.com/utility/pattern"
 )
 
-func newController() fyne.CanvasObject {
+func newControllerTab() fyne.CanvasObject {
 	coverView := cwidget.NewCoverView(fyne.NewSize(128.0, 128.0))
-	controller := cwidget.NewMediaMenu()
-	musicPlayer := player.NewMusicPlayer()
+	controller := cwidget.NewMusicController()
+	musicPlayer := player.NewMP3Player()
 	controller.Bind(musicPlayer)
 	go musicPlayer.Start(controller)
 

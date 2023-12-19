@@ -18,7 +18,7 @@ const (
 	SIZE
 )
 
-type MusicPlayer struct {
+type MP3Player struct {
 	PlayList
 	playMode    int
 	history     container.Slice[int]
@@ -34,8 +34,8 @@ type MusicPlayer struct {
 	modeCMD      chan int
 }
 
-func NewMusicPlayer() *MusicPlayer {
-	return &MusicPlayer{
+func NewMP3Player() *MP3Player {
+	return &MP3Player{
 		playMode:     RANDOM,
 		playListChan: make(chan PlayList),
 		progressCMD:  make(chan float64, 16),
@@ -47,31 +47,31 @@ func NewMusicPlayer() *MusicPlayer {
 	}
 }
 
-func (m *MusicPlayer) CommandProgress(percent float64) {
+func (m *MP3Player) OnProgress(percent float64) {
 	m.progressCMD <- percent
 }
 
-func (m *MusicPlayer) CommandVolume(volume float64) {
+func (m *MP3Player) OnVolume(volume float64) {
 	m.volumeCMD <- volume
 }
 
-func (m *MusicPlayer) CommandPlay() {
+func (m *MP3Player) OnPlay() {
 	m.playCMD <- struct{}{}
 }
 
-func (m *MusicPlayer) CommandRollback() {
+func (m *MP3Player) OnRollback() {
 	m.rollbackCMD <- struct{}{}
 }
 
-func (m *MusicPlayer) CommandSkip() {
+func (m *MP3Player) OnSkip() {
 	m.skipCMD <- struct{}{}
 }
 
-func (m *MusicPlayer) CommandMode(mode int) {
+func (m *MP3Player) OnMode(mode int) {
 	m.modeCMD <- mode
 }
 
-func (m *MusicPlayer) setPlayMode(playMode int) {
+func (m *MP3Player) setPlayMode(playMode int) {
 	if playMode == RANDOM {
 		m.history.Clear()
 		m.randomQueue = rand.Perm(m.MusicCount())
@@ -79,12 +79,12 @@ func (m *MusicPlayer) setPlayMode(playMode int) {
 	m.playMode = playMode
 }
 
-func (m *MusicPlayer) setPlayList(playList PlayList) {
+func (m *MP3Player) setPlayList(playList PlayList) {
 	m.PlayList = playList
 	m.setPlayMode(m.playMode)
 }
 
-func (m *MusicPlayer) rollback() {
+func (m *MP3Player) rollback() {
 	switch m.playMode {
 	case RANDOM:
 		if !m.history.Empty() {
@@ -101,7 +101,7 @@ func (m *MusicPlayer) rollback() {
 	}
 }
 
-func (m *MusicPlayer) skip() {
+func (m *MP3Player) skip() {
 	switch m.playMode {
 	case RANDOM:
 		//generate new queue if run out of music
@@ -120,11 +120,11 @@ func (m *MusicPlayer) skip() {
 	}
 }
 
-func (m *MusicPlayer) Notify(play PlayList) {
+func (m *MP3Player) Notify(play PlayList) {
 	m.playListChan <- play
 }
 
-func (m *MusicPlayer) Start(menu *cwidget.MediaMenu) {
+func (m *MP3Player) Start(menu *cwidget.MusicController) {
 	//initialize oto mp3 context
 	context, ready, err := oto.NewContext(resource.SAMPLING_RATE, resource.NUM_OF_CHANNELS, resource.AUDIO_BIT_DEPTH)
 	if err != nil {
@@ -154,7 +154,7 @@ WaitLoop:
 
 	for {
 		menu.SetMusic(m.Music())
-		mp3Controller := NewMP3Controller(context, m.PlayList.Music())
+		mp3Controller := NewSeeker(context, m.PlayList.Music())
 		mp3Controller.SetVolume(menu.Volume())
 
 		interrupted := false

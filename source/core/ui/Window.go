@@ -4,6 +4,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/core/client"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/utility/logger"
@@ -30,12 +31,21 @@ func NewMainWindow() fyne.Window {
 		tabs.Select(musicTab)
 	}))
 
-	window.SetContent(container.NewBorder(nil, newController(), nil, nil, tabs))
+	window.SetContent(container.NewBorder(nil, newControllerTab(), nil, nil, tabs))
 	return window
 }
 
 func getWindow() fyne.Window {
 	return fyne.CurrentApp().Driver().AllWindows()[0]
+}
+
+func loadingCall(callback func()) func() {
+	return func() {
+		progress := dialog.NewCustomWithoutButtons("loading", widget.NewProgressBarInfinite(), getWindow())
+		progress.Show()
+		defer progress.Hide()
+		callback()
+	}
 }
 
 func showErrorIfAny(err error) {

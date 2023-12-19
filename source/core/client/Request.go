@@ -15,13 +15,40 @@ import (
 	"meowyplayer.com/utility/uzip"
 )
 
-func RequestList() ([]resource.CollectionInfo, error) {
-	serverUrl, err := url.JoinPath(Config().ServerUrl(), "list")
+func sendRequest(
+	method string, server string, queryType string, urlValues url.Values,
+	username string, password string,
+	contentType string, content io.Reader) (*http.Response, error) {
+
+	//base url
+	url, err := url.JoinPath(server, queryType)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Get(serverUrl)
+	//url values
+	if len(urlValues) > 0 {
+		url += "?" + urlValues.Encode()
+	}
+
+	//create request
+	req, err := http.NewRequest(method, url, content)
+	if err != nil {
+		return nil, err
+	}
+
+	//set auth
+	req.SetBasicAuth(username, password)
+
+	//set content type
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	return http.DefaultClient.Do(req)
+}
+
+func RequestList(server, username, password string) ([]resource.CollectionInfo, error) {
+	resp, err := sendRequest("GET", server, "list", nil, username, password, "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -32,13 +59,8 @@ func RequestList() ([]resource.CollectionInfo, error) {
 	return infos, err
 }
 
-func RequestUpload() error {
-	serverUrl, err := url.JoinPath(Config().ServerUrl(), "upload")
-	if err != nil {
-		return err
-	}
-
-	//zip files
+func RequestUpload(server, username, password string) error {
+	//zip collection config
 	zipData := bytes.Buffer{}
 	if err := uzip.Compress(&zipData, resource.CollectionPath()); err != nil {
 		return err
@@ -47,31 +69,31 @@ func RequestUpload() error {
 	//prepare POST fields
 	fieldBody := bytes.Buffer{}
 	fieldWriter := multipart.NewWriter(&fieldBody)
-
 	writeFields := func() error {
 		defer fieldWriter.Close()
-		fieldPart, err := fieldWriter.CreateFormFile("collection", Config().Name()+".zip")
+		fieldPart, err := fieldWriter.CreateFormFile("collection", Config().Name())
 		if err != nil {
 			return err
 		}
-		_, err = io.Copy(fieldPart, &zipData)
+		_, err = fieldPart.Write(zipData.Bytes())
 		return err
 	}
 	if err := writeFields(); err != nil {
 		return err
 	}
 
-	//send post
-	_, err = http.Post(serverUrl, fieldWriter.FormDataContentType(), &fieldBody)
+	_, err := sendRequest("POST", server, "upload", nil, username, password, fieldWriter.FormDataContentType(), &fieldBody)
 	return err
 }
 
-func downloadCollection(serverUrl string) error {
-	resp, err := http.Get(serverUrl)
+func RequestDownload(server, username, password string, collectionInfo *resource.CollectionInfo) error {
+	resp, err := sendRequest("GET", server, "download", url.Values{"collection": {collectionInfo.Title}}, username, password, "", nil)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	//read in zip format
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -81,37 +103,22 @@ func downloadCollection(serverUrl string) error {
 		return err
 	}
 
+	//save to local
 	Manager().accessLock.Lock()
 	defer Manager().accessLock.Unlock()
-
 	if err := os.RemoveAll(resource.CollectionPath()); err != nil {
 		return err
 	}
 	if err := uzip.Extract(resource.CollectionPath(), reader); err != nil {
 		return err
 	}
-	return Manager().load()
-}
+	if err := Manager().load(); err != nil {
+		return err
+	}
 
-func RequestDownload(collectionInfo *resource.CollectionInfo) error {
-	serverUrl, err := url.JoinPath(Config().ServerUrl(), "download")
-	if err != nil {
-		return err
-	}
-	serverUrl += "?" + url.Values{"collection": {collectionInfo.Title}}.Encode()
-	if err := downloadCollection(serverUrl); err != nil {
-		return err
-	}
+	//sync music list
 	if unsynced := SyncCollection(); unsynced != 0 {
 		return fmt.Errorf("unable to sync %v music", unsynced)
 	}
-	return nil
-}
-
-func RequestRemove(collectionInfo *resource.CollectionInfo) error {
-	// serverUrl, err := url.JoinPath(Config().ServerUrl, "remove")
-	// if err != nil {
-	// 	return err
-	// }
 	return nil
 }

@@ -1,6 +1,8 @@
 package client
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"sync"
 
@@ -22,12 +24,12 @@ type configManager struct {
 
 func (c *configManager) Initialize() error {
 	_, err := os.Stat(resource.ConfigFile())
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
 
 	//create default config
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		config := resource.Config{Name: "Guest", ServerUrl: "http://localhost"}
 		if err := ujson.WriteFile(resource.ConfigFile(), config); err != nil {
 			return err
