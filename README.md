@@ -3,8 +3,8 @@
 <img align="left" width="50%" height="50%" src="https://i.imgur.com/xm5z93Q.png">  
   
 ## Customizable Music Player  
-✔️ Cross-platform support on Windows, Linux, and Mac.<br />
-✔️ Minimalism UI with customizable album cover.<br />
+✅ Cross-platform support on Windows, Linux, and Mac.<br />
+✅ Minimalism UI with customizable album cover.<br />
 <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 
 ---
@@ -12,8 +12,8 @@
 <img align="right" width="50%" height="50%" src="https://i.imgur.com/2NZY8WR.png">  
   
 ## Premium Music Resource
-✔️ Download music from YouTube, BiliBili, and various platforms.<br />
-✔️ Bypass regional restriction, enjoy your favourite video game OST.<br />
+✅ Download music from YouTube, BiliBili, and various platforms.<br />
+✅ Bypass regional restriction, enjoy your favourite video game OST.<br />
 <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 
 ---
@@ -21,16 +21,23 @@
 <img align="left" width="50%" height="50%" src="https://i.imgur.com/2XfZb6Z.pngg">  
   
 ## Personal Backup Server
-✔️ Backup music collection in just 1 click.<br />
-✔️ Share music collection with friends in a [customized server](https://github.com/evanhyd/MeowyPlayerServer).<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+✅ Backup music collection in just 1 click.<br />
+✅ Share music collection with friends in a [customized server](https://github.com/evanhyd/MeowyPlayerServer).<br />
+<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+
+---
+
+# Public Server
+![public](https://i.imgur.com/z4cWPJM.png)
+Enter the following information in the client tab, then click connection icon on the top right  
+Server URL: http://132.145.98.4  
+Username: Guest  
 
 ---
 
 # Build
-Require go 1.21.0+   
-- Run `go run build.go`
-
----  
+Requires go 1.21.0+   
+- Run `go run build.go` to compile the program
 
 # Why MeowyPlayer
 
