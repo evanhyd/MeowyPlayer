@@ -11,6 +11,9 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+*.txt
+*.log
+*.json
 
 # MeowyPlayer's resource directories
 collection/**
@@ -18,5 +21,3 @@ music/**
 source/core/resource/Font.go
 source/core/resource/Icon.go
 out/**
-*.txt
-*.json

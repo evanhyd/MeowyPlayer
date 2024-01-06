@@ -29,6 +29,7 @@ func newClientTab() *container.TabItem {
 	serverEntry.ActionItem = cwidget.NewButtonWithIcon("", theme.ComputerIcon(), func() { serverEntry.OnSubmitted(serverEntry.Text) })
 	serverEntry.OnSubmitted = func(url string) {
 		loadingCall(func() {
+			client.Config().SetName(userNameEntry.Text)
 			client.Config().SetServerUrl(url)
 			infos, err := client.RequestList(serverEntry.Text, userNameEntry.Text, passwordEntry.Text)
 			if err != nil {
@@ -36,8 +37,6 @@ func newClientTab() *container.TabItem {
 				return
 			}
 			infoData.Set(infos)
-			client.Config().SetName(userNameEntry.Text)
-			client.Config().SetServerUrl(url)
 		})()
 	}
 

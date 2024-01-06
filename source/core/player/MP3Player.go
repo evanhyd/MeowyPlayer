@@ -155,7 +155,7 @@ WaitLoop:
 	for {
 		menu.SetMusic(m.Music())
 		mp3Controller := NewSeeker(context, m.PlayList.Music())
-		mp3Controller.SetVolume(menu.Volume())
+		mp3Controller.SetVolume(menu.Volume() * menu.Volume())
 
 		interrupted := false
 
