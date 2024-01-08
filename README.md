@@ -36,7 +36,9 @@ Username: Guest
 ---
 
 # Build
-Requires go 1.21.0+   
+Requires go 1.21.0+, GCC, fyne cmd tools  
+- Install GCC  
+- Run `go install fyne.io/fyne/v2/cmd/fyne@latest`  
 - Run `go run build.go` to compile the program
 
 # Why MeowyPlayer
