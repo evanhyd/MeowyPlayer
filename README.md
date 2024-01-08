@@ -36,8 +36,10 @@ Username: Guest
 ---
 
 # Build
-Requires go 1.21.0+, GCC, fyne cmd tools  
-- Install GCC  
+Requirement:  
+- Install GO (1.21+)  
+- Install GCC
+- Linux Only: `sudo apt install libxcursor-dev libxinerama-dev libxrandr-dev libxi-dev libgl-dev libxxf86vm-dev`  
 - Run `go install fyne.io/fyne/v2/cmd/fyne@latest`  
 - Run `go run build.go` to compile the program
 
