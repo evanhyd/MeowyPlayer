@@ -135,7 +135,7 @@ func newOnlineMusicDialog() dialog.Dialog {
 	videoResultViews := cwidget.NewViewList(&videoResultData, container.NewVBox(),
 		func(video fileformat.VideoResult) fyne.CanvasObject {
 			return cwidget.NewVideoView(&video, fyne.NewSize(207, 128), func() {
-				showErrorIfAny(client.DownloadMusic(client.Manager().FocusedAlbum(), &video))
+				showErrorIfAny(client.AddMusicFromDownloader(client.Manager().FocusedAlbum(), &video))
 			})
 		},
 	)

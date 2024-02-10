@@ -4,7 +4,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/widget"
 	"meowyplayer.com/core/client"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/utility/logger"
@@ -37,15 +36,6 @@ func NewMainWindow() fyne.Window {
 
 func getWindow() fyne.Window {
 	return fyne.CurrentApp().Driver().AllWindows()[0]
-}
-
-func loadingCall(callback func()) func() {
-	return func() {
-		progress := dialog.NewCustomWithoutButtons("loading", widget.NewProgressBarInfinite(), getWindow())
-		progress.Show()
-		defer progress.Hide()
-		callback()
-	}
 }
 
 func showErrorIfAny(err error) {

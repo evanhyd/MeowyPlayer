@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -64,15 +63,13 @@ func (d *y2MateDownloader) parseConverterKey(video *fileformat.VideoResult) (str
 
 	matches := d.keyRegex.FindStringSubmatch(string(data))
 	if matches == nil {
-		return "", fmt.Errorf("couldn't get converter key: %v", video.Title)
+		return "", fmt.Errorf("couldn't get converter key: %v, %v", video.VideoID, video.Title)
 	}
 	return matches[1], nil
 }
 
 func (d *y2MateDownloader) downloadContent(video *fileformat.VideoResult, converterKey string) ([]byte, error) {
 	const dbURL = `https://www.y2mate.com/mates/convertV2/index`
-
-	log.Printf("[Y2mate] fetching %v, key: %v\n", video.Title, converterKey)
 
 	//request for video -> mp3 conversion
 	queryData := url.Values{"vid": {video.VideoID}, "k": {converterKey}}
@@ -94,9 +91,8 @@ func (d *y2MateDownloader) downloadContent(video *fileformat.VideoResult, conver
 
 	//fetch music file
 	if converterResp.CStatus == "FAILED" {
-		return nil, fmt.Errorf("[Y2mate] failed to download %v, can not find the resource", video.Title)
+		return nil, fmt.Errorf("[Y2mate] failed to download %v, can not find the resource", video.VideoID)
 	}
-	log.Printf("[Y2mate] downloading %v, url: %v\n", video.Title, converterResp.Dlink)
 	resp, err = http.Get(converterResp.Dlink)
 	if err != nil {
 		return nil, err

@@ -75,23 +75,10 @@ func AddMusicFromURIReader(album resource.Album, musicInfo fyne.URIReadCloser) e
 	return Manager().addMusic(album, resource.Music{Date: time.Now(), Title: musicInfo.URI().Name(), Length: length}, musicData)
 }
 
-func DownloadMusic(album resource.Album, videoResult *fileformat.VideoResult) error {
-	var provider downloader.MusicDownloader
-	switch videoResult.Platform {
-	case "YouTube":
-		provider = downloader.NewY2MateDownloader()
-	case "BiliBili":
-		provider = downloader.NewY2MateDownloader()
-		log.Println("BiliBili downloader is not implemented")
-	default:
-		return nil
-	}
-
-	data, err := provider.Download(videoResult)
-	if err != nil {
-		return err
-	}
-
+/*
+Download music from the internet based on the videoResult, then add to the album.
+*/
+func AddMusicFromDownloader(album resource.Album, videoResult *fileformat.VideoResult) error {
 	music := resource.Music{
 		Date:     time.Now(),
 		Title:    resource.SanatizeFileName(videoResult.Title) + ".mp3",
@@ -99,35 +86,75 @@ func DownloadMusic(album resource.Album, videoResult *fileformat.VideoResult) er
 		Platform: videoResult.Platform,
 		ID:       videoResult.VideoID,
 	}
+
+	data, err := downloadMusic(album, videoResult)
+	if err != nil {
+		return err
+	}
+
 	return Manager().addMusic(album, music, data)
 }
 
-func CloneMusic(album resource.Album, music resource.Music) error {
-	return DownloadMusic(album, &fileformat.VideoResult{
+func downloadMusic(album resource.Album, videoResult *fileformat.VideoResult) ([]byte, error) {
+	var provider downloader.MusicDownloader
+	switch videoResult.Platform {
+	case "YouTube":
+		provider = downloader.NewY2MateDownloader()
+	case "BiliBili":
+		return nil, fmt.Errorf("BiliBili downloader is not implemented")
+	default:
+		return nil, fmt.Errorf("unknown downloader")
+	}
+
+	return provider.Download(videoResult)
+}
+
+/*
+Download the missing music file.
+*/
+func SyncMusic(album resource.Album, music resource.Music) error {
+	videoResult := fileformat.VideoResult{
 		Title:    music.Title[:len(music.Title)-4],
 		Length:   music.Length,
 		Platform: music.Platform,
 		VideoID:  music.ID,
-	})
+	}
+	data, err := downloadMusic(album, &videoResult)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(resource.MusicPath(&music), data, 0777)
 }
 
-func SyncCollection() int32 {
-	var unsynced atomic.Int32
+func SyncCollection() <-chan float64 {
+	collection := Manager().currentCollection.Get()
+	successChannel := make(chan float64, 64)
+	var success atomic.Int32
+	var total atomic.Int32
 	wg := sync.WaitGroup{}
-	for _, album := range Manager().currentCollection.Get().Albums {
-		for _, music := range album.MusicList {
-			if !isMusicFileExist(&music) {
-				wg.Add(1)
-				go func(album resource.Album, music resource.Music) {
-					defer wg.Done()
-					if err := CloneMusic(album, music); err != nil {
-						unsynced.Add(1)
-						logger.Error(err, 1)
-					}
-				}(album, music)
+
+	go func() {
+		for _, album := range collection.Albums {
+			for _, music := range album.MusicList {
+				if !isMusicFileExist(&music) {
+					wg.Add(1)
+					total.Add(1)
+					go func(album resource.Album, music resource.Music) {
+						defer wg.Done()
+						if err := SyncMusic(album, music); err != nil {
+							logger.Error(err, 1)
+						} else {
+							success.Add(1)
+						}
+						successChannel <- float64(success.Load()) / float64(total.Load())
+					}(album, music)
+				}
 			}
 		}
-	}
-	wg.Wait()
-	return unsynced.Load()
+		wg.Wait()
+		close(successChannel)
+		log.Printf("%v/%v music downloaded\n", success.Load(), total.Load())
+	}()
+	return successChannel
 }

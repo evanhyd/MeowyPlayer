@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -86,37 +85,34 @@ func RequestUpload(server, username, password string) error {
 	return err
 }
 
-func RequestDownload(server, username, password string, collectionInfo *resource.CollectionInfo) error {
-	resp, err := sendRequest("GET", server, "download", url.Values{"collection": {collectionInfo.Title}}, username, password, "", nil)
+func RequestDownload(server, username, password string, info *resource.CollectionInfo) (<-chan float64, error) {
+	resp, err := sendRequest("GET", server, "download", url.Values{"collection": {info.Title}}, username, password, "", nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	//read in zip format
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	//save to local
 	if err := os.RemoveAll(resource.CollectionPath()); err != nil {
-		return err
+		return nil, err
 	}
 	if err := uzip.Extract(resource.CollectionPath(), reader); err != nil {
-		return err
+		return nil, err
 	}
 	if err := Manager().load(); err != nil {
-		return err
+		return nil, err
 	}
 
 	//sync music list
-	if unsynced := SyncCollection(); unsynced != 0 {
-		return fmt.Errorf("unable to sync %v music", unsynced)
-	}
-	return nil
+	return SyncCollection(), nil
 }

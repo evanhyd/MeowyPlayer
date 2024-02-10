@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -101,14 +100,16 @@ func newAlbumTab() *container.TabItem {
 	// add album button
 	addAlbumButton := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), func() { showErrorIfAny(client.AddRandomAlbum()) })
 
-	// sync music list button
-	syncDialog := dialog.NewCustomWithoutButtons("syncing", widget.NewProgressBarInfinite(), getWindow())
+	//progress bar
+	progressBar := widget.NewProgressBar()
+	progressDialog := dialog.NewCustomWithoutButtons("loading", progressBar, getWindow())
 	syncMusicButton := cwidget.NewButtonWithIcon("", theme.ViewRefreshIcon(), func() {
-		syncDialog.Show()
-		if unsynced := client.SyncCollection(); unsynced > 0 {
-			showErrorIfAny(fmt.Errorf("unabled to sync %v music", unsynced))
+		progressDialog.Show()
+		remains := client.SyncCollection()
+		for remain := range remains {
+			progressBar.SetValue(remain)
 		}
-		syncDialog.Hide()
+		progressDialog.Hide()
 	})
 
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon, container.NewBorder(
