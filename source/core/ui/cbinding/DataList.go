@@ -13,7 +13,7 @@ type dataList[T any] struct {
 	sorter func(T, T) int
 }
 
-func makeDataList[T any]() dataList[T] {
+func MakeDataList[T any]() dataList[T] {
 	return dataList[T]{filter: func(T) bool { return true }, sorter: func(T, T) int { return -1 }}
 }
 

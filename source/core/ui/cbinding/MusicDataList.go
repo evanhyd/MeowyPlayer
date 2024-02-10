@@ -10,7 +10,7 @@ type MusicDataList struct {
 }
 
 func MakeMusicDataList() MusicDataList {
-	return MusicDataList{makeDataList[resource.Music]()}
+	return MusicDataList{MakeDataList[resource.Music]()}
 }
 
 func (m *MusicDataList) Notify(album resource.Album) {

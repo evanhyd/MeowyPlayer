@@ -10,127 +10,118 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/exp/maps"
 	"meowyplayer.com/core/client"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/core/ui/cbinding"
 	"meowyplayer.com/core/ui/cwidget"
+	"meowyplayer.com/utility/pattern"
 )
 
 func newAlbumTab() *container.TabItem {
-	var clickedAlbum resource.Album
+	var selectedAlbum resource.Album
+	data := cbinding.MakeDataList[resource.Album]()
+	client.Manager().AddCollectionListener(pattern.MakeCallback(func(c resource.Collection) { data.Notify(maps.Values(c.Albums)) }))
 
+	// renaming title dialog
 	renameEntry := widget.NewEntry()
 	renameDialog := dialog.NewCustomConfirm("Enter title:", "Confirm", "Cancel", renameEntry, func(confirm bool) {
 		if confirm {
-			showErrorIfAny(client.Manager().UpdateAlbumTitle(clickedAlbum, renameEntry.Text))
+			showErrorIfAny(client.Manager().RenameAlbum(selectedAlbum, renameEntry.Text))
 		}
 	}, getWindow())
 
-	makeCoverDialog := func(album *resource.Album) func() {
-		return func() {
-			fileOpenDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
-				if err != nil {
-					showErrorIfAny(err)
-				} else if result != nil {
-					showErrorIfAny(client.Manager().UpdateAlbumCover(*album, result.URI().Path()))
-				}
-			}, getWindow())
-			fileOpenDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
-			fileOpenDialog.SetConfirmText("Upload")
-			fileOpenDialog.Show()
+	// updating album icon dialog
+	coverDialog := dialog.NewFileOpen(func(result fyne.URIReadCloser, err error) {
+		if err != nil {
+			showErrorIfAny(err)
+		} else if result != nil {
+			showErrorIfAny(client.Manager().EditCover(selectedAlbum, result.URI().Path()))
 		}
-	}
+	}, getWindow())
+	coverDialog.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
+	coverDialog.SetConfirmText("Upload")
 
-	makeDeleteAlbumDialog := func(album *resource.Album) func() {
-		return func() {
-			dialog.ShowConfirm("", fmt.Sprintf("Do you want to delete %v?", album.Title), func(delete bool) {
-				if delete {
-					showErrorIfAny(client.Manager().DeleteAlbum(*album))
-				}
-			}, getWindow())
+	// deleting album dialog
+	deleteDialog := dialog.NewConfirm("", "Do you want to delete the album?", func(delete bool) {
+		if delete {
+			showErrorIfAny(client.Manager().DeleteAlbum(selectedAlbum))
 		}
-	}
+	}, getWindow())
 
-	showAlbumMenu := func(album *resource.Album, canvas fyne.Canvas, pos fyne.Position) {
-		rename := fyne.NewMenuItem("Rename", makeRenameDialog(album))
-		cover := fyne.NewMenuItem("Cover", makeCoverDialog(album))
-		delete := fyne.NewMenuItem("Delete", makeDeleteAlbumDialog(album))
-		widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", rename, cover, delete), canvas, pos)
-	}
+	// pop up menu
+	editingMenu := widget.NewPopUpMenu(fyne.NewMenu("",
+		fyne.NewMenuItem("Rename", func() { renameEntry.SetText(""); renameDialog.Show() }),
+		fyne.NewMenuItem("Edit Cover", coverDialog.Show),
+		fyne.NewMenuItem("Delete", deleteDialog.Show)), getWindow().Canvas())
 
-	newAlbumViewList := func(data *cbinding.AlbumDataList) *cwidget.ViewList[resource.Album] {
-		return cwidget.NewViewList(data, container.NewGridWrap(fyne.NewSize(135.0, 165.0)),
-			func(album resource.Album) fyne.CanvasObject {
-				view := cwidget.NewAlbumView(&album)
-				view.OnTapped = func(*fyne.PointEvent) {
-					client.Manager().SetAlbum(album)
-				}
-				view.OnTappedSecondary = func(event *fyne.PointEvent) {
-					canvas := fyne.CurrentApp().Driver().CanvasForObject(view)
-					showAlbumMenu(&album, canvas, event.AbsolutePosition)
-				}
-				return view
-			},
-		)
-	}
+	// album views
+	albumViews := cwidget.NewViewList(&data, container.NewGridWrap(fyne.NewSize(135.0, 165.0)),
+		func(album resource.Album) fyne.CanvasObject {
+			view := cwidget.NewAlbumView(&album)
+			view.OnTapped = func(*fyne.PointEvent) {
+				client.Manager().SetFocusedAlbum(album)
+			}
+			view.OnTappedSecondary = func(event *fyne.PointEvent) {
+				selectedAlbum = album
+				editingMenu.ShowAtPosition(event.AbsolutePosition)
+			}
+			return view
+		},
+	)
 
-	newAlbumSearchBar := func(data *cbinding.AlbumDataList) *widget.Entry {
-		entry := widget.NewEntry()
-		entry.OnChanged = func(title string) {
-			title = strings.ToLower(title)
-			data.SetFilter(func(a resource.Album) bool {
-				return strings.Contains(strings.ToLower(a.Title), title)
-			})
-		}
-		return entry
-	}
-
-	newAlbumTitleButton := func(data *cbinding.AlbumDataList, title string) *widget.Button {
-		order := -1
-		return cwidget.NewButton(title, func() {
-			order = -order
-			data.SetSorter(func(a1, a2 resource.Album) int {
-				return strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) * order
-			})
+	// title search bar
+	searchBar := widget.NewEntry()
+	searchBar.OnChanged = func(title string) {
+		title = strings.ToLower(title)
+		data.SetFilter(func(album resource.Album) bool {
+			return strings.Contains(strings.ToLower(album.Title), title)
 		})
 	}
 
-	newAlbumDateButton := func(data *cbinding.AlbumDataList, title string) *widget.Button {
-		order := 1
-		button := cwidget.NewButton(title, func() {
-			order = -order
-			data.SetSorter(func(a1, a2 resource.Album) int {
-				return a1.Date.Compare(a2.Date) * order
-			})
+	// title sorting button
+	ascendTitle := -1
+	titleButton := cwidget.NewButton("Title", func() {
+		ascendTitle = -ascendTitle
+		data.SetSorter(func(a1, a2 resource.Album) int {
+			return strings.Compare(strings.ToLower(a1.Title), strings.ToLower(a2.Title)) * ascendTitle
 		})
-		button.OnTapped()
-		return button
-	}
+	})
 
-	data := cbinding.MakeAlbumDataList()
-	client.Manager().AddCollectionListener(&data)
+	// date sorting button
+	ascendDate := 1
+	dateButton := cwidget.NewButton("Date", func() {
+		ascendDate = -ascendDate
+		data.SetSorter(func(a1, a2 resource.Album) int {
+			return a1.Date.Compare(a2.Date) * ascendDate
+		})
+	})
+	defer dateButton.OnTapped()
 
-	addAlbumIcon := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), func() { showErrorIfAny(client.AddRandomAlbum()) })
+	// add album button
+	addAlbumButton := cwidget.NewButtonWithIcon("", theme.ContentAddIcon(), func() { showErrorIfAny(client.AddRandomAlbum()) })
+
+	// sync music list button
+	syncDialog := dialog.NewCustomWithoutButtons("syncing", widget.NewProgressBarInfinite(), getWindow())
 	syncMusicButton := cwidget.NewButtonWithIcon("", theme.ViewRefreshIcon(), func() {
-		progress := dialog.NewCustomWithoutButtons("syncing", widget.NewProgressBarInfinite(), getWindow())
-		progress.Show()
-		defer progress.Hide()
+		syncDialog.Show()
 		if unsynced := client.SyncCollection(); unsynced > 0 {
 			showErrorIfAny(fmt.Errorf("unabled to sync %v music", unsynced))
 		}
+		syncDialog.Hide()
 	})
 
 	return container.NewTabItemWithIcon("Album", resource.AlbumTabIcon, container.NewBorder(
 		container.NewBorder(
 			nil,
-			container.NewGridWithRows(1, newAlbumTitleButton(&data, "Title"), newAlbumDateButton(&data, "Date")),
+			container.NewGridWithRows(1, titleButton, dateButton),
 			nil,
-			container.NewGridWithRows(1, addAlbumIcon, syncMusicButton),
-			newAlbumSearchBar(&data),
+			container.NewGridWithRows(1, addAlbumButton, syncMusicButton),
+			searchBar,
 		),
 		nil,
 		nil,
 		nil,
-		newAlbumViewList(&data),
+		albumViews,
 	))
 }

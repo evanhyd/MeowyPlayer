@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"net/http"
 	_ "net/http/pprof"
 
 	"fyne.io/fyne/v2"
@@ -18,7 +19,7 @@ import (
 func main() {
 	//curl http://localhost/debug/pprof/heap -O profile.log
 	//go tool pprof profile.log
-	// go http.ListenAndServe("localhost:80", nil)
+	go http.ListenAndServe("localhost:80", nil)
 
 	// redirect panic message
 	defer func() {

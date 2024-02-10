@@ -26,7 +26,7 @@ func NewMainWindow() fyne.Window {
 	tabs.SetTabLocation(container.TabLocationLeading)
 	tabs.DisableItem(musicTab)
 
-	client.Manager().AddAlbumListener(pattern.MakeCallback(func(resource.Album) {
+	client.Manager().AddFocusedAlbumListener(pattern.MakeCallback(func(resource.Album) {
 		tabs.EnableItem(musicTab)
 		tabs.Select(musicTab)
 	}))

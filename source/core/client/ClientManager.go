@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"fyne.io/fyne/v2"
+	"meowyplayer.com/core/player"
 	"meowyplayer.com/core/resource"
 	"meowyplayer.com/utility/pattern"
 	"meowyplayer.com/utility/ujson"
@@ -22,8 +23,8 @@ func Manager() *clientManager {
 type clientManager struct {
 	currentCollection     pattern.Data[resource.Collection]
 	focusedAlbum          string
-	onFocusedAlbumChanged pattern.SubjectBase[resource.Album] //callback when update the focused album
-	onAlbumPlayed         pattern.SubjectBase[resource.Album] //callback when load the playlist from the album
+	onFocusedAlbumChanged pattern.SubjectBase[resource.Album]  //callback when update the focused album
+	onPlaylistChanged     pattern.SubjectBase[player.PlayList] //callback when load the playlist from the album
 }
 
 /*
@@ -69,22 +70,29 @@ func (c *clientManager) load() error {
 }
 
 /*
-Return the current album.
+Return the focused album.
 */
-func (c *clientManager) Album() resource.Album {
+func (c *clientManager) FocusedAlbum() resource.Album {
 	return c.currentCollection.Get().Albums[c.focusedAlbum]
 }
 
 /*
-Set the current album.
+Set the focused album.
 */
-func (c *clientManager) SetAlbum(album resource.Album) error {
+func (c *clientManager) SetFocusedAlbum(album resource.Album) error {
 	if source, ok := c.currentCollection.Get().Albums[album.Title]; ok {
 		c.focusedAlbum = source.Title
 		c.onFocusedAlbumChanged.NotifyAll(source)
 		return nil
 	}
 	return fmt.Errorf("setting invalid album - %v", album.Title)
+}
+
+/*
+Set the play list.
+*/
+func (c *clientManager) SetPlayList(playlist player.PlayList) {
+	c.onPlaylistChanged.NotifyAll(playlist)
 }
 
 /*
@@ -97,15 +105,15 @@ func (c *clientManager) AddCollectionListener(observer pattern.Observer[resource
 /*
 Add on focused album changed listener.
 */
-func (c *clientManager) AddAlbumListener(observer pattern.Observer[resource.Album]) {
+func (c *clientManager) AddFocusedAlbumListener(observer pattern.Observer[resource.Album]) {
 	c.onFocusedAlbumChanged.Attach(observer)
 }
 
 /*
 Add on album played listener.
 */
-func (c *clientManager) AddAlbumPlayedListener(observer pattern.Observer[resource.Album]) {
-	c.onAlbumPlayed.Attach(observer)
+func (c *clientManager) AddPlayListListener(observer pattern.Observer[player.PlayList]) {
+	c.onPlaylistChanged.Attach(observer)
 }
 
 /*
@@ -161,7 +169,7 @@ Update album's title to title.
 The title must not already exists in the collection.
 Immediately save to the collection config file.
 */
-func (c *clientManager) UpdateAlbumTitle(album resource.Album, title string) error {
+func (c *clientManager) RenameAlbum(album resource.Album, title string) error {
 	collection := c.currentCollection.Get()
 
 	title = resource.SanatizeFileName(title)
@@ -182,17 +190,15 @@ func (c *clientManager) UpdateAlbumTitle(album resource.Album, title string) err
 	}
 	delete(collection.Albums, album.Title)
 
+	//update the current album if necessary
+	if c.focusedAlbum == album.Title {
+		c.focusedAlbum = renamed.Title
+	}
+
 	//update the collection
 	collection.Date = renamed.Date
 	collection.Albums[renamed.Title] = renamed
 	c.currentCollection.Set(collection)
-
-	//update the current album if necessary
-	if c.focusedAlbum == album.Title {
-		c.focusedAlbum = renamed.Title
-		//TODO: notify listeners
-	}
-
 	return c.save()
 }
 
@@ -200,7 +206,7 @@ func (c *clientManager) UpdateAlbumTitle(album resource.Album, title string) err
 Update album's cover to the icon specified by the iconPath.
 Immediately save to the collection config file.
 */
-func (c *clientManager) UpdateAlbumCover(album resource.Album, iconPath string) error {
+func (c *clientManager) EditCover(album resource.Album, iconPath string) error {
 	collection := c.currentCollection.Get()
 
 	source, exist := collection.Albums[album.Title]

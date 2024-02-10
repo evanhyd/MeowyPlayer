@@ -11,8 +11,8 @@ type PlayList struct {
 	index     int
 }
 
-func NewPlayList(musicList []resource.Music, music *resource.Music) *PlayList {
-	return &PlayList{musicList, slices.Index(musicList, *music)}
+func MakePlayList(musicList []resource.Music, music *resource.Music) PlayList {
+	return PlayList{musicList, slices.Index(musicList, *music)}
 }
 
 func (p *PlayList) Music() *resource.Music {

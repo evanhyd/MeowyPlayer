@@ -5,7 +5,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"meowyplayer.com/core/client"
 	"meowyplayer.com/core/player"
-	"meowyplayer.com/core/resource"
 	"meowyplayer.com/core/ui/cwidget"
 	"meowyplayer.com/utility/pattern"
 )
@@ -17,12 +16,17 @@ func newControllerTab() fyne.CanvasObject {
 	controller.Bind(musicPlayer)
 	go musicPlayer.Start(controller)
 
-	client.Manager().AddAlbumListener(pattern.MakeCallback(func(album resource.Album) {
-		coverView.SetAlbum(&album)
-		coverView.OnTapped = func(*fyne.PointEvent) { client.Manager().SetAlbum(album) }
+	// set album preview when loading a new playlist
+	client.Manager().AddPlayListListener(pattern.MakeCallback(func(player.PlayList) {
+		focused := client.Manager().FocusedAlbum()
+		coverView.SetAlbum(&focused)
+		coverView.OnTapped = func(*fyne.PointEvent) {
+			client.Manager().SetFocusedAlbum(focused)
+		}
 	}))
 
-	client.Manager().AddAlbumPlayedListener(&musicPlayer)
+	// load playlist to the mp3 player
+	client.Manager().AddPlayListListener(musicPlayer)
 
 	return container.NewBorder(nil, nil, coverView, nil, controller)
 }
