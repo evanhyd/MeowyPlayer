@@ -87,7 +87,7 @@ func AddMusicFromDownloader(album resource.Album, videoResult *fileformat.VideoR
 		ID:       videoResult.VideoID,
 	}
 
-	data, err := downloadMusic(album, videoResult)
+	data, err := downloadMusic(videoResult)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func AddMusicFromDownloader(album resource.Album, videoResult *fileformat.VideoR
 	return Manager().addMusic(album, music, data)
 }
 
-func downloadMusic(album resource.Album, videoResult *fileformat.VideoResult) ([]byte, error) {
+func downloadMusic(videoResult *fileformat.VideoResult) ([]byte, error) {
 	var provider downloader.MusicDownloader
 	switch videoResult.Platform {
 	case "YouTube":
@@ -112,14 +112,14 @@ func downloadMusic(album resource.Album, videoResult *fileformat.VideoResult) ([
 /*
 Download the missing music file.
 */
-func SyncMusic(album resource.Album, music resource.Music) error {
+func SyncMusic(music resource.Music) error {
 	videoResult := fileformat.VideoResult{
 		Title:    music.Title[:len(music.Title)-4],
 		Length:   music.Length,
 		Platform: music.Platform,
 		VideoID:  music.ID,
 	}
-	data, err := downloadMusic(album, &videoResult)
+	data, err := downloadMusic(&videoResult)
 	if err != nil {
 		return err
 	}
@@ -128,33 +128,37 @@ func SyncMusic(album resource.Album, music resource.Music) error {
 }
 
 func SyncCollection() <-chan float64 {
-	collection := Manager().currentCollection.Get()
-	successChannel := make(chan float64, 64)
-	var success atomic.Int32
-	var total atomic.Int32
-	wg := sync.WaitGroup{}
-
-	go func() {
-		for _, album := range collection.Albums {
-			for _, music := range album.MusicList {
-				if !isMusicFileExist(&music) {
-					wg.Add(1)
-					total.Add(1)
-					go func(album resource.Album, music resource.Music) {
-						defer wg.Done()
-						if err := SyncMusic(album, music); err != nil {
-							logger.Error(err, 1)
-						} else {
-							success.Add(1)
-						}
-						successChannel <- float64(success.Load()) / float64(total.Load())
-					}(album, music)
-				}
+	const kDownloadRoutines = 4
+	percents := make(chan float64, kDownloadRoutines)
+	toDownload := []resource.Music{}
+	for _, album := range Manager().currentCollection.Get().Albums {
+		for _, music := range album.MusicList {
+			if !isMusicFileExist(&music) {
+				toDownload = append(toDownload, music)
 			}
 		}
+	}
+
+	go func() {
+		wg := sync.WaitGroup{}
+		wg.Add(len(toDownload))
+		tokens := make(chan struct{}, kDownloadRoutines)
+		success := atomic.Int32{}
+		for _, music := range toDownload {
+			go func(music resource.Music) {
+				tokens <- struct{}{}
+				if err := SyncMusic(music); err != nil {
+					logger.Error(err, 1)
+				} else {
+					percents <- float64(success.Add(1)) / float64(len(toDownload))
+				}
+				<-tokens
+				wg.Done()
+			}(music)
+		}
 		wg.Wait()
-		close(successChannel)
-		log.Printf("%v/%v music downloaded\n", success.Load(), total.Load())
+		close(percents)
+		log.Printf("%v/%v music downloaded\n", success.Load(), len(toDownload))
 	}()
-	return successChannel
+	return percents
 }
