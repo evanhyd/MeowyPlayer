@@ -1,3 +1,23 @@
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+### Go ###
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -11,13 +31,14 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-*.txt
-*.log
-*.json
 
-# MeowyPlayer's resource directories
+### MeowyPlayer ###
+# Resources
 collection/**
 music/**
 source/core/resource/Font.go
 source/core/resource/Icon.go
 out/**
+*.txt
+*.log
+*.json
