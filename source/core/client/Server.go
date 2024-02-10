@@ -104,8 +104,6 @@ func RequestDownload(server, username, password string, collectionInfo *resource
 	}
 
 	//save to local
-	Manager().accessLock.Lock()
-	defer Manager().accessLock.Unlock()
 	if err := os.RemoveAll(resource.CollectionPath()); err != nil {
 		return err
 	}

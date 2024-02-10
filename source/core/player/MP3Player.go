@@ -154,9 +154,14 @@ WaitLoop:
 
 	for {
 		menu.SetMusic(m.Music())
-		mp3Controller := NewSeeker(context, m.PlayList.Music())
+		mp3Controller, err := MakeSeeker(context, m.PlayList.Music())
+		if err != nil {
+			m.skip()
+			logger.Error(err, 0)
+			time.Sleep(1 * time.Second) //in case infinite cycle freezes the app
+			continue
+		}
 		mp3Controller.SetVolume(menu.Volume() * menu.Volume())
-
 		interrupted := false
 
 	CONTROL_LOOP:

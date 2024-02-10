@@ -17,16 +17,14 @@ import (
 )
 
 func newAlbumTab() *container.TabItem {
-	makeRenameDialog := func(album *resource.Album) func() {
-		entry := widget.NewEntry()
-		return func() {
-			dialog.ShowCustomConfirm("Enter title:", "Confirm", "Cancel", entry, func(rename bool) {
-				if rename {
-					showErrorIfAny(client.Manager().UpdateAlbumTitle(*album, entry.Text))
-				}
-			}, getWindow())
+	var clickedAlbum resource.Album
+
+	renameEntry := widget.NewEntry()
+	renameDialog := dialog.NewCustomConfirm("Enter title:", "Confirm", "Cancel", renameEntry, func(confirm bool) {
+		if confirm {
+			showErrorIfAny(client.Manager().UpdateAlbumTitle(clickedAlbum, renameEntry.Text))
 		}
-	}
+	}, getWindow())
 
 	makeCoverDialog := func(album *resource.Album) func() {
 		return func() {

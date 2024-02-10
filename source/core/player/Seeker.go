@@ -2,11 +2,11 @@ package player
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 
 	"meowyplayer.com/core/resource"
-	"meowyplayer.com/utility/logger"
 
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/hajimehoshi/oto/v2"
@@ -17,16 +17,16 @@ type Seeker struct {
 	oto.Player
 }
 
-func NewSeeker(context *oto.Context, music *resource.Music) *Seeker {
+func MakeSeeker(context *oto.Context, music *resource.Music) (Seeker, error) {
 	mp3Data, err := os.ReadFile(resource.MusicPath(music))
 	if err != nil {
-		logger.Error(err, 0)
+		return Seeker{}, fmt.Errorf("can't read the music file %v", music.Title)
 	}
 	mp3Decoder, err := mp3.NewDecoder(bytes.NewReader(mp3Data))
 	if err != nil {
-		logger.Error(err, 0)
+		return Seeker{}, fmt.Errorf("can't decode the music file %v", music.Title)
 	}
-	return &Seeker{Decoder: mp3Decoder, Player: context.NewPlayer(mp3Decoder)}
+	return Seeker{Decoder: mp3Decoder, Player: context.NewPlayer(mp3Decoder)}, nil
 }
 
 func (s *Seeker) CurrentProgressBytes() int64 {

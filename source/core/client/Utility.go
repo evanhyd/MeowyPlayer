@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"log"
 	"math/rand"
 	"os"
 	"sync"
@@ -80,7 +81,8 @@ func DownloadMusic(album resource.Album, videoResult *fileformat.VideoResult) er
 	case "YouTube":
 		provider = downloader.NewY2MateDownloader()
 	case "BiliBili":
-		logger.Fatal(fmt.Errorf("not implemented"), 0)
+		provider = downloader.NewY2MateDownloader()
+		log.Println("BiliBili downloader is not implemented")
 	default:
 		return nil
 	}
@@ -112,7 +114,7 @@ func CloneMusic(album resource.Album, music resource.Music) error {
 func SyncCollection() int32 {
 	var unsynced atomic.Int32
 	wg := sync.WaitGroup{}
-	for _, album := range Manager().collection.Get().Albums {
+	for _, album := range Manager().currentCollection.Get().Albums {
 		for _, music := range album.MusicList {
 			if !isMusicFileExist(&music) {
 				wg.Add(1)

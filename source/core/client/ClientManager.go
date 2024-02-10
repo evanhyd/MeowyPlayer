@@ -4,15 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
-	"meowyplayer.com/core/player"
 	"meowyplayer.com/core/resource"
-	"meowyplayer.com/utility/logger"
 	"meowyplayer.com/utility/pattern"
 	"meowyplayer.com/utility/ujson"
 )
@@ -24,36 +20,42 @@ func Manager() *clientManager {
 }
 
 type clientManager struct {
-	accessLock sync.Mutex
-	collection pattern.Data[resource.Collection]
-	albumTitle string //key in the collection
-	albumEvent pattern.SubjectBase[resource.Album]
-	playList   pattern.Data[player.PlayList]
+	currentCollection     pattern.Data[resource.Collection]
+	focusedAlbum          string
+	onFocusedAlbumChanged pattern.SubjectBase[resource.Album] //callback when update the focused album
+	onAlbumPlayed         pattern.SubjectBase[resource.Album] //callback when load the playlist from the album
 }
 
+/*
+Initialize the client and load the collection config file.
+Creates a default collection config file if not exists.
+*/
 func (c *clientManager) Initialize() error {
-	_, err := os.Stat(resource.CollectionFile())
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+	if _, err := os.Stat(resource.CollectionFile()); errors.Is(err, fs.ErrNotExist) {
+		collection := resource.Collection{Date: time.Now(), Albums: make(map[string]resource.Album)}
+		if err := ujson.Write(resource.CollectionFile(), collection); err != nil {
+			return err
+		}
+	} else if err != nil {
 		return err
 	}
 
-	//create default collection
-	if errors.Is(err, fs.ErrNotExist) {
-		collection := resource.Collection{Date: time.Now(), Albums: make(map[string]resource.Album)}
-		if err := ujson.WriteFile(resource.CollectionFile(), collection); err != nil {
-			return err
-		}
-	}
 	return c.load()
 }
 
+/*
+Save the current collection to the collection config file.
+*/
 func (c *clientManager) save() error {
-	return ujson.WriteFile(resource.CollectionFile(), c.collection.Get())
+	return ujson.Write(resource.CollectionFile(), c.currentCollection.Get())
 }
 
+/*
+Load from the collection config file to the current collection.
+*/
 func (c *clientManager) load() error {
 	collection := resource.Collection{}
-	if err := ujson.ReadFile(resource.CollectionFile(), &collection); err != nil {
+	if err := ujson.Read(resource.CollectionFile(), &collection); err != nil {
 		return err
 	}
 
@@ -62,142 +64,148 @@ func (c *clientManager) load() error {
 		collection.Albums[title] = album
 	}
 
-	c.collection.Set(collection)
+	c.currentCollection.Set(collection)
 	return nil
 }
 
+/*
+Return the current album.
+*/
 func (c *clientManager) Album() resource.Album {
-	return c.collection.Get().Albums[c.albumTitle]
+	return c.currentCollection.Get().Albums[c.focusedAlbum]
 }
 
-func (c *clientManager) SetAlbum(album resource.Album) {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
-	if album, ok := c.collection.Get().Albums[album.Title]; ok {
-		c.albumTitle = album.Title
-		c.albumEvent.NotifyAll(album)
-	} else {
-		logger.Error(fmt.Errorf("setting invalid album - %v", album.Title), 0)
+/*
+Set the current album.
+*/
+func (c *clientManager) SetAlbum(album resource.Album) error {
+	if source, ok := c.currentCollection.Get().Albums[album.Title]; ok {
+		c.focusedAlbum = source.Title
+		c.onFocusedAlbumChanged.NotifyAll(source)
+		return nil
 	}
+	return fmt.Errorf("setting invalid album - %v", album.Title)
 }
 
-func (c *clientManager) SetPlayList(playList *player.PlayList) {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
-	c.playList.Set(*playList)
-}
-
+/*
+Add collection on-change event listener.
+*/
 func (c *clientManager) AddCollectionListener(observer pattern.Observer[resource.Collection]) {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
-	c.collection.Attach(observer)
+	c.currentCollection.Attach(observer)
 }
 
+/*
+Add on focused album changed listener.
+*/
 func (c *clientManager) AddAlbumListener(observer pattern.Observer[resource.Album]) {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
-	c.albumEvent.Attach(observer)
+	c.onFocusedAlbumChanged.Attach(observer)
 }
 
-func (c *clientManager) AddPlayListListener(observer pattern.Observer[player.PlayList]) {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
-	c.playList.Attach(observer)
+/*
+Add on album played listener.
+*/
+func (c *clientManager) AddAlbumPlayedListener(observer pattern.Observer[resource.Album]) {
+	c.onAlbumPlayed.Attach(observer)
 }
 
+/*
+Add album to the current collection.
+Duplicated album title is prohibited.
+Immediately save to the collection config file.
+*/
 func (c *clientManager) addAlbum(album resource.Album) error {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
+	collection := c.currentCollection.Get()
+	album.Title = resource.SanatizeFileName(album.Title)
+	album.Date = time.Now()
 
-	//add the album to the collection, then refresh
-	if _, exist := c.collection.Get().Albums[album.Title]; !exist {
+	//check for duplicted album title
+	if _, exist := collection.Albums[album.Title]; !exist {
 
-		//add album icon to the icon path
+		//save icon
 		if err := os.WriteFile(resource.CoverPath(&album), album.Cover.Content(), 0777); err != nil {
 			return err
 		}
 
-		//add album to the collection
-		collection := c.collection.Get()
-		collection.Date = time.Now()
+		//add to the collection
+		collection.Date = album.Date
 		collection.Albums[album.Title] = album
-		c.collection.Set(collection)
+		c.currentCollection.Set(collection)
 		return c.save()
-	} else {
-		return fmt.Errorf("failed to add the duplicated album: %v", album.Title)
 	}
+
+	return fmt.Errorf("failed to add the duplicated album: %v", album.Title)
 }
 
+/*
+Delete the album from the collection.
+Immediately save to the collection config file.
+*/
 func (c *clientManager) DeleteAlbum(album resource.Album) error {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
+	album.Title = resource.SanatizeFileName(album.Title)
 
-	album.Title = resource.SanatizeFileName(c.albumTitle)
-	log.Println("delete", album.Title)
-
-	//delete album icon
+	//delete the icon
 	if err := os.RemoveAll(resource.CoverPath(&album)); err != nil {
 		return err
 	}
 
-	//delete album from the collection
-	collection := c.collection.Get()
-	collection.Date = time.Now()
+	//delete from the collection
+	collection := c.currentCollection.Get()
 	delete(collection.Albums, album.Title)
-	c.collection.Set(collection)
+	collection.Date = time.Now()
+	c.currentCollection.Set(collection)
 	return c.save()
 }
 
-func (c *clientManager) UpdateAlbumTitle(toRename resource.Album, newTitle string) error {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
+/*
+Update album's title to title.
+The title must not already exists in the collection.
+Immediately save to the collection config file.
+*/
+func (c *clientManager) UpdateAlbumTitle(album resource.Album, title string) error {
+	collection := c.currentCollection.Get()
 
-	newTitle = resource.SanatizeFileName(newTitle)
-	toRename.Title = resource.SanatizeFileName(toRename.Title)
-	log.Printf("rename %v to %v\n", toRename.Title, newTitle)
+	title = resource.SanatizeFileName(title)
+	if _, exist := collection.Albums[title]; exist {
+		return fmt.Errorf("attempted to rename to an existed title: %v", title)
+	}
 
-	//target album must exist
-	album, exist := c.collection.Get().Albums[toRename.Title]
+	renamed, exist := collection.Albums[album.Title]
 	if !exist {
-		return fmt.Errorf("failed to rename the title of a non-existed album: %v", toRename.Title)
+		return fmt.Errorf("attempted to rename an invalid album: %v", album.Title)
 	}
+	renamed.Title = title
+	renamed.Date = time.Now()
 
-	//album with the new title must not already exist
-	if _, exist := c.collection.Get().Albums[newTitle]; exist {
-		return fmt.Errorf("album title already exists: %v", newTitle)
-	}
-
-	//add the new album to the collection
-	album.Date = time.Now()
-	album.Title = newTitle
-	collection := c.collection.Get()
-	collection.Date = album.Date
-	delete(collection.Albums, toRename.Title)
-	collection.Albums[newTitle] = album
-	c.collection.Set(collection)
-
-	//update the album key to the new one
-	//so the reference is not broken
-	if c.albumTitle == toRename.Title {
-		c.albumTitle = newTitle
-	}
-
-	//rename the album cover
-	if err := os.Rename(resource.CoverPath(&toRename), resource.CoverPath(&album)); err != nil && !os.IsNotExist(err) {
+	//rename the cover
+	if err := os.Rename(resource.CoverPath(&album), resource.CoverPath(&renamed)); err != nil {
 		return err
 	}
+	delete(collection.Albums, album.Title)
+
+	//update the collection
+	collection.Date = renamed.Date
+	collection.Albums[renamed.Title] = renamed
+	c.currentCollection.Set(collection)
+
+	//update the current album if necessary
+	if c.focusedAlbum == album.Title {
+		c.focusedAlbum = renamed.Title
+		//TODO: notify listeners
+	}
+
 	return c.save()
 }
 
+/*
+Update album's cover to the icon specified by the iconPath.
+Immediately save to the collection config file.
+*/
 func (c *clientManager) UpdateAlbumCover(album resource.Album, iconPath string) error {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
+	collection := c.currentCollection.Get()
 
-	log.Printf("update %v cover: %v\n", album.Title, iconPath)
-
-	//target album must exist
-	if _, exist := c.collection.Get().Albums[album.Title]; !exist {
-		return fmt.Errorf("failed to update the cover of a non-existed album: %v", album.Title)
+	source, exist := collection.Albums[album.Title]
+	if !exist {
+		return fmt.Errorf("attempted to update an invalid album's icon: %v", album.Title)
 	}
 
 	//update cover image
@@ -205,64 +213,64 @@ func (c *clientManager) UpdateAlbumCover(album resource.Album, iconPath string) 
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(resource.CoverPath(&album), icon.Content(), 0777); err != nil {
+	if err = os.WriteFile(resource.CoverPath(&source), icon.Content(), 0777); err != nil {
 		return err
 	}
+	source.Date = time.Now()
+	source.Cover = icon
 
-	//update timestamp
-	album.Date = time.Now()
-	album.Cover = icon
-	collection := c.collection.Get()
-	collection.Date = album.Date
-	collection.Albums[album.Title] = album
-	c.collection.Set(collection)
+	//update the collection
+	collection.Date = source.Date
+	collection.Albums[source.Title] = source
+	c.currentCollection.Set(collection)
 	return c.save()
 }
 
-func (c *clientManager) addMusic(toAlbum resource.Album, music resource.Music, musicData []byte) error {
-	c.accessLock.Lock()
-	defer c.accessLock.Unlock()
+/*
+Add music to the album.
+Save musicData to the music directory.
+Immediately save the collection config file.
+*/
+func (c *clientManager) addMusic(album resource.Album, music resource.Music, musicData []byte) error {
+	collection := c.currentCollection.Get()
 
-	//album must exist
-	album, exist := c.collection.Get().Albums[toAlbum.Title]
+	source, exist := collection.Albums[album.Title]
 	if !exist {
-		return fmt.Errorf("failed to add the music to a non-existed album: %v", toAlbum.Title)
+		return fmt.Errorf("attempted to add music to an invalid album: %v", album.Title)
 	}
+	source.Date = time.Now()
+	source.MusicList[music.Title] = music
 
-	//write data to the music repo
+	//save the music data
 	if err := os.WriteFile(resource.MusicPath(&music), musicData, 0777); err != nil {
 		return err
 	}
 
-	//updaite album date, album music list, collection date
-	album.Date = time.Now()
-	album.MusicList[music.Title] = music
-	collection := c.collection.Get()
-	collection.Date = album.Date
-	collection.Albums[album.Title] = album
-	c.collection.Set(collection)
-	c.albumEvent.NotifyAll(album)
+	//save the collection
+	collection.Date = source.Date
+	collection.Albums[source.Title] = source
+	c.currentCollection.Set(collection)
 	return c.save()
 }
 
-func (s *clientManager) DeleteMusic(music resource.Music) error {
-	s.accessLock.Lock()
-	defer s.accessLock.Unlock()
+/*
+Delete the music from the album.
+Immediately save the collection config file.
+*/
+func (s *clientManager) DeleteMusic(album resource.Album, music resource.Music) error {
+	collection := s.currentCollection.Get()
 
-	//target album must exist
-	album, exist := s.collection.Get().Albums[s.albumTitle]
+	source, exist := collection.Albums[album.Title]
 	if !exist {
-		return fmt.Errorf("failed to delete the music to a non-existed album: %v", s.albumTitle)
+		return fmt.Errorf("attempted to delete a music from an invalid album: %v", album.Title)
 	}
+	source.Date = time.Now()
+	delete(source.MusicList, music.Title)
 
 	//remove from the collection
 	//but not delete it from the music repo
-	album.Date = time.Now()
-	delete(album.MusicList, music.Title)
-	collection := s.collection.Get()
-	collection.Date = album.Date
-	collection.Albums[album.Title] = album
-	s.collection.Set(collection)
-	s.albumEvent.NotifyAll(album)
+	collection.Date = source.Date
+	collection.Albums[source.Title] = source
+	s.currentCollection.Set(collection)
 	return s.save()
 }

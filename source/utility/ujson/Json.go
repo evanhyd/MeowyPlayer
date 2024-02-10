@@ -5,7 +5,10 @@ import (
 	"os"
 )
 
-func WriteFile(fileName string, object any) error {
+/*
+Write the object into file.
+*/
+func Write(fileName string, object any) error {
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
 	if err != nil {
 		return err
@@ -15,9 +18,10 @@ func WriteFile(fileName string, object any) error {
 }
 
 /*
-Object must be a pointer type
+Read the file into the object.
+Object must be a pointer type.
 */
-func ReadFile(fileName string, object any) error {
+func Read(fileName string, object any) error {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return err

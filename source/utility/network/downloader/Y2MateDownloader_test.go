@@ -1,7 +1,6 @@
 package downloader_test
 
 import (
-	"os"
 	"testing"
 
 	"meowyplayer.com/utility/network/downloader"
@@ -29,8 +28,7 @@ func TestLoveStory(t *testing.T) {
 
 func DownloadQuery(downloader downloader.MusicDownloader, video *fileformat.VideoResult, t *testing.T) {
 	data, err := downloader.Download(video)
-	if err != nil {
+	if len(data) == 0 || err != nil {
 		t.Fatalf("%v\n", err)
 	}
-	os.WriteFile(video.Title, data, 0777)
 }
