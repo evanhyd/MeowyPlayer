@@ -24,6 +24,9 @@ func newMusicTab() *container.TabItem {
 	var selectedMusic resource.Music
 	data := cbinding.MakeMusicDataList()
 	client.Manager().AddFocusedAlbumListener(&data)
+	client.Manager().AddCollectionListener(pattern.MakeCallback(func(resource.Collection) {
+		data.Notify(client.Manager().FocusedAlbum())
+	}))
 
 	// deleting music dialog
 	deleteDialog := dialog.NewConfirm("", "Do you want to delete the music?", func(confirm bool) {

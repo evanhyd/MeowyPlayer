@@ -20,7 +20,9 @@ import (
 func newAlbumTab() *container.TabItem {
 	var selectedAlbum resource.Album
 	data := cbinding.MakeDataList[resource.Album]()
-	client.Manager().AddCollectionListener(pattern.MakeCallback(func(c resource.Collection) { data.Notify(maps.Values(c.Albums)) }))
+	client.Manager().AddCollectionListener(pattern.MakeCallback(func(c resource.Collection) {
+		data.Notify(maps.Values(c.Albums))
+	}))
 
 	// renaming title dialog
 	renameEntry := widget.NewEntry()
@@ -50,7 +52,11 @@ func newAlbumTab() *container.TabItem {
 
 	// pop up menu
 	editingMenu := widget.NewPopUpMenu(fyne.NewMenu("",
-		fyne.NewMenuItem("Rename", func() { renameEntry.SetText(""); renameDialog.Show() }),
+		fyne.NewMenuItem("Rename", func() {
+			renameEntry.SetText("")
+			renameDialog.Show()
+			renameEntry.FocusGained()
+		}),
 		fyne.NewMenuItem("Edit Cover", coverDialog.Show),
 		fyne.NewMenuItem("Delete", deleteDialog.Show)), getWindow().Canvas())
 
@@ -59,7 +65,7 @@ func newAlbumTab() *container.TabItem {
 		func(album resource.Album) fyne.CanvasObject {
 			view := cwidget.NewAlbumView(&album)
 			view.OnTapped = func(*fyne.PointEvent) {
-				client.Manager().SetFocusedAlbum(album)
+				showErrorIfAny(client.Manager().SetFocusedAlbum(album))
 			}
 			view.OnTappedSecondary = func(event *fyne.PointEvent) {
 				selectedAlbum = album

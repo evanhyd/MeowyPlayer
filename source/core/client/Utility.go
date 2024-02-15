@@ -109,24 +109,6 @@ func downloadMusic(videoResult *fileformat.VideoResult) ([]byte, error) {
 	return provider.Download(videoResult)
 }
 
-/*
-Download the missing music file.
-*/
-func SyncMusic(music resource.Music) error {
-	videoResult := fileformat.VideoResult{
-		Title:    music.Title[:len(music.Title)-4],
-		Length:   music.Length,
-		Platform: music.Platform,
-		VideoID:  music.ID,
-	}
-	data, err := downloadMusic(&videoResult)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(resource.MusicPath(&music), data, 0777)
-}
-
 func SyncCollection() <-chan float64 {
 	const kDownloadRoutines = 4
 	percents := make(chan float64, kDownloadRoutines)
@@ -147,7 +129,7 @@ func SyncCollection() <-chan float64 {
 		for _, music := range toDownload {
 			go func(music resource.Music) {
 				tokens <- struct{}{}
-				if err := SyncMusic(music); err != nil {
+				if err := syncMusic(music); err != nil {
 					logger.Error(err, 1)
 				} else {
 					percents <- float64(success.Add(1)) / float64(len(toDownload))
@@ -158,7 +140,26 @@ func SyncCollection() <-chan float64 {
 		}
 		wg.Wait()
 		close(percents)
+		Manager().load()
 		log.Printf("%v/%v music downloaded\n", success.Load(), len(toDownload))
 	}()
 	return percents
+}
+
+/*
+Download the missing music file.
+*/
+func syncMusic(music resource.Music) error {
+	videoResult := fileformat.VideoResult{
+		Title:    music.Title[:len(music.Title)-4],
+		Length:   music.Length,
+		Platform: music.Platform,
+		VideoID:  music.ID,
+	}
+	data, err := downloadMusic(&videoResult)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(resource.MusicPath(&music), data, 0777)
 }

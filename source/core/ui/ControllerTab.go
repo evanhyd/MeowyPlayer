@@ -21,7 +21,8 @@ func newControllerTab() fyne.CanvasObject {
 		focused := client.Manager().FocusedAlbum()
 		coverView.SetAlbum(&focused)
 		coverView.OnTapped = func(*fyne.PointEvent) {
-			client.Manager().SetFocusedAlbum(focused)
+			showErrorIfAny(client.Manager().SetFocusedAlbum(focused))
+			//TODO: fix reference when renaming/deleting the album
 		}
 	}))
 
