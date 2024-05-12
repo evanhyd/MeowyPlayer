@@ -1,79 +1,90 @@
 package main
 
 import (
+	"flag"
 	"go/build"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 )
 
-func runCmd(command string, args ...string) {
+var platform string
+var runInDebug bool
+
+func init() {
+	flag.StringVar(&platform, "platform", runtime.GOOS, "The executable plaforms: windows, linux, darwin.")
+	flag.BoolVar(&runInDebug, "debug", false, "Run the binary in debug mode after building.")
+	flag.Parse()
+}
+
+func runAt(dir string, command string, args ...string) {
 	cmd := exec.Command(command, args...)
+	cmd.Dir = dir
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	println(cmd.String())
+	log.Println(cmd.String())
 	if err := cmd.Run(); err != nil {
-		panic(err)
+		log.Println(err)
 	}
 }
 
-func runCmdAt(basePath string, command string, args ...string) {
-	cmd := exec.Command(command, args...)
-	cmd.Dir = basePath
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	println(cmd.String())
-	if err := cmd.Run(); err != nil {
-		panic(err)
+func run(command string, args ...string) {
+	runAt("", command, args...)
+}
+
+type bundleFormat struct {
+	name string
+	path string
+}
+
+func bundleResource(outputFile string, toBundles []bundleFormat) {
+	fyneToolPath := filepath.Join(build.Default.GOPATH, "bin", "fyne")
+
+	getAsset := func(asset string) string {
+		return filepath.Join("asset", asset)
+	}
+
+	run(fyneToolPath, "bundle", "-o", outputFile, "--package", "resource", "--name", toBundles[0].name, getAsset(toBundles[0].path))
+
+	for _, toBundle := range toBundles[1:] {
+		run(fyneToolPath, "bundle", "-o", outputFile, "--append", "--name", toBundle.name, getAsset(toBundle.path))
+	}
+}
+
+func buildBinary() {
+	switch platform {
+	case "windows":
+		if runInDebug {
+			runAt("source", "go", "build", "-o", filepath.Join("..", "meowyplayer.exe"), "main.go")
+		} else {
+			runAt("source", "go", "build", "-ldflags", "-H=windowsgui", "-o", filepath.Join("..", "meowyplayer.exe"), "main.go")
+		}
+	case "linux", "darwin":
+		runAt("source", "go", "build", "-o", filepath.Join("..", "meowyplayer"), "main.go")
+	default:
+		panic("unknown platform")
+	}
+
+	if runInDebug {
+		run("./meowyplayer")
 	}
 }
 
 func main() {
-	//set up paths
-	fyneFile := filepath.Join(build.Default.GOPATH, "bin", "fyne")
-	resourcePath := filepath.Join("source", "core", "resource")
-	iconFile := filepath.Join(resourcePath, "Icon.go")
-	fontFile := filepath.Join(resourcePath, "Font.go")
 
-	bundleResource := func(outputFile, name, sourceFile string) {
-		runCmd(fyneFile, "bundle", "-o", outputFile, "--package", "resource", "--name", name, sourceFile)
+	//bundle icons
+	iconBundles := []bundleFormat{
+		{"WindowIcon", "icon.png"}, //unfortunately fyne doesn't support svg as system tray icon
+		{"CollectionTabIcon", "collection_tab.svg"},
+		{"YouTubeIcon", "youtube.svg"},
+		{"AlphabeticalIcon", "alphabetical.svg"},
 	}
+	iconPath := filepath.Join("source", "resource", "Icon.go")
+	bundleResource(iconPath, iconBundles)
 
-	appendResource := func(outputFile, name, sourceFile string) {
-		runCmd(fyneFile, "bundle", "-o", outputFile, "--append", "--name", name, sourceFile)
-	}
-
-	//bundle the resources
-	bundleResource(iconFile, "MissingIcon", filepath.Join("asset", "missing_asset.png"))
-	appendResource(iconFile, "WindowIcon", filepath.Join("asset", "icon.ico"))
-	appendResource(iconFile, "AlbumTabIcon", filepath.Join("asset", "album_tab.png"))
-	appendResource(iconFile, "MusicTabIcon", filepath.Join("asset", "music_tab.png"))
-	appendResource(iconFile, "MusicAdderOnlineIcon", filepath.Join("asset", "music_adder_online.png"))
-	appendResource(iconFile, "DefaultIcon", filepath.Join("asset", "default.png"))
-	appendResource(iconFile, "RandomIcon", filepath.Join("asset", "random.png"))
-	appendResource(iconFile, "YouTubeIcon", filepath.Join("asset", "youtube.png"))
-	appendResource(iconFile, "BiliBiliIcon", filepath.Join("asset", "bilibili.png"))
-
-	bundleResource(fontFile, "RegularFont", filepath.Join("asset", "regular_font.ttf"))
-	appendResource(fontFile, "BoldFont", filepath.Join("asset", "bold_font.ttf"))
-	appendResource(fontFile, "ItalicFont", filepath.Join("asset", "italic_font.ttf"))
-	appendResource(fontFile, "BoldItalicFont", filepath.Join("asset", "bold_italic_font.ttf"))
-
-	// build binary
-	platform := runtime.GOOS
-	if len(os.Args) >= 2 {
-		platform = os.Args[1]
-	}
-
-	switch platform {
-	case "windows":
-		runCmdAt("source", "go", "build", "-ldflags", "-H=windowsgui", "-o", filepath.Join("..", "meowyplayer.exe"), "main.go")
-	case "linux", "darwin":
-		runCmdAt("source", "go", "build", "-o", filepath.Join("..", "meowyplayer"), "main.go")
-	default:
-		panic("unknown platform")
-	}
+	//build or execute
+	buildBinary()
 }

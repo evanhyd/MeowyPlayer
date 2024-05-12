@@ -1,57 +1,47 @@
 package main
 
 import (
-	"fmt"
-	"runtime/debug"
-
+	"log"
 	_ "net/http/pprof"
+
+	"playground/model"
+	"playground/resource"
+	"playground/view"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
-	"meowyplayer.com/core/client"
-	"meowyplayer.com/core/resource"
-	"meowyplayer.com/core/ui"
-	"meowyplayer.com/utility/logger"
 )
 
 func main() {
 	//curl http://localhost/debug/pprof/heap -O profile.log
 	//go tool pprof profile.log
-	// go http.ListenAndServe("localhost:80", nil)
+	//go http.ListenAndServe("localhost:80", nil)
 
-	// redirect panic message
-	defer func() {
-		if err := recover(); err != nil {
-			logger.Error(fmt.Errorf("%v\n%v", err, string(debug.Stack())), 1)
-		}
-	}()
+	//create model
+	config := model.NewLocalFileSystem()
+	client := model.NewStorageClient(&config)
 
-	logger.Initiate()
-	resource.MakeNecessaryPath()
+	//create main app
+	mainApp := app.NewWithID(resource.KWindowTitle)
+	fyne.SetCurrentApp(mainApp)
+	mainApp.SetIcon(resource.WindowIcon)
+	// application.Settings().SetTheme()
 
-	//initiate app configuration
-	fyne.SetCurrentApp(app.NewWithID("MeowyPlayer"))
-	fyne.CurrentApp().Settings().SetTheme(resource.VanillaTheme())
-	fyne.CurrentApp().SetIcon(resource.WindowIcon)
-
-	//create window
-	window := ui.NewMainWindow()
+	//create main window
+	window := mainApp.NewWindow(resource.KWindowTitle)
+	window.SetCloseIntercept(window.Hide)
+	window.CenterOnScreen()
+	window.Resize(resource.KWindowSize)
+	window.SetContent(view.NewMainPanel(&client))
 
 	//create system tray
-	if desktop, ok := fyne.CurrentApp().(desktop.App); ok {
+	if desktop, ok := mainApp.(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
 	}
 
-	//load music collection
-	if err := client.Manager().Initialize(); err != nil {
-		logger.Error(err, 0)
-		return
-	}
-
-	//load user config
-	if err := client.Config().Initialize(); err != nil {
-		logger.Error(err, 0)
+	if err := client.Initialize(); err != nil {
+		log.Println(err)
 		return
 	}
 
