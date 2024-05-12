@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/exp/maps"
@@ -51,9 +52,10 @@ func (f *localFileSystem) getAlbum(key AlbumKey) (Album, error) {
 	return album, nil
 }
 
-func (f *localFileSystem) uploadAlbum(album Album) (AlbumKey, error) {
+func (f *localFileSystem) createAlbum(album Album) (AlbumKey, error) {
 	key := AlbumKey(uuid.NewString())
 	album.key = key
+	album.date = time.Now()
 	f.albums[key] = album
 	return key, f.save(key)
 }
@@ -63,6 +65,7 @@ func (f *localFileSystem) updateAlbum(album Album) error {
 	if !exist {
 		return fmt.Errorf("invalid album key")
 	}
+	album.date = time.Now()
 	f.albums[album.key] = album
 	return f.save(album.key)
 }

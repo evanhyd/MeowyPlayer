@@ -23,14 +23,14 @@ type MusicCardProp struct {
 type MusicCard struct {
 	widget.BaseWidget
 	cwidget.TappableBase
-	info      *widget.Label
+	info      widget.TextSegment
 	highlight *canvas.Rectangle
 	isHovered bool
 }
 
 func newMusicCard() *MusicCard {
 	v := &MusicCard{
-		info:      widget.NewLabel("?"),
+		info:      widget.TextSegment{Style: widget.RichTextStyleParagraph},
 		highlight: canvas.NewRectangle(theme.HoverColor()),
 	}
 	v.highlight.Hide()
@@ -39,19 +39,22 @@ func newMusicCard() *MusicCard {
 }
 
 func (v *MusicCard) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewStack(v.info, v.highlight))
+	text := widget.NewRichText(&v.info)
+	text.Wrapping = fyne.TextWrapWord
+	text.Truncation = fyne.TextTruncateEllipsis
+	return widget.NewSimpleRenderer(container.NewStack(text, v.highlight))
 }
 
 func (v *MusicCard) MouseIn(*desktop.MouseEvent) {
 	v.highlight.Show()
-	v.highlight.Refresh()
 	v.isHovered = true
+	v.Refresh()
 }
 
 func (v *MusicCard) MouseOut() {
 	v.highlight.Hide()
-	v.highlight.Refresh()
 	v.isHovered = false
+	v.Refresh()
 }
 
 func (v *MusicCard) MouseMoved(*desktop.MouseEvent) {
@@ -70,7 +73,9 @@ func (v *MusicCard) Notify(prop MusicCardProp) {
 	mins := length / time.Minute
 	secs := (length - mins*time.Minute) / time.Second
 
-	v.info.SetText(fmt.Sprintf("%02d:%02d | %v", mins, secs, prop.Music.Title()))
+	v.info.Text = fmt.Sprintf("%02d:%02d | %v", mins, secs, prop.Music.Title())
+	v.Refresh()
+
 	v.OnTapped = prop.OnTapped
 	v.OnTappedSecondary = prop.OnTappedSecondary
 }

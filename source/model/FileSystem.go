@@ -44,6 +44,10 @@ func (a Album) Title() string {
 	return a.title
 }
 
+func (a *Album) Music() []Music {
+	return a.music
+}
+
 func (a *Album) Cover() fyne.Resource {
 	return fyne.NewStaticResource("", a.cover)
 }
@@ -132,8 +136,8 @@ type FileSystem interface {
 	//Get the album from the file system by key.
 	getAlbum(AlbumKey) (Album, error)
 
-	//Upload the album to the file system. Return the generated key.
-	uploadAlbum(Album) (AlbumKey, error)
+	//Create the album in the file system. Return the generated key.
+	createAlbum(Album) (AlbumKey, error)
 
 	//Update the album in the file system.
 	//

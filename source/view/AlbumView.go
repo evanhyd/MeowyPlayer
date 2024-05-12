@@ -105,7 +105,6 @@ func (v *AlbumView) Notify(albums []model.Album) {
 func (v *AlbumView) render() {
 	albums := v.searchBar.Query(v.albums)
 
-	//update collection view
 	props := make([]AlbumCardProp, 0, len(albums))
 	for _, album := range albums {
 		album := album //loop closure
@@ -117,7 +116,7 @@ func (v *AlbumView) render() {
 
 		props = append(props, AlbumCardProp{
 			Album:    album,
-			OnTapped: func(*fyne.PointEvent) { v.client.FocusAlbum(album) },
+			OnTapped: func(*fyne.PointEvent) { v.client.SelectAlbum(album) },
 			OnTappedSecondary: func(e *fyne.PointEvent) {
 				widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
 			},

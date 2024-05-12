@@ -51,6 +51,11 @@ func (s *SearchBar[T]) Select(i int) {
 	s.dropDown.Select(i)
 }
 
+func (s *SearchBar[T]) ClearFilter() {
+	s.entry.Text = ""
+	s.setFilter("")
+}
+
 func (s *SearchBar[T]) setComparator(cmp func(T, T) int) {
 	s.cmp = cmp
 	s.onUpdate()

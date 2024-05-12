@@ -31,8 +31,7 @@ func (v *ScrollList[T]) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (v *ScrollList[T]) Notify(data []T) {
-
-	//resize to fit
+	//resize to fit, keep the capacity
 	if len(data) < len(v.structure.Objects) {
 		clear(v.structure.Objects[len(data):])
 		v.structure.Objects = v.structure.Objects[:len(data)]
@@ -52,4 +51,6 @@ func (v *ScrollList[T]) Notify(data []T) {
 	if v.structure.Layout != nil {
 		v.structure.Layout.Layout(v.structure.Objects, v.structure.Size())
 	}
+
+	v.scroll.ScrollToTop()
 }

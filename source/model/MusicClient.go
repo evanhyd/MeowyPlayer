@@ -3,23 +3,26 @@ package model
 import (
 	"fmt"
 	"playground/pattern"
-	"time"
+	"slices"
 
 	"fyne.io/fyne/v2"
 )
 
 type MusicClient struct {
-	fileSystem      FileSystem
-	focusedAlbum    Album
-	onAlbumsChanged pattern.Subject[[]Album]
-	onAlbumFocused  pattern.Subject[Album]
+	fileSystem         FileSystem
+	onAlbumsChanged    pattern.Subject[[]Album]
+	onAlbumSelected    pattern.Subject[Album]
+	onAlbumViewFocused pattern.Subject[bool]
+	onMusicViewFocused pattern.Subject[bool]
 }
 
 func NewStorageClient(fileSystem FileSystem) MusicClient {
 	return MusicClient{
-		fileSystem:      fileSystem,
-		onAlbumsChanged: pattern.MakeSubject[[]Album](),
-		onAlbumFocused:  pattern.MakeSubject[Album](),
+		fileSystem:         fileSystem,
+		onAlbumsChanged:    pattern.MakeSubject[[]Album](),
+		onAlbumSelected:    pattern.MakeSubject[Album](),
+		onAlbumViewFocused: pattern.MakeSubject[bool](),
+		onMusicViewFocused: pattern.MakeSubject[bool](),
 	}
 }
 
@@ -39,11 +42,10 @@ func (m *MusicClient) GetAlbum(key AlbumKey) Album {
 }
 
 func (m *MusicClient) CreateAlbum(title string, cover fyne.Resource) error {
-	album := Album{date: time.Now(), title: title, cover: cover.Content()}
-	if _, err := m.fileSystem.uploadAlbum(album); err != nil {
+	album := Album{title: title, cover: cover.Content()}
+	if _, err := m.fileSystem.createAlbum(album); err != nil {
 		return err
 	}
-
 	return m.notifyAlbumsChanges()
 }
 
@@ -51,17 +53,24 @@ func (m *MusicClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource)
 	album := m.GetAlbum(key)
 	album.title = title
 	album.cover = cover.Content()
-	album.date = time.Now()
 
 	if err := m.fileSystem.updateAlbum(album); err != nil {
 		return err
 	}
-
 	return m.notifyAlbumsChanges()
 }
 
 func (m *MusicClient) RemoveAlbum(key AlbumKey) error {
 	if err := m.fileSystem.removeAlbum(key); err != nil {
+		return err
+	}
+	return m.notifyAlbumsChanges()
+}
+
+func (m *MusicClient) RemoveMusic(aKey AlbumKey, mKey MusicKey) error {
+	album := m.GetAlbum(aKey)
+	album.music = slices.DeleteFunc(album.music, func(m Music) bool { return m.Key() == mKey })
+	if err := m.fileSystem.updateAlbum(album); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
@@ -76,19 +85,27 @@ func (m *MusicClient) notifyAlbumsChanges() error {
 	return nil
 }
 
-func (m *MusicClient) RefreshAlbums() {
-	m.notifyAlbumsChanges()
+func (m *MusicClient) SelectAlbum(album Album) {
+	m.onAlbumSelected.NotifyAll(album)
+	m.onMusicViewFocused.NotifyAll(true)
 }
 
-func (m *MusicClient) FocusAlbum(album Album) {
-	m.focusedAlbum = album
-	m.onAlbumFocused.NotifyAll(album)
+func (m *MusicClient) FocusAlbumView() {
+	m.onAlbumViewFocused.NotifyAll(true)
 }
 
 func (m *MusicClient) OnAlbumsChanged() pattern.Subject[[]Album] {
 	return m.onAlbumsChanged
 }
 
-func (m *MusicClient) OnAlbumFocused() pattern.Subject[Album] {
-	return m.onAlbumFocused
+func (m *MusicClient) OnAlbumSelected() pattern.Subject[Album] {
+	return m.onAlbumSelected
+}
+
+func (m *MusicClient) OnAlbumViewFocused() pattern.Subject[bool] {
+	return m.onAlbumViewFocused
+}
+
+func (m *MusicClient) OnMusicViewFocused() pattern.Subject[bool] {
+	return m.onMusicViewFocused
 }
