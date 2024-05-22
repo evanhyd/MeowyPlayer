@@ -17,7 +17,7 @@ import (
 type AlbumView struct {
 	widget.BaseWidget
 	searchBar *cwidget.SearchBar[model.Album]
-	cards     *cwidget.ScrollList[AlbumCardProp]
+	list      *cwidget.ScrollList[model.Album]
 
 	client *model.MusicClient
 	albums []model.Album
@@ -30,20 +30,31 @@ func NewAlbumView(client *model.MusicClient) *AlbumView {
 			v.render,
 			cwidget.NewButtonWithIcon("", theme.FolderNewIcon(), v.showCreateAlbumDialog),
 		),
-		cards: cwidget.NewScrollList(
+		list: cwidget.NewScrollList(
 			container.NewGridWrap(resource.KAlbumCardSize),
-			func() cwidget.ObserverCanvasObject[AlbumCardProp] { return newAlbumCard() },
+			func() cwidget.WidgetObserver[model.Album] { return newAlbumCard() },
 		),
 		client: client,
 	}
 
-	v.searchBar.AddComparator(resource.KMostRecentMenuText, theme.HistoryIcon(), func(a, b model.Album) int {
+	//search bar
+	v.searchBar.AddComparator(resource.KMostRecentText, theme.HistoryIcon(), func(a, b model.Album) int {
 		return -a.Date().Compare(b.Date())
 	})
-	v.searchBar.AddComparator(resource.KAlphabeticalMenuText, resource.AlphabeticalIcon, func(a, b model.Album) int {
+	v.searchBar.AddComparator(resource.KAlphabeticalText, resource.AlphabeticalIcon, func(a, b model.Album) int {
 		return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
 	})
 	v.searchBar.Select(0)
+
+	//item list
+	v.list.OnItemTapped = func(e cwidget.ItemTapEvent[model.Album]) {
+		v.client.SelectAlbum(e.Data)
+	}
+	v.list.OnItemTappedSecondary = func(e cwidget.ItemTapEvent[model.Album]) {
+		editMenu := cwidget.NewMenuItemWithIcon(resource.KEditText, theme.DocumentCreateIcon(), func() { v.showEditAlbumDialog(e.Data) })
+		deleteMenu := cwidget.NewMenuItemWithIcon(resource.KDeleteText, theme.DeleteIcon(), func() { v.showDeleteAlbumDialog(e.Data) })
+		widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
+	}
 
 	client.OnAlbumsChanged().Attach(&v)
 	v.ExtendBaseWidget(&v)
@@ -51,7 +62,7 @@ func NewAlbumView(client *model.MusicClient) *AlbumView {
 }
 
 func (v *AlbumView) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewBorder(v.searchBar, nil, nil, nil, v.cards))
+	return widget.NewSimpleRenderer(container.NewBorder(v.searchBar, nil, nil, nil, v.list))
 }
 
 func (v *AlbumView) showCreateAlbumDialog() {
@@ -103,24 +114,5 @@ func (v *AlbumView) Notify(albums []model.Album) {
 }
 
 func (v *AlbumView) render() {
-	albums := v.searchBar.Query(v.albums)
-
-	props := make([]AlbumCardProp, 0, len(albums))
-	for _, album := range albums {
-		album := album //loop closure
-
-		editMenu := fyne.NewMenuItem(resource.KEditText, func() { v.showEditAlbumDialog(album) })
-		editMenu.Icon = theme.DocumentCreateIcon()
-		deleteMenu := fyne.NewMenuItem(resource.KDeleteText, func() { v.showDeleteAlbumDialog(album) })
-		deleteMenu.Icon = theme.DeleteIcon()
-
-		props = append(props, AlbumCardProp{
-			Album:    album,
-			OnTapped: func(*fyne.PointEvent) { v.client.SelectAlbum(album) },
-			OnTappedSecondary: func(e *fyne.PointEvent) {
-				widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
-			},
-		})
-	}
-	v.cards.Notify(props)
+	v.list.Notify(v.searchBar.Query(v.albums))
 }

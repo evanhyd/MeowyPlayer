@@ -10,3 +10,7 @@ func NewButtonWithIcon(label string, icon fyne.Resource, tapped func()) *widget.
 	button.Importance = widget.LowImportance
 	return button
 }
+
+func NewMenuItemWithIcon(label string, icon fyne.Resource, action func()) *fyne.MenuItem {
+	return &fyne.MenuItem{Label: label, Icon: icon, Action: action}
+}

@@ -2,7 +2,6 @@ package view
 
 import (
 	"fmt"
-	"playground/cwidget"
 	"playground/model"
 	"playground/resource"
 	"time"
@@ -14,15 +13,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type AlbumCardProp struct {
-	Album             model.Album
-	OnTapped          func(*fyne.PointEvent)
-	OnTappedSecondary func(*fyne.PointEvent)
-}
-
 type AlbumCard struct {
 	widget.BaseWidget
-	cwidget.TappableBase
 	cover     *canvas.Image
 	title     *widget.Label
 	tip       *widget.Label
@@ -52,7 +44,7 @@ func (v *AlbumCard) CreateRenderer() fyne.WidgetRenderer {
 	))
 }
 
-func (v *AlbumCard) MouseIn(event *desktop.MouseEvent) {
+func (v *AlbumCard) MouseIn(e *desktop.MouseEvent) {
 	v.cover.Translucency = 0.8
 	v.cover.Refresh()
 	v.tip.Show()
@@ -67,7 +59,7 @@ func (v *AlbumCard) MouseOut() {
 }
 
 func (v *AlbumCard) MouseMoved(*desktop.MouseEvent) {
-	//satisfy MouseMovement interface
+	//satisfy Hoverable interface
 }
 
 func (v *AlbumCard) Cursor() desktop.Cursor {
@@ -77,11 +69,9 @@ func (v *AlbumCard) Cursor() desktop.Cursor {
 	return desktop.DefaultCursor
 }
 
-func (v *AlbumCard) Notify(prop AlbumCardProp) {
-	v.cover.Resource = prop.Album.Cover()
+func (v *AlbumCard) Notify(album model.Album) {
+	v.cover.Resource = album.Cover()
 	v.cover.Refresh()
-	v.title.SetText(prop.Album.Title())
-	v.tip.SetText(fmt.Sprintf(resource.KAlbumTipTextTemplate, prop.Album.Count(), prop.Album.Date().Format(time.DateTime)))
-	v.OnTapped = prop.OnTapped
-	v.OnTappedSecondary = prop.OnTappedSecondary
+	v.title.SetText(album.Title())
+	v.tip.SetText(fmt.Sprintf(resource.KAlbumTipTextTemplate, album.Count(), album.Date().Format(time.DateTime)))
 }

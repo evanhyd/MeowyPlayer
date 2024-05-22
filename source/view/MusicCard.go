@@ -2,7 +2,6 @@ package view
 
 import (
 	"fmt"
-	"playground/cwidget"
 	"playground/model"
 	"time"
 
@@ -14,18 +13,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type MusicCardProp struct {
-	Music             model.Music
-	OnTapped          func(*fyne.PointEvent)
-	OnTappedSecondary func(*fyne.PointEvent)
-}
-
 type MusicCard struct {
 	widget.BaseWidget
-	cwidget.TappableBase
 	info      widget.TextSegment
 	highlight *canvas.Rectangle
-	isHovered bool
 }
 
 func newMusicCard() *MusicCard {
@@ -47,35 +38,23 @@ func (v *MusicCard) CreateRenderer() fyne.WidgetRenderer {
 
 func (v *MusicCard) MouseIn(*desktop.MouseEvent) {
 	v.highlight.Show()
-	v.isHovered = true
 	v.Refresh()
 }
 
 func (v *MusicCard) MouseOut() {
 	v.highlight.Hide()
-	v.isHovered = false
 	v.Refresh()
 }
 
 func (v *MusicCard) MouseMoved(*desktop.MouseEvent) {
-	//satisfy MouseMovement interface
+	//satisfy Hoverable interface
 }
 
-func (v *MusicCard) Cursor() desktop.Cursor {
-	if v.isHovered {
-		return desktop.PointerCursor
-	}
-	return desktop.DefaultCursor
-}
-
-func (v *MusicCard) Notify(prop MusicCardProp) {
-	length := prop.Music.Length().Round(time.Second)
+func (v *MusicCard) Notify(music model.Music) {
+	length := music.Length().Round(time.Second)
 	mins := length / time.Minute
 	secs := (length - mins*time.Minute) / time.Second
 
-	v.info.Text = fmt.Sprintf("%02d:%02d | %v", mins, secs, prop.Music.Title())
+	v.info.Text = fmt.Sprintf("%02d:%02d | %v", mins, secs, music.Title())
 	v.Refresh()
-
-	v.OnTapped = prop.OnTapped
-	v.OnTappedSecondary = prop.OnTappedSecondary
 }

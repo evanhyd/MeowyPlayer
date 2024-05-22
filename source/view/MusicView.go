@@ -22,7 +22,7 @@ type MusicView struct {
 	cover     *canvas.Image
 	title     widget.TextSegment
 	info      widget.TextSegment
-	cards     *cwidget.ScrollList[MusicCardProp]
+	list      *cwidget.ScrollList[model.Music]
 
 	client  *model.MusicClient
 	current model.Album
@@ -35,22 +35,36 @@ func NewMusicView(client *model.MusicClient) *MusicView {
 			v.render,
 			cwidget.NewButtonWithIcon(resource.KReturnText, theme.NavigateBackIcon(), client.FocusAlbumView),
 		),
-		cover:  canvas.NewImageFromResource(theme.BrokenImageIcon()),
-		title:  widget.TextSegment{Style: widget.RichTextStyleHeading},
-		info:   widget.TextSegment{Style: widget.RichTextStyleParagraph},
-		cards:  cwidget.NewScrollList(container.NewVBox(), func() cwidget.ObserverCanvasObject[MusicCardProp] { return newMusicCard() }),
+		cover: canvas.NewImageFromResource(theme.BrokenImageIcon()),
+		title: widget.TextSegment{Style: widget.RichTextStyleHeading},
+		info:  widget.TextSegment{Style: widget.RichTextStyleParagraph},
+		list: cwidget.NewScrollList(
+			container.NewVBox(),
+			func() cwidget.WidgetObserver[model.Music] { return newMusicCard() },
+		),
 		client: client,
 	}
 
-	v.searchBar.AddComparator(resource.KMostRecentMenuText, theme.HistoryIcon(), func(a, b model.Music) int {
+	//search bar
+	v.searchBar.AddComparator(resource.KMostRecentText, theme.HistoryIcon(), func(a, b model.Music) int {
 		return -a.Date().Compare(b.Date())
 	})
-	v.searchBar.AddComparator(resource.KAlphabeticalMenuText, resource.AlphabeticalIcon, func(a, b model.Music) int {
+	v.searchBar.AddComparator(resource.KAlphabeticalText, resource.AlphabeticalIcon, func(a, b model.Music) int {
 		return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
 	})
 	v.searchBar.Select(0)
 
+	//cover
 	v.cover.SetMinSize(resource.KAlbumCoverSize)
+
+	//list
+	v.list.OnItemTapped = func(e cwidget.ItemTapEvent[model.Music]) {
+		//TODO: play music
+	}
+	v.list.OnItemTappedSecondary = func(e cwidget.ItemTapEvent[model.Music]) {
+		deleteMenu := cwidget.NewMenuItemWithIcon(resource.KDeleteText, theme.DeleteIcon(), func() { v.showDeleteMusicDialog(e.Data) })
+		widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
+	}
 
 	client.OnAlbumSelected().Attach(&v)                                     //update when selecting album
 	client.OnAlbumsChanged().AttachFunc(func([]model.Album) { v.render() }) //update when updating album
@@ -59,12 +73,12 @@ func NewMusicView(client *model.MusicClient) *MusicView {
 }
 
 func (v *MusicView) CreateRenderer() fyne.WidgetRenderer {
-	description := widget.NewRichText(&v.title, &v.info)
-	description.Wrapping = fyne.TextWrapWord
-	description.Truncation = fyne.TextTruncateEllipsis
+	desc := widget.NewRichText(&v.title, &v.info)
+	desc.Wrapping = fyne.TextWrapWord
+	desc.Truncation = fyne.TextTruncateEllipsis
 
 	return widget.NewSimpleRenderer(container.NewBorder(
-		container.NewBorder(v.searchBar, nil, v.cover, nil, description), nil, nil, nil, v.cards,
+		container.NewBorder(v.searchBar, nil, v.cover, nil, desc), nil, nil, nil, v.list,
 	))
 }
 
@@ -101,24 +115,5 @@ func (v *MusicView) render() {
 	v.info.Text = fmt.Sprintf(resource.KAlbumTipTextTemplate, v.current.Count(), v.current.Date().Format(time.DateTime))
 
 	//update music cards
-	musicList := v.searchBar.Query(v.current.Music())
-
-	props := make([]MusicCardProp, 0, len(musicList))
-	for _, music := range musicList {
-		music := music //loop closure
-
-		// editMenu := fyne.NewMenuItem(resource.KEditText, func() { v.showEditAlbumDialog(album) })
-		// editMenu.Icon = theme.DocumentCreateIcon()
-		deleteMenu := fyne.NewMenuItem(resource.KDeleteText, func() { v.showDeleteMusicDialog(music) })
-		deleteMenu.Icon = theme.DeleteIcon()
-
-		props = append(props, MusicCardProp{
-			Music:    music,
-			OnTapped: func(*fyne.PointEvent) {},
-			OnTappedSecondary: func(e *fyne.PointEvent) {
-				widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
-			},
-		})
-	}
-	v.cards.Notify(props)
+	v.list.Notify(v.searchBar.Query(v.current.Music()))
 }

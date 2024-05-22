@@ -1,27 +1,72 @@
 package cwidget
 
 import (
+	"image/color"
 	"playground/pattern"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
-type ObserverCanvasObject[T any] interface {
-	fyne.CanvasObject
+type itemHitbox struct {
+	widget.BaseWidget
+	TappableBase
+	hitbox *canvas.Rectangle
+}
+
+func newHitbox() *itemHitbox {
+	h := &itemHitbox{hitbox: canvas.NewRectangle(color.Transparent)}
+	h.ExtendBaseWidget(h)
+	return h
+}
+
+func (i *itemHitbox) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(i.hitbox)
+}
+
+type WidgetObserver[T any] interface {
+	fyne.Widget
 	pattern.Observer[T]
+}
+
+type item[T any] struct {
+	widget.BaseWidget
+	content WidgetObserver[T]
+	hitbox  *itemHitbox
+}
+
+func newItem[T any](content WidgetObserver[T]) *item[T] {
+	i := &item[T]{content: content, hitbox: newHitbox()}
+	i.ExtendBaseWidget(i)
+	return i
+}
+
+func (i *item[T]) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewStack(i.content, i.hitbox))
+}
+
+func (i *item[T]) Notify(data T) {
+	i.content.Notify(data)
+}
+
+type ItemTapEvent[T any] struct {
+	*fyne.PointEvent
+	Data T
 }
 
 type ScrollList[T any] struct {
 	widget.BaseWidget
-	scroll      *container.Scroll
-	structure   *fyne.Container
-	constructor func() ObserverCanvasObject[T]
+	scroll                *container.Scroll
+	display               *fyne.Container
+	makeItem              func() WidgetObserver[T]
+	OnItemTapped          func(ItemTapEvent[T])
+	OnItemTappedSecondary func(ItemTapEvent[T])
 }
 
-func NewScrollList[T any](structure *fyne.Container, constructor func() ObserverCanvasObject[T]) *ScrollList[T] {
-	v := &ScrollList[T]{scroll: container.NewScroll(structure), structure: structure, constructor: constructor}
+func NewScrollList[T any](display *fyne.Container, makeItem func() WidgetObserver[T]) *ScrollList[T] {
+	v := &ScrollList[T]{scroll: container.NewScroll(display), display: display, makeItem: makeItem}
 	v.ExtendBaseWidget(v)
 	return v
 }
@@ -31,25 +76,33 @@ func (v *ScrollList[T]) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (v *ScrollList[T]) Notify(data []T) {
+
 	//resize to fit, keep the capacity
-	if len(data) < len(v.structure.Objects) {
-		clear(v.structure.Objects[len(data):])
-		v.structure.Objects = v.structure.Objects[:len(data)]
-	} else if len(data) > len(v.structure.Objects) {
-		required := len(data) - len(v.structure.Objects)
+	if len(data) < len(v.display.Objects) {
+		clear(v.display.Objects[len(data):])
+		v.display.Objects = v.display.Objects[:len(data)]
+	} else if len(data) > len(v.display.Objects) {
+		required := len(data) - len(v.display.Objects)
 		for i := 0; i < required; i++ {
-			v.structure.Objects = append(v.structure.Objects, v.constructor())
+			v.display.Objects = append(v.display.Objects, newItem[T](v.makeItem()))
 		}
 	}
 
 	//update content
 	for i := range data {
-		v.structure.Objects[i].(ObserverCanvasObject[T]).Notify(data[i])
+		i := i
+		v.display.Objects[i].(*item[T]).Notify(data[i])
+		v.display.Objects[i].(*item[T]).hitbox.OnTapped = func(e *fyne.PointEvent) {
+			v.OnItemTapped(ItemTapEvent[T]{e, data[i]})
+		}
+		v.display.Objects[i].(*item[T]).hitbox.OnTappedSecondary = func(e *fyne.PointEvent) {
+			v.OnItemTappedSecondary(ItemTapEvent[T]{e, data[i]})
+		}
 	}
 
 	//update layout
-	if v.structure.Layout != nil {
-		v.structure.Layout.Layout(v.structure.Objects, v.structure.Size())
+	if v.display.Layout != nil {
+		v.display.Layout.Layout(v.display.Objects, v.display.Size())
 	}
 
 	v.scroll.ScrollToTop()
