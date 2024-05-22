@@ -84,20 +84,21 @@ func (v *ScrollList[T]) Notify(data []T) {
 	} else if len(data) > len(v.display.Objects) {
 		required := len(data) - len(v.display.Objects)
 		for i := 0; i < required; i++ {
-			v.display.Objects = append(v.display.Objects, newItem[T](v.makeItem()))
+			len := len(v.display.Objects)
+			item := newItem(v.makeItem())
+			item.hitbox.OnTapped = func(e *fyne.PointEvent) {
+				v.OnItemTapped(ItemTapEvent[T]{e, data[len]})
+			}
+			item.hitbox.OnTappedSecondary = func(e *fyne.PointEvent) {
+				v.OnItemTappedSecondary(ItemTapEvent[T]{e, data[i]})
+			}
+			v.display.Objects = append(v.display.Objects, item)
 		}
 	}
 
 	//update content
 	for i := range data {
-		i := i
 		v.display.Objects[i].(*item[T]).Notify(data[i])
-		v.display.Objects[i].(*item[T]).hitbox.OnTapped = func(e *fyne.PointEvent) {
-			v.OnItemTapped(ItemTapEvent[T]{e, data[i]})
-		}
-		v.display.Objects[i].(*item[T]).hitbox.OnTappedSecondary = func(e *fyne.PointEvent) {
-			v.OnItemTappedSecondary(ItemTapEvent[T]{e, data[i]})
-		}
 	}
 
 	//update layout
