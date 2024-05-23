@@ -38,10 +38,10 @@ func NewAlbumView(client *model.MusicClient) *AlbumView {
 	}
 
 	//search bar
-	v.searchBar.AddComparator(resource.KMostRecentText, theme.HistoryIcon(), func(a, b model.Album) int {
+	v.searchBar.AddMenuItem(resource.KMostRecentText, theme.HistoryIcon(), func(a, b model.Album) int {
 		return -a.Date().Compare(b.Date())
 	})
-	v.searchBar.AddComparator(resource.KAlphabeticalText, resource.AlphabeticalIcon, func(a, b model.Album) int {
+	v.searchBar.AddMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, func(a, b model.Album) int {
 		return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
 	})
 	v.searchBar.Select(0)

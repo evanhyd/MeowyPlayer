@@ -24,12 +24,12 @@ func newMusicCard() *MusicCard {
 		info:      widget.TextSegment{Style: widget.RichTextStyleParagraph},
 		highlight: canvas.NewRectangle(theme.HoverColor()),
 	}
-	v.highlight.Hide()
 	v.ExtendBaseWidget(v)
 	return v
 }
 
 func (v *MusicCard) CreateRenderer() fyne.WidgetRenderer {
+	v.highlight.Hide()
 	text := widget.NewRichText(&v.info)
 	text.Wrapping = fyne.TextWrapWord
 	text.Truncation = fyne.TextTruncateEllipsis

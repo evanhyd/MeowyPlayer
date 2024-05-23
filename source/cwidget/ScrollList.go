@@ -7,23 +7,27 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 )
 
 type itemHitbox struct {
 	widget.BaseWidget
 	TappableBase
-	hitbox *canvas.Rectangle
 }
 
 func newHitbox() *itemHitbox {
-	h := &itemHitbox{hitbox: canvas.NewRectangle(color.Transparent)}
+	h := &itemHitbox{}
 	h.ExtendBaseWidget(h)
 	return h
 }
 
 func (i *itemHitbox) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(i.hitbox)
+	return widget.NewSimpleRenderer(canvas.NewRectangle(color.Transparent))
+}
+
+func (i *itemHitbox) Cursor() desktop.Cursor {
+	return desktop.PointerCursor
 }
 
 type WidgetObserver[T any] interface {
@@ -33,18 +37,18 @@ type WidgetObserver[T any] interface {
 
 type item[T any] struct {
 	widget.BaseWidget
+	*itemHitbox
 	content WidgetObserver[T]
-	hitbox  *itemHitbox
 }
 
 func newItem[T any](content WidgetObserver[T]) *item[T] {
-	i := &item[T]{content: content, hitbox: newHitbox()}
+	i := &item[T]{itemHitbox: newHitbox(), content: content}
 	i.ExtendBaseWidget(i)
 	return i
 }
 
 func (i *item[T]) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewStack(i.content, i.hitbox))
+	return widget.NewSimpleRenderer(container.NewStack(i.content, i.itemHitbox))
 }
 
 func (i *item[T]) Notify(data T) {
@@ -78,20 +82,15 @@ func (v *ScrollList[T]) CreateRenderer() fyne.WidgetRenderer {
 func (v *ScrollList[T]) Notify(data []T) {
 
 	//resize to fit, keep the capacity
-	if len(data) < len(v.display.Objects) {
+	if need := len(data) - len(v.display.Objects); need <= 0 {
 		clear(v.display.Objects[len(data):])
 		v.display.Objects = v.display.Objects[:len(data)]
-	} else if len(data) > len(v.display.Objects) {
-		required := len(data) - len(v.display.Objects)
-		for i := 0; i < required; i++ {
-			len := len(v.display.Objects)
+	} else {
+		for i := 0; i < need; i++ {
+			i := len(v.display.Objects)
 			item := newItem(v.makeItem())
-			item.hitbox.OnTapped = func(e *fyne.PointEvent) {
-				v.OnItemTapped(ItemTapEvent[T]{e, data[len]})
-			}
-			item.hitbox.OnTappedSecondary = func(e *fyne.PointEvent) {
-				v.OnItemTappedSecondary(ItemTapEvent[T]{e, data[i]})
-			}
+			item.OnTapped = func(e *fyne.PointEvent) { v.OnItemTapped(ItemTapEvent[T]{e, data[i]}) }
+			item.OnTappedSecondary = func(e *fyne.PointEvent) { v.OnItemTappedSecondary(ItemTapEvent[T]{e, data[i]}) }
 			v.display.Objects = append(v.display.Objects, item)
 		}
 	}

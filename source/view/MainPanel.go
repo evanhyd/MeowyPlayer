@@ -24,9 +24,9 @@ func NewMainPanel(client *model.MusicClient) *MainPanel {
 
 	//create tabs
 	v.tabs = container.NewAppTabs(
-		container.NewTabItemWithIcon(resource.KHomeText, theme.HomeIcon(), NewHomeView(client)),                 //home
+		container.NewTabItemWithIcon(resource.KHomeText, theme.HomeIcon(), NewHomePage(client)),                 //home
 		container.NewTabItemWithIcon(resource.KCollectionText, resource.CollectionTabIcon, NewSwitcher(client)), //collection
-		container.NewTabItemWithIcon(resource.KAccountText, theme.AccountIcon(), NewAccountView(client)),        //account
+		container.NewTabItemWithIcon(resource.KAccountText, theme.AccountIcon(), NewAccountPage(client)),        //account
 		container.NewTabItemWithIcon(resource.KSettingText, theme.SettingsIcon(), NewSettingView(client)),       //setting
 	)
 	v.tabs.SetTabLocation(container.TabLocationLeading)

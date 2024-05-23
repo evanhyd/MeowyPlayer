@@ -7,16 +7,16 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type AccountView struct {
+type AccountPage struct {
 	widget.BaseWidget
 }
 
-func NewAccountView(client *model.MusicClient) *AccountView {
-	v := &AccountView{}
+func NewAccountPage(client *model.MusicClient) *AccountPage {
+	v := &AccountPage{}
 	v.ExtendBaseWidget(v)
 	return v
 }
 
-func (v *AccountView) CreateRenderer() fyne.WidgetRenderer {
+func (v *AccountPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(widget.NewLabel("Account"))
 }

@@ -43,7 +43,7 @@ func (s *SearchBar[T]) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(nil, nil, s.dropDown, container.NewHBox(s.tools...), s.entry))
 }
 
-func (s *SearchBar[T]) AddComparator(title string, icon fyne.Resource, cmp func(T, T) int) {
+func (s *SearchBar[T]) AddMenuItem(title string, icon fyne.Resource, cmp func(T, T) int) {
 	s.dropDown.Add(title, icon, func() { s.setComparator(cmp) })
 }
 
