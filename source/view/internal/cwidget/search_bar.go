@@ -33,8 +33,7 @@ func NewSearchBar[T Titler](onUpdate func(), tools ...fyne.CanvasObject) *Search
 		filter:   func(Titler) bool { return true },
 		onUpdate: onUpdate,
 	}
-	s.entry.OnChanged = s.setFilter
-
+	s.entry.OnChanged = s.SetFilter
 	s.ExtendBaseWidget(s)
 	return s
 }
@@ -43,27 +42,27 @@ func (s *SearchBar[T]) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(nil, nil, s.dropDown, container.NewHBox(s.tools...), s.entry))
 }
 
-func (s *SearchBar[T]) AddMenuItem(title string, icon fyne.Resource, cmp func(T, T) int) {
-	s.dropDown.Add(title, icon, func() { s.setComparator(cmp) })
+func (s *SearchBar[T]) AddMenuItem(title string, icon fyne.Resource, onTapped func()) {
+	s.dropDown.Add(title, icon, onTapped)
 }
 
 func (s *SearchBar[T]) Select(i int) {
 	s.dropDown.Select(i)
 }
 
-func (s *SearchBar[T]) ClearFilter() {
-	s.entry.Text = ""
-	s.setFilter("")
-}
-
-func (s *SearchBar[T]) setComparator(cmp func(T, T) int) {
+func (s *SearchBar[T]) SetComparator(cmp func(T, T) int) {
 	s.cmp = cmp
 	s.onUpdate()
 }
 
-func (s *SearchBar[T]) setFilter(title string) {
+func (s *SearchBar[T]) SetFilter(title string) {
 	s.filter = func(t Titler) bool { return strings.Contains(strings.ToLower(t.Title()), strings.ToLower(title)) }
 	s.onUpdate()
+}
+
+func (s *SearchBar[T]) ClearFilter() {
+	s.entry.Text = ""
+	s.SetFilter("")
 }
 
 func (s *SearchBar[T]) Query(data []T) []T {

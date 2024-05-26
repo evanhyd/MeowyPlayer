@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2"
 )
 
-type MusicClient struct {
+type Client struct {
 	fileSystem         FileSystem
 	onAlbumsChanged    pattern.Subject[[]Album]
 	onAlbumSelected    pattern.Subject[Album]
@@ -16,8 +16,8 @@ type MusicClient struct {
 	onMusicViewFocused pattern.Subject[bool]
 }
 
-func NewStorageClient(fileSystem FileSystem) MusicClient {
-	return MusicClient{
+func NewClient(fileSystem FileSystem) Client {
+	return Client{
 		fileSystem:         fileSystem,
 		onAlbumsChanged:    pattern.MakeSubject[[]Album](),
 		onAlbumSelected:    pattern.MakeSubject[Album](),
@@ -26,14 +26,14 @@ func NewStorageClient(fileSystem FileSystem) MusicClient {
 	}
 }
 
-func (m *MusicClient) Initialize() error {
+func (m *Client) Initialize() error {
 	if err := m.fileSystem.initialize(); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
-func (m *MusicClient) GetAlbum(key AlbumKey) Album {
+func (m *Client) GetAlbum(key AlbumKey) Album {
 	album, err := m.fileSystem.getAlbum(key)
 	if err != nil {
 		fyne.LogError(fmt.Sprintf("failed to get album by key %v", key), err)
@@ -41,15 +41,15 @@ func (m *MusicClient) GetAlbum(key AlbumKey) Album {
 	return album
 }
 
-func (m *MusicClient) CreateAlbum(title string, cover fyne.Resource) error {
-	album := Album{title: title, cover: cover.Content()}
-	if _, err := m.fileSystem.createAlbum(album); err != nil {
+func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
+	_, err := m.fileSystem.createAlbum(Album{title: title, cover: cover.Content()})
+	if err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
-func (m *MusicClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
+func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
 	album := m.GetAlbum(key)
 	album.title = title
 	album.cover = cover.Content()
@@ -60,14 +60,14 @@ func (m *MusicClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource)
 	return m.notifyAlbumsChanges()
 }
 
-func (m *MusicClient) RemoveAlbum(key AlbumKey) error {
+func (m *Client) RemoveAlbum(key AlbumKey) error {
 	if err := m.fileSystem.removeAlbum(key); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
-func (m *MusicClient) RemoveMusic(aKey AlbumKey, mKey MusicKey) error {
+func (m *Client) RemoveMusicFromAlbum(aKey AlbumKey, mKey MusicKey) error {
 	album := m.GetAlbum(aKey)
 	album.music = slices.DeleteFunc(album.music, func(m Music) bool { return m.Key() == mKey })
 	if err := m.fileSystem.updateAlbum(album); err != nil {
@@ -76,7 +76,7 @@ func (m *MusicClient) RemoveMusic(aKey AlbumKey, mKey MusicKey) error {
 	return m.notifyAlbumsChanges()
 }
 
-func (m *MusicClient) notifyAlbumsChanges() error {
+func (m *Client) notifyAlbumsChanges() error {
 	albums, err := m.fileSystem.getAllAlbums()
 	if err != nil {
 		return err
@@ -85,27 +85,27 @@ func (m *MusicClient) notifyAlbumsChanges() error {
 	return nil
 }
 
-func (m *MusicClient) SelectAlbum(album Album) {
+func (m *Client) SelectAlbum(album Album) {
 	m.onAlbumSelected.NotifyAll(album)
 	m.onMusicViewFocused.NotifyAll(true)
 }
 
-func (m *MusicClient) FocusAlbumView() {
+func (m *Client) FocusAlbumView() {
 	m.onAlbumViewFocused.NotifyAll(true)
 }
 
-func (m *MusicClient) OnAlbumsChanged() pattern.Subject[[]Album] {
+func (m *Client) OnAlbumsChanged() pattern.Subject[[]Album] {
 	return m.onAlbumsChanged
 }
 
-func (m *MusicClient) OnAlbumSelected() pattern.Subject[Album] {
+func (m *Client) OnAlbumSelected() pattern.Subject[Album] {
 	return m.onAlbumSelected
 }
 
-func (m *MusicClient) OnAlbumViewFocused() pattern.Subject[bool] {
+func (m *Client) OnAlbumViewFocused() pattern.Subject[bool] {
 	return m.onAlbumViewFocused
 }
 
-func (m *MusicClient) OnMusicViewFocused() pattern.Subject[bool] {
+func (m *Client) OnMusicViewFocused() pattern.Subject[bool] {
 	return m.onMusicViewFocused
 }

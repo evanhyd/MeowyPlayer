@@ -14,7 +14,7 @@ type Switcher struct {
 	musicView fyne.CanvasObject
 }
 
-func NewSwitcher(client *model.MusicClient) *Switcher {
+func NewSwitcher(client *model.Client) *Switcher {
 	s := &Switcher{albumView: NewAlbumView(client), musicView: NewMusicView(client)}
 	s.musicView.Hide()
 	client.OnAlbumViewFocused().AttachFunc(s.showAlbumTab)

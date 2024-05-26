@@ -2,9 +2,9 @@ package view
 
 import (
 	"fmt"
-	"playground/cwidget"
 	"playground/model"
 	"playground/resource"
+	"playground/view/internal/cwidget"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -18,11 +18,11 @@ type MusicView struct {
 	widget.BaseWidget
 	searchBar *cwidget.SearchBar[model.Music]
 	list      *cwidget.ScrollList[model.Music]
-	client    *model.MusicClient
+	client    *model.Client
 	current   model.Album
 }
 
-func NewMusicView(client *model.MusicClient) *MusicView {
+func NewMusicView(client *model.Client) *MusicView {
 	var v MusicView
 	v = MusicView{
 		searchBar: cwidget.NewSearchBar[model.Music](
@@ -37,11 +37,15 @@ func NewMusicView(client *model.MusicClient) *MusicView {
 	}
 
 	//search bar
-	v.searchBar.AddMenuItem(resource.KMostRecentText, theme.HistoryIcon(), func(a, b model.Music) int {
-		return -a.Date().Compare(b.Date())
+	v.searchBar.AddMenuItem(resource.KMostRecentText, theme.HistoryIcon(), func() {
+		v.searchBar.SetComparator(func(a, b model.Music) int {
+			return -a.Date().Compare(b.Date())
+		})
 	})
-	v.searchBar.AddMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, func(a, b model.Music) int {
-		return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
+	v.searchBar.AddMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, func() {
+		v.searchBar.SetComparator(func(a, b model.Music) int {
+			return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
+		})
 	})
 	v.searchBar.Select(0)
 
@@ -69,7 +73,7 @@ func (v *MusicView) showDeleteMusicDialog(music model.Music) {
 		widget.NewLabel(fmt.Sprintf(resource.KDeleteMusicTextTemplate, music.Title())),
 		func(confirm bool) {
 			if confirm {
-				if err := v.client.RemoveMusic(v.current.Key(), music.Key()); err != nil {
+				if err := v.client.RemoveMusicFromAlbum(v.current.Key(), music.Key()); err != nil {
 					fyne.LogError("failed to remove music", err)
 				}
 			}

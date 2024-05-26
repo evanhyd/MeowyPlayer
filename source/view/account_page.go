@@ -11,7 +11,7 @@ type AccountPage struct {
 	widget.BaseWidget
 }
 
-func NewAccountPage(client *model.MusicClient) *AccountPage {
+func NewAccountPage(client *model.Client) *AccountPage {
 	v := &AccountPage{}
 	v.ExtendBaseWidget(v)
 	return v

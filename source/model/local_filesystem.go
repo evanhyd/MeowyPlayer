@@ -18,7 +18,7 @@ type localFileSystem struct {
 	albumDir string
 	musicDir string
 
-	albums map[AlbumKey]Album
+	cache map[AlbumKey]Album
 }
 
 func NewLocalFileSystem() localFileSystem {
@@ -26,7 +26,7 @@ func NewLocalFileSystem() localFileSystem {
 	return localFileSystem{
 		albumDir: filepath.Join(storage, "album"),
 		musicDir: filepath.Join(storage, "music"),
-		albums:   map[AlbumKey]Album{},
+		cache:    map[AlbumKey]Album{},
 	}
 }
 
@@ -41,11 +41,11 @@ func (f *localFileSystem) initialize() error {
 }
 
 func (f *localFileSystem) getAllAlbums() ([]Album, error) {
-	return maps.Values(f.albums), nil
+	return maps.Values(f.cache), nil
 }
 
 func (f *localFileSystem) getAlbum(key AlbumKey) (Album, error) {
-	album, exist := f.albums[key]
+	album, exist := f.cache[key]
 	if !exist {
 		return album, fmt.Errorf("invalid album key")
 	}
@@ -56,22 +56,22 @@ func (f *localFileSystem) createAlbum(album Album) (AlbumKey, error) {
 	key := AlbumKey(uuid.NewString())
 	album.key = key
 	album.date = time.Now()
-	f.albums[key] = album
+	f.cache[key] = album
 	return key, f.save(key)
 }
 
 func (f *localFileSystem) updateAlbum(album Album) error {
-	_, exist := f.albums[album.key]
+	_, exist := f.cache[album.key]
 	if !exist {
 		return fmt.Errorf("invalid album key")
 	}
 	album.date = time.Now()
-	f.albums[album.key] = album
+	f.cache[album.key] = album
 	return f.save(album.key)
 }
 
 func (f *localFileSystem) removeAlbum(key AlbumKey) error {
-	delete(f.albums, key)
+	delete(f.cache, key)
 	return f.save(key)
 }
 
@@ -105,7 +105,7 @@ func (f *localFileSystem) getMusicPath(key MusicKey) string {
 }
 
 func (f *localFileSystem) save(key AlbumKey) error {
-	album, exist := f.albums[key]
+	album, exist := f.cache[key]
 	if exist {
 		file, err := os.OpenFile(f.getAlbumPath(key), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
@@ -124,7 +124,7 @@ func (f *localFileSystem) load() error {
 		return err
 	}
 
-	clear(f.albums)
+	clear(f.cache)
 	for _, entry := range entries {
 		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".json" {
 			file, err := os.Open(filepath.Join(f.albumDir, entry.Name()))
@@ -137,7 +137,7 @@ func (f *localFileSystem) load() error {
 			if err := json.NewDecoder(file).Decode(&album); err != nil {
 				return err
 			}
-			f.albums[album.key] = album
+			f.cache[album.key] = album
 		}
 	}
 	return nil

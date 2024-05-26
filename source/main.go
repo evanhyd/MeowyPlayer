@@ -20,7 +20,7 @@ func main() {
 
 	//create model
 	config := model.NewLocalFileSystem()
-	client := model.NewStorageClient(&config)
+	client := model.NewClient(&config)
 
 	//create main app
 	mainApp := app.NewWithID(resource.KWindowTitle)

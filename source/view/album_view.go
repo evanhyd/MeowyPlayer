@@ -2,9 +2,9 @@ package view
 
 import (
 	"fmt"
-	"playground/cwidget"
 	"playground/model"
 	"playground/resource"
+	"playground/view/internal/cwidget"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -19,11 +19,11 @@ type AlbumView struct {
 	searchBar *cwidget.SearchBar[model.Album]
 	list      *cwidget.ScrollList[model.Album]
 
-	client *model.MusicClient
+	client *model.Client
 	albums []model.Album
 }
 
-func NewAlbumView(client *model.MusicClient) *AlbumView {
+func NewAlbumView(client *model.Client) *AlbumView {
 	var v AlbumView
 	v = AlbumView{
 		searchBar: cwidget.NewSearchBar[model.Album](
@@ -38,11 +38,15 @@ func NewAlbumView(client *model.MusicClient) *AlbumView {
 	}
 
 	//search bar
-	v.searchBar.AddMenuItem(resource.KMostRecentText, theme.HistoryIcon(), func(a, b model.Album) int {
-		return -a.Date().Compare(b.Date())
+	v.searchBar.AddMenuItem(resource.KMostRecentText, theme.HistoryIcon(), func() {
+		v.searchBar.SetComparator(func(a, b model.Album) int {
+			return -a.Date().Compare(b.Date())
+		})
 	})
-	v.searchBar.AddMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, func(a, b model.Album) int {
-		return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
+	v.searchBar.AddMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, func() {
+		v.searchBar.SetComparator(func(a, b model.Album) int {
+			return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
+		})
 	})
 	v.searchBar.Select(0)
 

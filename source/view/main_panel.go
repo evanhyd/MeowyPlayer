@@ -19,7 +19,7 @@ func getWindow() fyne.Window {
 	return fyne.CurrentApp().Driver().AllWindows()[0]
 }
 
-func NewMainPanel(client *model.MusicClient) *MainPanel {
+func NewMainPanel(client *model.Client) *MainPanel {
 	v := &MainPanel{}
 
 	//create tabs
@@ -27,7 +27,7 @@ func NewMainPanel(client *model.MusicClient) *MainPanel {
 		container.NewTabItemWithIcon(resource.KHomeText, theme.HomeIcon(), NewHomePage(client)),                 //home
 		container.NewTabItemWithIcon(resource.KCollectionText, resource.CollectionTabIcon, NewSwitcher(client)), //collection
 		container.NewTabItemWithIcon(resource.KAccountText, theme.AccountIcon(), NewAccountPage(client)),        //account
-		container.NewTabItemWithIcon(resource.KSettingText, theme.SettingsIcon(), NewSettingView(client)),       //setting
+		container.NewTabItemWithIcon(resource.KSettingText, theme.SettingsIcon(), NewSettingPage(client)),       //setting
 	)
 	v.tabs.SetTabLocation(container.TabLocationLeading)
 
