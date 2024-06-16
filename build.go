@@ -27,7 +27,7 @@ func runAt(dir string, command string, args ...string) {
 	cmd.Stderr = os.Stderr
 	log.Println(cmd.String())
 	if err := cmd.Run(); err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
 }
 

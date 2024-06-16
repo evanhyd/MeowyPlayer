@@ -7,6 +7,11 @@ import (
 	"fyne.io/fyne/v2"
 )
 
+type Browser interface {
+	Search(string) ([]Result, error)
+	Download(*Result) (io.ReadCloser, error)
+}
+
 type Result struct {
 	Platform     string
 	VideoID      string
@@ -17,9 +22,4 @@ type Result struct {
 	Description  string
 	Length       time.Duration
 	Thumbnail    fyne.Resource
-}
-
-type Browser interface {
-	Search(string) ([]Result, error)
-	Download(*Result) (io.ReadCloser, error)
 }

@@ -16,56 +16,63 @@ import (
 
 type MusicView struct {
 	widget.BaseWidget
-	searchBar *cwidget.SearchBar[model.Music]
-	list      *cwidget.ScrollList[model.Music]
-	client    *model.Client
-	current   model.Album
+	list *cwidget.SearchList[model.Music, *MusicCard]
+
+	client   *model.Client
+	pipeline DataPipeline[model.Music]
+	current  model.Album
 }
 
 func NewMusicView(client *model.Client) *MusicView {
-	var v MusicView
-	v = MusicView{
-		searchBar: cwidget.NewSearchBar[model.Music](
-			v.render,
-			cwidget.NewButtonWithIcon(resource.KReturnText, theme.NavigateBackIcon(), client.FocusAlbumView),
-		),
-		list: cwidget.NewScrollList(
+	var v *MusicView
+	v = &MusicView{
+		list: cwidget.NewSearchList(
 			container.NewVBox(),
-			func() cwidget.WidgetObserver[model.Music] { return newMusicCard() },
+			newMusicCard,
+			func(e cwidget.ItemTapEvent[model.Music]) {
+				fmt.Println("play", e.Data.Title())
+			},
+			func(e cwidget.ItemTapEvent[model.Music]) {
+				deleteMenu := cwidget.NewMenuItemWithIcon(resource.KDeleteText, theme.DeleteIcon(), func() { v.showDeleteMusicDialog(e.Data) })
+				widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
+			},
+			func(sub string) {
+				v.pipeline.filter = func(str string) bool {
+					return strings.Contains(strings.ToLower(str), strings.ToLower(sub))
+				}
+				v.updateList()
+			},
+			nil,
 		),
 		client: client,
+		pipeline: DataPipeline[model.Music]{
+			comparator: func(_, _ model.Music) int { return -1 },
+			filter:     func(_ string) bool { return true },
+		},
 	}
 
-	//search bar
-	v.searchBar.AddMenuItem(resource.KMostRecentText, theme.HistoryIcon(), func() {
-		v.searchBar.SetComparator(func(a, b model.Music) int {
-			return -a.Date().Compare(b.Date())
-		})
-	})
-	v.searchBar.AddMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, func() {
-		v.searchBar.SetComparator(func(a, b model.Music) int {
-			return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
-		})
-	})
-	v.searchBar.Select(0)
+	v.list.AddDropDown(cwidget.NewMenuItemWithIcon(resource.KMostRecentText, theme.HistoryIcon(), func() {
+		v.pipeline.comparator = func(l, r model.Music) int {
+			return -l.Date().Compare(r.Date())
+		}
+		v.updateList()
+	}))
+	v.list.AddDropDown(cwidget.NewMenuItemWithIcon(resource.KAlphabeticalText, resource.AlphabeticalIcon, func() {
+		v.pipeline.comparator = func(l, r model.Music) int {
+			return strings.Compare(strings.ToLower(l.Title()), strings.ToLower(r.Title()))
+		}
+		v.updateList()
+	}))
+	v.list.AddToolbar(cwidget.NewToolbarButton(resource.KReturnText, theme.NavigateBackIcon(), client.FocusAlbumView))
+	v.ExtendBaseWidget(v)
 
-	//list
-	v.list.OnItemTapped = func(e cwidget.ItemTapEvent[model.Music]) {
-		//TODO: play music
-	}
-	v.list.OnItemTappedSecondary = func(e cwidget.ItemTapEvent[model.Music]) {
-		deleteMenu := cwidget.NewMenuItemWithIcon(resource.KDeleteText, theme.DeleteIcon(), func() { v.showDeleteMusicDialog(e.Data) })
-		widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
-	}
-
-	client.OnAlbumSelected().Attach(&v)                                     //update when selecting album
-	client.OnAlbumsChanged().AttachFunc(func([]model.Album) { v.render() }) //update when updating album
-	v.ExtendBaseWidget(&v)
-	return &v
+	client.OnAlbumSelected().Attach(v)                                          //update current album and list content when selecting album
+	client.OnAlbumsChanged().AttachFunc(func([]model.Album) { v.updateList() }) //update list content when albums get updated
+	return v
 }
 
 func (v *MusicView) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewBorder(v.searchBar, nil, nil, nil, v.list))
+	return widget.NewSimpleRenderer(v.list)
 }
 
 func (v *MusicView) showDeleteMusicDialog(music model.Music) {
@@ -85,16 +92,20 @@ func (v *MusicView) showDeleteMusicDialog(music model.Music) {
 func (v *MusicView) Notify(album model.Album) {
 	if v.current.Key() != album.Key() {
 		v.current = album
-		v.searchBar.ClearFilter() //call render()
+		v.list.ClearSearchEntry() //this triggers onChanged(), which triggers updateList()
 	}
 }
 
-func (v *MusicView) render() {
+func (v *MusicView) updateList() {
 	if v.current.Key().IsEmpty() {
 		return
 	}
-	v.current = v.client.GetAlbum(v.current.Key())
 
-	//update music cards
-	v.list.Notify(v.searchBar.Query(v.current.Music()))
+	var err error
+	v.current, err = v.client.GetAlbum(v.current.Key())
+	if err != nil {
+		fyne.LogError("client GetAlbum fails", err)
+	}
+
+	v.list.Update(v.pipeline.pass(v.current.Music()))
 }

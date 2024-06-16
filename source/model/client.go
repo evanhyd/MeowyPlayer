@@ -1,15 +1,18 @@
 package model
 
 import (
-	"fmt"
 	"playground/pattern"
 	"slices"
+	"sync"
+	"time"
 
 	"fyne.io/fyne/v2"
+	"github.com/google/uuid"
 )
 
 type Client struct {
-	fileSystem         FileSystem
+	sync.Mutex
+	storage            FileSystem
 	onAlbumsChanged    pattern.Subject[[]Album]
 	onAlbumSelected    pattern.Subject[Album]
 	onAlbumViewFocused pattern.Subject[bool]
@@ -18,7 +21,7 @@ type Client struct {
 
 func NewClient(fileSystem FileSystem) Client {
 	return Client{
-		fileSystem:         fileSystem,
+		storage:            fileSystem,
 		onAlbumsChanged:    pattern.MakeSubject[[]Album](),
 		onAlbumSelected:    pattern.MakeSubject[Album](),
 		onAlbumViewFocused: pattern.MakeSubject[bool](),
@@ -27,57 +30,73 @@ func NewClient(fileSystem FileSystem) Client {
 }
 
 func (m *Client) Initialize() error {
-	if err := m.fileSystem.initialize(); err != nil {
+	if err := m.storage.initialize(); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
-func (m *Client) GetAlbum(key AlbumKey) Album {
-	album, err := m.fileSystem.getAlbum(key)
-	if err != nil {
-		fyne.LogError(fmt.Sprintf("failed to get album by key %v", key), err)
-	}
-	return album
+func (m *Client) GetAlbum(key AlbumKey) (Album, error) {
+	m.Lock()
+	defer m.Unlock()
+
+	return m.storage.getAlbum(key)
 }
 
 func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
-	_, err := m.fileSystem.createAlbum(Album{title: title, cover: cover.Content()})
-	if err != nil {
+	m.Lock()
+	defer m.Unlock()
+
+	album := Album{key: AlbumKey(uuid.NewString()), date: time.Now()}
+	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
 func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
-	album := m.GetAlbum(key)
-	album.title = title
-	album.cover = cover.Content()
+	m.Lock()
+	defer m.Unlock()
 
-	if err := m.fileSystem.updateAlbum(album); err != nil {
+	album, err := m.storage.getAlbum(key)
+	if err != nil {
+		return err
+	}
+	album.title = title
+	album.cover = cover
+	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
 func (m *Client) RemoveAlbum(key AlbumKey) error {
-	if err := m.fileSystem.removeAlbum(key); err != nil {
+	m.Lock()
+	defer m.Unlock()
+
+	if err := m.storage.removeAlbum(key); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
-func (m *Client) RemoveMusicFromAlbum(aKey AlbumKey, mKey MusicKey) error {
-	album := m.GetAlbum(aKey)
+func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
+	m.Lock()
+	defer m.Unlock()
+
+	album, err := m.storage.getAlbum(key)
+	if err != nil {
+		return err
+	}
 	album.music = slices.DeleteFunc(album.music, func(m Music) bool { return m.Key() == mKey })
-	if err := m.fileSystem.updateAlbum(album); err != nil {
+	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
 func (m *Client) notifyAlbumsChanges() error {
-	albums, err := m.fileSystem.getAllAlbums()
+	albums, err := m.storage.getAllAlbums()
 	if err != nil {
 		return err
 	}

@@ -11,18 +11,16 @@ type DropDown struct {
 	menu     *fyne.Menu
 }
 
-func NewDropDown(icon fyne.Resource) *DropDown {
-	d := &DropDown{
-		selected: NewButtonWithIcon("", icon, nil),
-		menu:     fyne.NewMenu(""),
+func newDropDown() *DropDown {
+	var d *DropDown
+	d = &DropDown{
+		selected: NewButtonWithIcon("", nil, func() {
+			canvas := fyne.CurrentApp().Driver().CanvasForObject(d)
+			position := fyne.CurrentApp().Driver().AbsolutePositionForObject(d)
+			widget.ShowPopUpMenuAtPosition(d.menu, canvas, position)
+		}),
+		menu: fyne.NewMenu(""),
 	}
-
-	d.selected.OnTapped = func() {
-		canvas := fyne.CurrentApp().Driver().CanvasForObject(d)
-		position := fyne.CurrentApp().Driver().AbsolutePositionForObject(d)
-		widget.ShowPopUpMenuAtPosition(d.menu, canvas, position)
-	}
-
 	d.ExtendBaseWidget(d)
 	return d
 }
@@ -31,18 +29,15 @@ func (d *DropDown) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(d.selected)
 }
 
-func (d *DropDown) Add(title string, icon fyne.Resource, onSelected func()) {
-	item := &fyne.MenuItem{
-		Label: title,
-		Icon:  icon,
-		Action: func() {
-			d.selected.SetIcon(icon)
-			onSelected()
-		},
+func (d *DropDown) Add(item *fyne.MenuItem) {
+	action := item.Action
+	item.Action = func() {
+		d.selected.SetIcon(item.Icon)
+		action()
 	}
 	d.menu.Items = append(d.menu.Items, item)
-}
 
-func (d *DropDown) Select(index int) {
-	d.menu.Items[index].Action()
+	if len(d.menu.Items) == 1 {
+		item.Action()
+	}
 }

@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 )
 
 func main() {
@@ -19,14 +20,14 @@ func main() {
 	//go http.ListenAndServe("localhost:80", nil)
 
 	//create model
-	config := model.NewLocalFileSystem()
+	config := model.NewLocalStorage()
 	client := model.NewClient(&config)
 
 	//create main app
 	mainApp := app.NewWithID(resource.KWindowTitle)
 	fyne.SetCurrentApp(mainApp)
 	mainApp.SetIcon(resource.WindowIcon)
-	// application.Settings().SetTheme()
+	mainApp.Settings().SetTheme(theme.DarkTheme())
 
 	//create main window
 	window := mainApp.NewWindow(resource.KWindowTitle)

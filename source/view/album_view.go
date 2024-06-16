@@ -16,57 +16,63 @@ import (
 
 type AlbumView struct {
 	widget.BaseWidget
-	searchBar *cwidget.SearchBar[model.Album]
-	list      *cwidget.ScrollList[model.Album]
+	list *cwidget.SearchList[model.Album, *AlbumCard]
 
-	client *model.Client
-	albums []model.Album
+	client     *model.Client
+	pipeline   DataPipeline[model.Album]
+	albumsData []model.Album
 }
 
 func NewAlbumView(client *model.Client) *AlbumView {
-	var v AlbumView
-	v = AlbumView{
-		searchBar: cwidget.NewSearchBar[model.Album](
-			v.render,
-			cwidget.NewButtonWithIcon("", theme.FolderNewIcon(), v.showCreateAlbumDialog),
-		),
-		list: cwidget.NewScrollList(
+	var v *AlbumView
+	v = &AlbumView{
+		list: cwidget.NewSearchList(
 			container.NewGridWrap(resource.KAlbumCardSize),
-			func() cwidget.WidgetObserver[model.Album] { return newAlbumCard() },
+			newAlbumCard,
+			func(e cwidget.ItemTapEvent[model.Album]) {
+				v.client.SelectAlbum(e.Data)
+			},
+			func(e cwidget.ItemTapEvent[model.Album]) {
+				editMenu := cwidget.NewMenuItemWithIcon(resource.KEditText, theme.DocumentCreateIcon(), func() { v.showEditAlbumDialog(e.Data) })
+				deleteMenu := cwidget.NewMenuItemWithIcon(resource.KDeleteText, theme.DeleteIcon(), func() { v.showDeleteAlbumDialog(e.Data) })
+				widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
+			},
+			func(sub string) {
+				v.pipeline.filter = func(str string) bool {
+					return strings.Contains(strings.ToLower(str), strings.ToLower(sub))
+				}
+				v.updateList()
+			},
+			nil,
 		),
 		client: client,
+		pipeline: DataPipeline[model.Album]{
+			comparator: func(_, _ model.Album) int { return -1 },
+			filter:     func(_ string) bool { return true },
+		},
 	}
 
-	//search bar
-	v.searchBar.AddMenuItem(resource.KMostRecentText, theme.HistoryIcon(), func() {
-		v.searchBar.SetComparator(func(a, b model.Album) int {
-			return -a.Date().Compare(b.Date())
-		})
-	})
-	v.searchBar.AddMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, func() {
-		v.searchBar.SetComparator(func(a, b model.Album) int {
-			return strings.Compare(strings.ToLower(a.Title()), strings.ToLower(b.Title()))
-		})
-	})
-	v.searchBar.Select(0)
+	v.list.AddDropDown(cwidget.NewMenuItemWithIcon(resource.KMostRecentText, theme.HistoryIcon(), func() {
+		v.pipeline.comparator = func(l, r model.Album) int {
+			return -l.Date().Compare(r.Date())
+		}
+		v.updateList()
+	}))
+	v.list.AddDropDown(cwidget.NewMenuItemWithIcon(resource.KAlphabeticalText, resource.AlphabeticalIcon, func() {
+		v.pipeline.comparator = func(l, r model.Album) int {
+			return strings.Compare(strings.ToLower(l.Title()), strings.ToLower(r.Title()))
+		}
+		v.updateList()
+	}))
+	v.list.AddToolbar(widget.NewToolbarAction(theme.FolderNewIcon(), v.showCreateAlbumDialog))
+	v.ExtendBaseWidget(v)
 
-	//item list
-	v.list.OnItemTapped = func(e cwidget.ItemTapEvent[model.Album]) {
-		v.client.SelectAlbum(e.Data)
-	}
-	v.list.OnItemTappedSecondary = func(e cwidget.ItemTapEvent[model.Album]) {
-		editMenu := cwidget.NewMenuItemWithIcon(resource.KEditText, theme.DocumentCreateIcon(), func() { v.showEditAlbumDialog(e.Data) })
-		deleteMenu := cwidget.NewMenuItemWithIcon(resource.KDeleteText, theme.DeleteIcon(), func() { v.showDeleteAlbumDialog(e.Data) })
-		widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
-	}
-
-	client.OnAlbumsChanged().Attach(&v)
-	v.ExtendBaseWidget(&v)
-	return &v
+	client.OnAlbumsChanged().Attach(v)
+	return v
 }
 
 func (v *AlbumView) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewBorder(v.searchBar, nil, nil, nil, v.list))
+	return widget.NewSimpleRenderer(v.list)
 }
 
 func (v *AlbumView) showCreateAlbumDialog() {
@@ -113,10 +119,10 @@ func (v *AlbumView) showDeleteAlbumDialog(album model.Album) {
 }
 
 func (v *AlbumView) Notify(albums []model.Album) {
-	v.albums = albums
-	v.render()
+	v.albumsData = albums
+	v.updateList()
 }
 
-func (v *AlbumView) render() {
-	v.list.Notify(v.searchBar.Query(v.albums))
+func (v *AlbumView) updateList() {
+	v.list.Update(v.pipeline.pass(v.albumsData))
 }
