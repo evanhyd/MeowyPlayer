@@ -6,7 +6,6 @@ import (
 	"playground/model"
 	"playground/resource"
 	"playground/view/internal/cwidget"
-	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -15,38 +14,35 @@ import (
 
 type HomePage struct {
 	widget.BaseWidget
-	list *cwidget.SearchList[model.Music, *MusicCard]
+	list *cwidget.SearchList[browser.Result, *ThumbnailCard]
 
-	client   *model.Client
-	pipeline DataPipeline[model.Music]
-	browser  browser.Browser
+	client  *model.Client
+	browser browser.Browser
 }
 
 func NewHomePage(client *model.Client) *HomePage {
 	var v *HomePage
 	v = &HomePage{
-		list: cwidget.NewSearchList[model.Music, *MusicCard](
+		list: cwidget.NewSearchList(
 			container.NewVBox(),
-			newMusicCard,
-			func(e cwidget.ItemTapEvent[model.Music]) {
+			newThumbnailCard,
+			func(e cwidget.ItemTapEvent[browser.Result]) {
 				fmt.Println("left click", e.Data)
 			},
-			func(e cwidget.ItemTapEvent[model.Music]) {
+			func(e cwidget.ItemTapEvent[browser.Result]) {
 				fmt.Println("rigth click")
 			},
-			func(sub string) {
-				v.pipeline.filter = func(str string) bool {
-					return strings.Contains(strings.ToLower(str), strings.ToLower(sub))
-				}
-				v.updateList()
-			},
 			nil,
+			func(title string) {
+				result, err := v.browser.Search(title)
+				if err != nil {
+					fyne.LogError("browser search failed", err)
+					return
+				}
+				v.list.Update(result)
+			},
 		),
 		client: client,
-		pipeline: DataPipeline[model.Music]{
-			comparator: func(_, _ model.Music) int { return -1 },
-			filter:     func(_ string) bool { return true },
-		},
 	}
 
 	v.list.AddDropDown(cwidget.NewMenuItemWithIcon("YouTube", resource.YouTubeIcon, func() {
@@ -59,8 +55,4 @@ func NewHomePage(client *model.Client) *HomePage {
 
 func (v *HomePage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(v.list)
-}
-
-func (v *HomePage) updateList() {
-	fmt.Println("update home page")
 }

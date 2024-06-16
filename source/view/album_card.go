@@ -36,10 +36,7 @@ func (v *AlbumCard) CreateRenderer() fyne.WidgetRenderer {
 	v.tip.Wrapping = fyne.TextWrapWord
 	v.tip.Hide()
 
-	return widget.NewSimpleRenderer(container.NewStack(
-		container.NewBorder(nil, v.title, nil, nil, v.cover),
-		v.tip,
-	))
+	return widget.NewSimpleRenderer(container.NewStack(container.NewBorder(nil, v.title, nil, nil, v.cover), v.tip))
 }
 
 func (v *AlbumCard) MouseIn(e *desktop.MouseEvent) {

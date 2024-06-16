@@ -9,6 +9,7 @@ const KGoldenRatioPercentage = 1 / (1 + KGoldenRatio)
 var KWindowSize fyne.Size = fyne.NewSize(600, 650)
 var KAlbumCardSize fyne.Size = fyne.NewSize(140, 180)
 var KAlbumCoverSize fyne.Size = fyne.NewSize(160, 160)
+var KThumbnailSize fyne.Size = fyne.NewSize(271, 152)
 
 //Program
 const KWindowTitle = "MeowyPlayer"
