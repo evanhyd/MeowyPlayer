@@ -37,7 +37,7 @@ func newAlbumPage() *AlbumPage {
 	//search bar menu and toolbar
 	p.list.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
 	p.list.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
-	p.list.AddToolbar(cwidget.NewTappableIcon(theme.FolderNewIcon(), p.showCreateAlbumDialog))
+	p.list.AddToolbar(cwidget.NewButton(resource.KCreateAlbumText, theme.FolderNewIcon(), p.showCreateAlbumDialog))
 	p.ExtendBaseWidget(&p)
 
 	//client update callback

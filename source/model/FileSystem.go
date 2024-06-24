@@ -102,8 +102,7 @@ func (m *Music) Date() time.Time {
 }
 
 func (m Music) Title() string {
-	const kExtLen = 4 //.mp3
-	return m.title[:len(m.title)-kExtLen]
+	return m.title
 }
 
 func (m *Music) Length() time.Duration {

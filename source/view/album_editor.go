@@ -33,11 +33,11 @@ func newAlbumEditor() *AlbumEditor {
 	v.cover.FillMode = canvas.ImageFillContain
 
 	//file picker
-	upload := dialog.NewFileOpen(func(source fyne.URIReadCloser, err error) {
+	upload := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
 		if err != nil {
 			fyne.LogError("failed to read file", err)
-		} else if source != nil {
-			v.setImage(source.URI().Path())
+		} else if reader != nil {
+			v.setImage(reader.URI().Path())
 		}
 	}, getWindow())
 	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))

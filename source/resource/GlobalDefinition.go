@@ -16,6 +16,7 @@ const KSearchAttempts = 5
 
 //Program Text
 const KWindowTitle = "MeowyPlayer"
+const KDownloadText = "Download"
 const KUploadText = "Upload"
 const KQueueText = "Queue"
 const KCancelText = "Cancel"
@@ -28,9 +29,8 @@ const KCollectionText = "Collection"
 const KAccountText = "Account"
 const KSettingText = "Setting"
 const KBackText = "Back"
-const KSearching = "Searching"
-const KAttempts = "Attempts"
-
+const KSearchingText = "Searching"
+const KAttemptsText = "Attempts"
 const KSortMenuText = "Sort By"
 const KMostRecentText = "Most Recent"
 const KAlphabeticalText = "Alphabetical"
@@ -38,6 +38,8 @@ const KCreateAlbumText = "Create Album"
 const KEditAlbumText = "Edit Album"
 const KEnterTitleHint = "Enter title:"
 const KDeleteConfirmationText = "Delete Confirmation"
+const KSelectAlbumText = "(Select an album)"
+
 const KDeleteAlbumTextTemplate = "Delete the album \"%v\" ?"
 const KDeleteMusicTextTemplate = "Delete the music \"%v\" ?"
 const KAlbumTipTextTemplate = "Songs: %v\n\nLast Edit: %v"

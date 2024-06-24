@@ -1,15 +1,18 @@
 package model
 
 import (
+	"io"
+	"playground/browser"
 	"playground/pattern"
 	"slices"
-	"time"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"github.com/google/uuid"
 )
 
 type Client struct {
+	sync.Mutex         //read, modify, then upload back will have time interval
 	storage            FileSystem
 	onAlbumsChanged    pattern.Subject[[]Album]
 	onAlbumSelected    pattern.Subject[Album]
@@ -41,11 +44,24 @@ func (m *Client) Run() error {
 }
 
 func (m *Client) GetAlbum(key AlbumKey) (Album, error) {
+	m.Lock()
+	defer m.Unlock()
+
 	return m.storage.getAlbum(key)
 }
 
+func (m *Client) GetAllAlbums() ([]Album, error) {
+	m.Lock()
+	defer m.Unlock()
+
+	return m.storage.getAllAlbums()
+}
+
 func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
-	album := Album{key: AlbumKey(uuid.NewString()), date: time.Now()}
+	m.Lock()
+	defer m.Unlock()
+
+	album := Album{key: AlbumKey(uuid.NewString()), title: title, cover: cover}
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
@@ -53,6 +69,9 @@ func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
 }
 
 func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
+	m.Lock()
+	defer m.Unlock()
+
 	album, err := m.storage.getAlbum(key)
 	if err != nil {
 		return err
@@ -66,13 +85,36 @@ func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) erro
 }
 
 func (m *Client) RemoveAlbum(key AlbumKey) error {
+	m.Lock()
+	defer m.Unlock()
+
 	if err := m.storage.removeAlbum(key); err != nil {
 		return err
 	}
 	return m.notifyAlbumsChanges()
 }
 
+func (m *Client) AddMusicToAlbum(key AlbumKey, result browser.Result, reader io.Reader) error {
+	m.Lock()
+	defer m.Unlock()
+
+	album, err := m.storage.getAlbum(key)
+	if err != nil {
+		return err
+	}
+	music := Music{title: result.Title, length: result.Length, platform: result.Platform, id: result.VideoID}
+	album.music = append(album.music, music)
+	if err := m.storage.uploadAlbum(album); err != nil {
+		return err
+	}
+	m.storage.uploadMusic(music, reader)
+	return m.notifyAlbumsChanges()
+}
+
 func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
+	m.Lock()
+	defer m.Unlock()
+
 	album, err := m.storage.getAlbum(key)
 	if err != nil {
 		return err
@@ -85,6 +127,9 @@ func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 }
 
 func (m *Client) SelectAlbum(key AlbumKey) error {
+	m.Lock()
+	defer m.Unlock()
+
 	album, err := m.storage.getAlbum(key)
 	if err != nil {
 		return err

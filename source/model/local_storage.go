@@ -6,13 +6,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
+	"time"
 )
 
 var _ FileSystem = &localStorage{}
 
 type localStorage struct {
-	sync.RWMutex
 	albumDir string
 	musicDir string
 }
@@ -44,9 +43,6 @@ func (f *localStorage) initialize() error {
 }
 
 func (f *localStorage) getAllAlbums() ([]Album, error) {
-	f.RLock()
-	defer f.RUnlock()
-
 	const kFileExt = ".json"
 	entries, err := os.ReadDir(f.albumDir)
 	if err != nil {
@@ -76,9 +72,6 @@ func (f *localStorage) getAlbum(key AlbumKey) (album Album, err error) {
 		return album, fmt.Errorf("empty key in getAlbum")
 	}
 
-	f.RLock()
-	defer f.RUnlock()
-
 	data, err := os.ReadFile(f.albumPath(key))
 	if err == nil {
 		err = json.Unmarshal(data, &album)
@@ -92,9 +85,7 @@ func (f *localStorage) uploadAlbum(album Album) error {
 		return fmt.Errorf("empty key in uploadAlbum")
 	}
 
-	f.Lock()
-	defer f.Unlock()
-
+	album.date = time.Now()
 	data, err := json.Marshal(&album)
 	if err != nil {
 		return err
@@ -107,9 +98,6 @@ func (f *localStorage) removeAlbum(key AlbumKey) error {
 		return fmt.Errorf("empty key in removeAlbum")
 	}
 
-	f.Lock()
-	defer f.Unlock()
-
 	return os.Remove(f.albumPath(key))
 }
 
@@ -117,9 +105,6 @@ func (f *localStorage) getMusic(key MusicKey) (io.ReadSeekCloser, error) {
 	if key.IsEmpty() {
 		return nil, fmt.Errorf("empty key in getMusic")
 	}
-
-	f.RLock()
-	defer f.RUnlock()
 
 	return os.Open(f.musicPath(key))
 }
@@ -130,9 +115,7 @@ func (f *localStorage) uploadMusic(music Music, reader io.Reader) error {
 		return fmt.Errorf("empty key in uploadMusic")
 	}
 
-	f.Lock()
-	defer f.Unlock()
-
+	music.date = time.Now()
 	dst, err := os.OpenFile(f.musicPath(key), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
@@ -147,9 +130,6 @@ func (f *localStorage) removeMusic(key MusicKey) error {
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in removeMusic")
 	}
-
-	f.Lock()
-	defer f.Unlock()
 
 	return os.Remove(f.musicPath(key))
 }

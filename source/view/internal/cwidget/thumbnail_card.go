@@ -16,28 +16,25 @@ import (
 
 type ThumbnailCard struct {
 	widget.BaseWidget
-	thumbnail     *canvas.Image
-	summary       *widget.RichText
-	download      *widget.Button
-	instantPlay   *widget.Button
-	openInBrowser *widget.Button
-	highlight     *canvas.Rectangle
-	result        browser.Result
+	thumbnail   *canvas.Image
+	summary     *widget.RichText
+	instantPlay *widget.Button
+	download    *widget.Button
+	highlight   *canvas.Rectangle
+	result      browser.Result
 }
 
 func NewThumbnailCardConstructor(
-	onDownload func(browser.Result),
 	onInstantPlay func(browser.Result),
-	onOpenInBrowser func(browser.Result)) func() *ThumbnailCard {
+	onDownload func(browser.Result)) func() *ThumbnailCard {
 	return func() *ThumbnailCard {
 		var c ThumbnailCard
 		c = ThumbnailCard{
-			thumbnail:     canvas.NewImageFromResource(theme.BrokenImageIcon()),
-			summary:       widget.NewRichTextWithText(""),
-			download:      NewTappableIcon(theme.DownloadIcon(), func() { onDownload(c.result) }),
-			instantPlay:   NewTappableIcon(theme.MediaPlayIcon(), func() { onInstantPlay(c.result) }),
-			openInBrowser: NewTappableIcon(theme.ComputerIcon(), func() { onOpenInBrowser(c.result) }),
-			highlight:     canvas.NewRectangle(theme.HoverColor()),
+			thumbnail:   canvas.NewImageFromResource(theme.BrokenImageIcon()),
+			summary:     widget.NewRichTextWithText(""),
+			instantPlay: NewTappableIcon(theme.MediaPlayIcon(), func() { onInstantPlay(c.result) }),
+			download:    NewTappableIcon(theme.DownloadIcon(), func() { onDownload(c.result) }),
+			highlight:   canvas.NewRectangle(theme.HoverColor()),
 		}
 		c.ExtendBaseWidget(&c)
 		return &c
@@ -51,7 +48,13 @@ func (c *ThumbnailCard) CreateRenderer() fyne.WidgetRenderer {
 	c.thumbnail.SetMinSize(resource.KThumbnailSize)
 	c.summary.Wrapping = fyne.TextWrapWord
 	return widget.NewSimpleRenderer(container.NewStack(
-		container.NewBorder(nil, nil, c.thumbnail, container.NewVBox(c.download, c.instantPlay, c.openInBrowser), c.summary),
+		container.NewBorder(
+			nil,
+			nil,
+			c.thumbnail,
+			nil,
+			container.NewBorder(nil, container.NewHBox(c.instantPlay, c.download), nil, nil, c.summary),
+		),
 		c.highlight,
 	))
 }
