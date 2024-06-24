@@ -1,6 +1,14 @@
 package view
 
-import "slices"
+import (
+	"slices"
+
+	"fyne.io/fyne/v2"
+)
+
+func getWindow() fyne.Window {
+	return fyne.CurrentApp().Driver().AllWindows()[0]
+}
 
 type Titler interface {
 	Title() string
@@ -11,7 +19,14 @@ type DataPipeline[T Titler] struct {
 	filter     func(string) bool
 }
 
-func (p *DataPipeline[T]) pass(data []T) []T {
+func NewDataPipeline[T Titler]() DataPipeline[T] {
+	return DataPipeline[T]{
+		comparator: func(T, T) int { return -1 },
+		filter:     func(string) bool { return true },
+	}
+}
+
+func (p *DataPipeline[T]) Pass(data []T) []T {
 	//lazy removal, swapping to the back
 	i, j := 0, len(data)
 	for i < j {

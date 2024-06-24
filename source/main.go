@@ -19,9 +19,7 @@ func main() {
 	//go tool pprof profile.log
 	//go http.ListenAndServe("localhost:80", nil)
 
-	//create model
-	config := model.NewLocalStorage()
-	client := model.NewClient(&config)
+	model.CreateClient(model.NewLocalStorage())
 
 	//create main app
 	mainApp := app.NewWithID(resource.KWindowTitle)
@@ -34,17 +32,17 @@ func main() {
 	window.SetCloseIntercept(window.Hide)
 	window.CenterOnScreen()
 	window.Resize(resource.KWindowSize)
-	window.SetContent(view.NewMainPanel(&client))
+	window.SetContent(view.NewMainPanel())
 
 	//create system tray
 	if desktop, ok := mainApp.(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
 	}
 
-	if err := client.Initialize(); err != nil {
+	//run the client
+	if err := model.GetClient().Run(); err != nil {
 		log.Println(err)
 		return
 	}
-
 	window.ShowAndRun()
 }

@@ -2,6 +2,7 @@ package cwidget
 
 import (
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -11,22 +12,25 @@ type DropDown struct {
 	menu     *fyne.Menu
 }
 
-func newDropDown() *DropDown {
-	var d *DropDown
-	d = &DropDown{
-		selected: NewButtonWithIcon("", nil, func() {
-			canvas := fyne.CurrentApp().Driver().CanvasForObject(d)
-			position := fyne.CurrentApp().Driver().AbsolutePositionForObject(d)
-			widget.ShowPopUpMenuAtPosition(d.menu, canvas, position)
-		}),
-		menu: fyne.NewMenu(""),
+func NewDropDown() *DropDown {
+	var d DropDown
+	d = DropDown{
+		selected: NewTappableIcon(nil, d.showMenu),
+		menu:     fyne.NewMenu(""),
 	}
-	d.ExtendBaseWidget(d)
-	return d
+	d.ExtendBaseWidget(&d)
+	return &d
 }
 
 func (d *DropDown) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(d.selected)
+}
+
+func (d *DropDown) showMenu() {
+	canvas := fyne.CurrentApp().Driver().CanvasForObject(d)
+	position := fyne.CurrentApp().Driver().AbsolutePositionForObject(d)
+	position.Y += d.Size().Height - theme.InputBorderSize()
+	widget.ShowPopUpMenuAtPosition(d.menu, canvas, position)
 }
 
 func (d *DropDown) Add(item *fyne.MenuItem) {

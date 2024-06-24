@@ -11,11 +11,13 @@ var KAlbumCardSize fyne.Size = fyne.NewSize(140, 180)
 var KAlbumCoverSize fyne.Size = fyne.NewSize(160, 160)
 var KThumbnailSize fyne.Size = fyne.NewSize(271, 152)
 
-//Program
-const KWindowTitle = "MeowyPlayer"
+//Search attempts
+const KSearchAttempts = 5
 
-//Generic Text
+//Program Text
+const KWindowTitle = "MeowyPlayer"
 const KUploadText = "Upload"
+const KQueueText = "Queue"
 const KCancelText = "Cancel"
 const KCreateText = "Create"
 const KDeleteText = "Delete"
@@ -25,7 +27,9 @@ const KHomeText = "Home"
 const KCollectionText = "Collection"
 const KAccountText = "Account"
 const KSettingText = "Setting"
-const KReturnText = "Return"
+const KBackText = "Back"
+const KSearching = "Searching"
+const KAttempts = "Attempts"
 
 const KSortMenuText = "Sort By"
 const KMostRecentText = "Most Recent"

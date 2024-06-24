@@ -3,7 +3,6 @@ package model
 import (
 	"playground/pattern"
 	"slices"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -11,7 +10,6 @@ import (
 )
 
 type Client struct {
-	sync.Mutex
 	storage            FileSystem
 	onAlbumsChanged    pattern.Subject[[]Album]
 	onAlbumSelected    pattern.Subject[Album]
@@ -19,8 +17,10 @@ type Client struct {
 	onMusicViewFocused pattern.Subject[bool]
 }
 
-func NewClient(fileSystem FileSystem) Client {
-	return Client{
+var client Client
+
+func CreateClient(fileSystem FileSystem) {
+	client = Client{
 		storage:            fileSystem,
 		onAlbumsChanged:    pattern.MakeSubject[[]Album](),
 		onAlbumSelected:    pattern.MakeSubject[Album](),
@@ -29,7 +29,11 @@ func NewClient(fileSystem FileSystem) Client {
 	}
 }
 
-func (m *Client) Initialize() error {
+func GetClient() *Client {
+	return &client
+}
+
+func (m *Client) Run() error {
 	if err := m.storage.initialize(); err != nil {
 		return err
 	}
@@ -37,16 +41,10 @@ func (m *Client) Initialize() error {
 }
 
 func (m *Client) GetAlbum(key AlbumKey) (Album, error) {
-	m.Lock()
-	defer m.Unlock()
-
 	return m.storage.getAlbum(key)
 }
 
 func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
-	m.Lock()
-	defer m.Unlock()
-
 	album := Album{key: AlbumKey(uuid.NewString()), date: time.Now()}
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
@@ -55,9 +53,6 @@ func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
 }
 
 func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
-	m.Lock()
-	defer m.Unlock()
-
 	album, err := m.storage.getAlbum(key)
 	if err != nil {
 		return err
@@ -71,9 +66,6 @@ func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) erro
 }
 
 func (m *Client) RemoveAlbum(key AlbumKey) error {
-	m.Lock()
-	defer m.Unlock()
-
 	if err := m.storage.removeAlbum(key); err != nil {
 		return err
 	}
@@ -81,9 +73,6 @@ func (m *Client) RemoveAlbum(key AlbumKey) error {
 }
 
 func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
-	m.Lock()
-	defer m.Unlock()
-
 	album, err := m.storage.getAlbum(key)
 	if err != nil {
 		return err
@@ -95,18 +84,14 @@ func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 	return m.notifyAlbumsChanges()
 }
 
-func (m *Client) notifyAlbumsChanges() error {
-	albums, err := m.storage.getAllAlbums()
+func (m *Client) SelectAlbum(key AlbumKey) error {
+	album, err := m.storage.getAlbum(key)
 	if err != nil {
 		return err
 	}
-	m.onAlbumsChanged.NotifyAll(albums)
-	return nil
-}
-
-func (m *Client) SelectAlbum(album Album) {
 	m.onAlbumSelected.NotifyAll(album)
 	m.onMusicViewFocused.NotifyAll(true)
+	return nil
 }
 
 func (m *Client) FocusAlbumView() {
@@ -127,4 +112,13 @@ func (m *Client) OnAlbumViewFocused() pattern.Subject[bool] {
 
 func (m *Client) OnMusicViewFocused() pattern.Subject[bool] {
 	return m.onMusicViewFocused
+}
+
+func (m *Client) notifyAlbumsChanges() error {
+	albums, err := m.storage.getAllAlbums()
+	if err != nil {
+		return err
+	}
+	m.onAlbumsChanged.NotifyAll(albums)
+	return nil
 }

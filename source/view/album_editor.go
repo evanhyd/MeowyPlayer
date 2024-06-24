@@ -43,12 +43,12 @@ func newAlbumEditor() *AlbumEditor {
 	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
 	upload.SetConfirmText(resource.KUploadText)
 	upload.SetDismissText(resource.KCancelText)
-	v.uploadButton = cwidget.NewButtonWithIcon("", nil, upload.Show)
+	v.uploadButton = cwidget.NewTappableIcon(nil, upload.Show)
 
 	//color picker
 	picker := dialog.NewColorPicker("", "", v.setColor, getWindow())
 	picker.Advanced = true
-	v.pickButton = cwidget.NewButtonWithIcon("", theme.ColorPaletteIcon(), picker.Show)
+	v.pickButton = cwidget.NewTappableIcon(theme.ColorPaletteIcon(), picker.Show)
 
 	//title entry
 	v.titleEntry = widget.NewEntry()

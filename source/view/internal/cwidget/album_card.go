@@ -1,4 +1,4 @@
-package view
+package cwidget
 
 import (
 	"fmt"
@@ -15,24 +15,32 @@ import (
 
 type AlbumCard struct {
 	widget.BaseWidget
+	TappableComponent
+	CursorableComponent
 	cover *canvas.Image
 	title *widget.Label
 	tip   *widget.Label
+	key   model.AlbumKey
 }
 
-func newAlbumCard() *AlbumCard {
-	v := &AlbumCard{
-		cover: canvas.NewImageFromResource(nil),
-		title: widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{}),
-		tip:   widget.NewLabel(""),
+func NewAlbumCardConstructor(onTapped func(model.AlbumKey), onTappedSecondary func(*fyne.PointEvent, model.AlbumKey)) func() *AlbumCard {
+	return func() *AlbumCard {
+		v := AlbumCard{
+			cover: canvas.NewImageFromResource(nil),
+			title: widget.NewLabel(""),
+			tip:   widget.NewLabel(""),
+		}
+		v.OnTapped = func(*fyne.PointEvent) { onTapped(v.key) }
+		v.OnTappedSecondary = func(e *fyne.PointEvent) { onTappedSecondary(e, v.key) }
+		v.ExtendBaseWidget(&v)
+		return &v
 	}
-	v.ExtendBaseWidget(v)
-	return v
 }
 
 func (v *AlbumCard) CreateRenderer() fyne.WidgetRenderer {
 	v.cover.FillMode = canvas.ImageFillContain
 	v.title.Truncation = fyne.TextTruncateEllipsis
+	v.title.Alignment = fyne.TextAlignCenter
 	v.tip.Wrapping = fyne.TextWrapWord
 	v.tip.Hide()
 
@@ -52,10 +60,11 @@ func (v *AlbumCard) MouseOut() {
 }
 
 func (v *AlbumCard) MouseMoved(*desktop.MouseEvent) {
-	//satisfy Hoverable interface
+	//Hoverable interface
 }
 
 func (v *AlbumCard) Notify(album model.Album) {
+	v.key = album.Key()
 	v.cover.Resource = album.Cover()
 	v.cover.Refresh()
 	v.title.SetText(album.Title())

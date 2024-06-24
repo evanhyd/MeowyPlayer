@@ -17,9 +17,9 @@ type localStorage struct {
 	musicDir string
 }
 
-func NewLocalStorage() localStorage {
+func NewLocalStorage() *localStorage {
 	const kStorage = "storage"
-	return localStorage{
+	return &localStorage{
 		albumDir: filepath.Join(kStorage, "album"),
 		musicDir: filepath.Join(kStorage, "music"),
 	}

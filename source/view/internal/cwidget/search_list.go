@@ -1,11 +1,9 @@
 package cwidget
 
 import (
-	"image/color"
 	"playground/pattern"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
@@ -13,40 +11,6 @@ import (
 type WidgetObserver[T any] interface {
 	fyne.Widget
 	pattern.Observer[T]
-}
-
-type ItemTapEvent[T any] struct {
-	*fyne.PointEvent
-	Data T
-}
-
-type hitbox struct {
-	TappableComponent
-	CursorableComponent
-	*canvas.Rectangle
-}
-
-type item[T any] struct {
-	widget.BaseWidget
-	*hitbox
-	content WidgetObserver[T]
-}
-
-func newItem[T any](content WidgetObserver[T]) *item[T] {
-	i := &item[T]{
-		hitbox:  &hitbox{Rectangle: canvas.NewRectangle(color.Transparent)},
-		content: content,
-	}
-	i.ExtendBaseWidget(i)
-	return i
-}
-
-func (i *item[T]) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewStack(i.content, i.hitbox))
-}
-
-func (i *item[T]) Notify(data T) {
-	i.content.Notify(data)
 }
 
 type SearchList[DataType any, WidgetType WidgetObserver[DataType]] struct {
@@ -60,37 +24,30 @@ type SearchList[DataType any, WidgetType WidgetObserver[DataType]] struct {
 	//main
 	scroll *container.Scroll
 
-	itemContainer     *fyne.Container
-	itemConstructor   func() WidgetType
-	onTapped          func(ItemTapEvent[DataType])
-	onTappedSecondary func(ItemTapEvent[DataType])
-	data              []DataType
+	itemContainer   *fyne.Container
+	itemConstructor func() WidgetType
+	data            []DataType
 }
 
 func NewSearchList[DataType any, WidgetType WidgetObserver[DataType]](
 	itemContainer *fyne.Container,
 	itemConstructor func() WidgetType,
-	onTapped func(ItemTapEvent[DataType]),
-	onTappedSecondary func(ItemTapEvent[DataType]),
 	onTextChanged func(string),
 	onTextSubmitted func(string),
 ) *SearchList[DataType, WidgetType] {
-
-	l := &SearchList[DataType, WidgetType]{
-		dropDown:          newDropDown(),
-		searchEntry:       widget.NewEntry(),
-		toolbar:           widget.NewToolbar(),
-		scroll:            container.NewScroll(itemContainer),
-		itemContainer:     itemContainer,
-		itemConstructor:   itemConstructor,
-		onTapped:          onTapped,
-		onTappedSecondary: onTappedSecondary,
+	l := SearchList[DataType, WidgetType]{
+		dropDown:        NewDropDown(),
+		searchEntry:     widget.NewEntry(),
+		toolbar:         widget.NewToolbar(),
+		scroll:          container.NewScroll(itemContainer),
+		itemContainer:   itemContainer,
+		itemConstructor: itemConstructor,
 	}
 	l.searchEntry.OnChanged = onTextChanged
 	l.searchEntry.OnSubmitted = onTextSubmitted
 
-	l.ExtendBaseWidget(l)
-	return l
+	l.ExtendBaseWidget(&l)
+	return &l
 }
 
 func (v *SearchList[DataType, WidgetType]) CreateRenderer() fyne.WidgetRenderer {
@@ -107,8 +64,8 @@ func (v *SearchList[DataType, WidgetType]) AddDropDown(item *fyne.MenuItem) {
 	v.dropDown.Add(item)
 }
 
-func (v *SearchList[DataType, WidgetType]) AddToolbar(item widget.ToolbarItem) {
-	v.toolbar.Append(item)
+func (v *SearchList[DataType, WidgetType]) AddToolbar(item fyne.Widget) {
+	v.toolbar.Append(&toolbarWidget{item})
 }
 
 func (v *SearchList[DataType, WidgetType]) ClearSearchEntry() {
@@ -127,21 +84,13 @@ func (v *SearchList[DataType, WidgetType]) Update(data []DataType) {
 		v.itemContainer.Objects = v.itemContainer.Objects[:len(data)]
 	} else {
 		for i := 0; i < need; i++ {
-			i := len(v.itemContainer.Objects)
-			item := newItem(v.itemConstructor())
-			item.OnTapped = func(e *fyne.PointEvent) {
-				v.onTapped(ItemTapEvent[DataType]{e, v.data[i]})
-			}
-			item.OnTappedSecondary = func(e *fyne.PointEvent) {
-				v.onTappedSecondary(ItemTapEvent[DataType]{e, v.data[i]})
-			}
-			v.itemContainer.Objects = append(v.itemContainer.Objects, item)
+			v.itemContainer.Objects = append(v.itemContainer.Objects, v.itemConstructor())
 		}
 	}
 
 	//update content
 	for i := range data {
-		v.itemContainer.Objects[i].(*item[DataType]).Notify(data[i])
+		v.itemContainer.Objects[i].(WidgetObserver[DataType]).Notify(data[i])
 	}
 
 	//update layout
