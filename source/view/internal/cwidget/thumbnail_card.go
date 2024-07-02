@@ -3,7 +3,7 @@ package cwidget
 import (
 	"fmt"
 	"playground/browser"
-	"playground/resource"
+	"playground/view/internal/resource"
 	"time"
 
 	"fyne.io/fyne/v2"

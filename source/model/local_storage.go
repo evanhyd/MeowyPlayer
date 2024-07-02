@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var _ FileSystem = &localStorage{}
+var _ Storage = &localStorage{}
 
 type localStorage struct {
 	albumDir string
@@ -134,7 +134,7 @@ func (f *localStorage) removeMusic(key MusicKey) error {
 	return os.Remove(f.musicPath(key))
 }
 
-// func (d *localFileSystem) sanatizeFileName(filename string) string {
+// func (d *localStorage) sanatizeFileName(filename string) string {
 // 	sanitizer := strings.NewReplacer(
 // 		"<", "",
 // 		">", "",

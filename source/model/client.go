@@ -12,8 +12,8 @@ import (
 )
 
 type Client struct {
-	sync.Mutex         //read, modify, then upload back will have time interval
-	storage            FileSystem
+	sync.Mutex         //read -> modify -> upload back may have intervene sequence
+	storage            Storage
 	onAlbumsChanged    pattern.Subject[[]Album]
 	onAlbumSelected    pattern.Subject[Album]
 	onAlbumViewFocused pattern.Subject[bool]
@@ -22,9 +22,9 @@ type Client struct {
 
 var client Client
 
-func CreateClient(fileSystem FileSystem) {
+func InitClient(storage Storage) {
 	client = Client{
-		storage:            fileSystem,
+		storage:            storage,
 		onAlbumsChanged:    pattern.MakeSubject[[]Album](),
 		onAlbumSelected:    pattern.MakeSubject[Album](),
 		onAlbumViewFocused: pattern.MakeSubject[bool](),
@@ -124,6 +124,12 @@ func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 		return err
 	}
 	return m.notifyAlbumsChanges()
+}
+
+func (m *Client) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
+	m.Lock()
+	defer m.Unlock()
+	return m.storage.getMusic(key)
 }
 
 func (m *Client) SelectAlbum(key AlbumKey) error {

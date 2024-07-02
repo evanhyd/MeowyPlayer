@@ -3,8 +3,8 @@ package view
 import (
 	"fmt"
 	"playground/model"
-	"playground/resource"
 	"playground/view/internal/cwidget"
+	"playground/view/internal/resource"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -31,7 +31,7 @@ func newMusicPage() *MusicPage {
 			p.setEntryFilter,
 			nil,
 		),
-		pipeline: NewDataPipeline[model.Music](),
+		pipeline: newDataPipeline[model.Music](),
 	}
 
 	//search bar menu and toolbar
@@ -68,7 +68,7 @@ func (p *MusicPage) updateList() {
 	if err != nil {
 		fyne.LogError("musicPage updateList fails", err)
 	}
-	p.list.Update(p.pipeline.Pass(p.current.Music()))
+	p.list.Update(p.pipeline.pass(p.current.Music()))
 }
 
 func (p *MusicPage) setEntryFilter(substr string) {

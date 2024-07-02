@@ -2,7 +2,7 @@ package view
 
 import (
 	"playground/model"
-	"playground/resource"
+	"playground/view/internal/resource"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -19,7 +19,7 @@ type MainPanel struct {
 	settingPage *SettingPage
 }
 
-func NewMainPanel() *MainPanel {
+func newMainPanel() *MainPanel {
 	p := MainPanel{
 		homePage:    newHomePage(),
 		albumPage:   newAlbumPage(),

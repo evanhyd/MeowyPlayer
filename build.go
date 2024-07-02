@@ -48,7 +48,6 @@ func bundleResource(outputFile string, toBundles []bundleFormat) {
 	}
 
 	run(fyneToolPath, "bundle", "-o", outputFile, "--package", "resource", "--name", toBundles[0].name, getAsset(toBundles[0].path))
-
 	for _, toBundle := range toBundles[1:] {
 		run(fyneToolPath, "bundle", "-o", outputFile, "--append", "--name", toBundle.name, getAsset(toBundle.path))
 	}
@@ -74,17 +73,13 @@ func buildBinary() {
 }
 
 func main() {
-
-	//bundle icons
 	iconBundles := []bundleFormat{
 		{"WindowIcon", "icon.png"}, //unfortunately fyne doesn't support svg as system tray icon
 		{"CollectionTabIcon", "collection_tab.svg"},
 		{"YouTubeIcon", "youtube.svg"},
 		{"AlphabeticalIcon", "alphabetical.svg"},
 	}
-	iconPath := filepath.Join("source", "resource", "Icon.go")
+	iconPath := filepath.Join("source", "view", "internal", "resource", "Icon.go")
 	bundleResource(iconPath, iconBundles)
-
-	//build or execute
 	buildBinary()
 }

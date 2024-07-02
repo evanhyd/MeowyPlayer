@@ -8,13 +8,12 @@ import (
 	"fyne.io/fyne/v2"
 )
 
-// random UUID
 // watch out path injection
 type AlbumKey string
+type MusicKey string
 
-func (k AlbumKey) IsEmpty() bool {
-	return len(k) == 0
-}
+func (k MusicKey) IsEmpty() bool { return len(k) == 0 }
+func (k AlbumKey) IsEmpty() bool { return len(k) == 0 }
 
 type Album struct {
 	key   AlbumKey
@@ -32,29 +31,12 @@ type albumJson struct {
 	Cover []byte   `json:"cover"`
 }
 
-func (a *Album) Key() AlbumKey {
-	return a.key
-}
-
-func (a *Album) Date() time.Time {
-	return a.date
-}
-
-func (a Album) Title() string {
-	return a.title
-}
-
-func (a *Album) Music() []Music {
-	return a.music
-}
-
-func (a *Album) Cover() fyne.Resource {
-	return a.cover
-}
-
-func (a *Album) Count() int {
-	return len(a.music)
-}
+func (a *Album) Key() AlbumKey        { return a.key }
+func (a *Album) Date() time.Time      { return a.date }
+func (a Album) Title() string         { return a.title }
+func (a *Album) Music() []Music       { return a.music }
+func (a *Album) Cover() fyne.Resource { return a.cover }
+func (a *Album) Count() int           { return len(a.music) }
 
 func (a *Album) MarshalJSON() ([]byte, error) {
 	return json.Marshal(albumJson{a.key, a.date.Unix(), a.title, a.music, a.cover.Content()})
@@ -67,14 +49,6 @@ func (a *Album) UnmarshalJSON(data []byte) error {
 	}
 	*a = Album{buf.Key, time.Unix(buf.Date, 0), buf.Title, buf.Music, fyne.NewStaticResource("", buf.Cover)}
 	return nil
-}
-
-// unique hash that maps to file system's file name.
-// watch out path injection
-type MusicKey string
-
-func (k MusicKey) IsEmpty() bool {
-	return len(k) == 0
 }
 
 type Music struct {
@@ -93,21 +67,10 @@ type musicJson struct {
 	ID       string `json:"id"`
 }
 
-func (m *Music) Key() MusicKey {
-	return MusicKey(m.platform + m.id)
-}
-
-func (m *Music) Date() time.Time {
-	return m.date
-}
-
-func (m Music) Title() string {
-	return m.title
-}
-
-func (m *Music) Length() time.Duration {
-	return m.length
-}
+func (m *Music) Key() MusicKey         { return MusicKey(m.platform + m.id) }
+func (m *Music) Date() time.Time       { return m.date }
+func (m Music) Title() string          { return m.title }
+func (m *Music) Length() time.Duration { return m.length }
 
 func (m *Music) MarshalJSON() ([]byte, error) {
 	return json.Marshal(musicJson{m.date.Unix(), m.title, m.length.String(), m.platform, m.id})
@@ -127,7 +90,7 @@ func (m *Music) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type FileSystem interface {
+type Storage interface {
 	initialize() error
 
 	//Get all albums.

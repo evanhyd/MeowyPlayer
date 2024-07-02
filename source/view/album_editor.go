@@ -5,8 +5,8 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"playground/resource"
 	"playground/view/internal/cwidget"
+	"playground/view/internal/resource"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"

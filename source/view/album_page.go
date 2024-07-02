@@ -3,8 +3,8 @@ package view
 import (
 	"fmt"
 	"playground/model"
-	"playground/resource"
 	"playground/view/internal/cwidget"
+	"playground/view/internal/resource"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -31,7 +31,7 @@ func newAlbumPage() *AlbumPage {
 			p.setEntryFilter,
 			nil,
 		),
-		pipeline: NewDataPipeline[model.Album](),
+		pipeline: newDataPipeline[model.Album](),
 	}
 
 	//search bar menu and toolbar
@@ -55,7 +55,7 @@ func (p *AlbumPage) Notify(albums []model.Album) {
 }
 
 func (p *AlbumPage) updateList() {
-	p.list.Update(p.pipeline.Pass(p.albumsData))
+	p.list.Update(p.pipeline.pass(p.albumsData))
 }
 
 func (p *AlbumPage) setEntryFilter(substr string) {

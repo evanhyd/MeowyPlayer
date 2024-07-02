@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"playground/browser"
 	"playground/model"
-	"playground/resource"
 	"playground/view/internal/cwidget"
+	"playground/view/internal/resource"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
