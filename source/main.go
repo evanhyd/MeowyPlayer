@@ -4,6 +4,7 @@ import (
 	_ "net/http/pprof"
 
 	"playground/model"
+	"playground/player"
 	"playground/view"
 )
 
@@ -13,5 +14,6 @@ func main() {
 	//go http.ListenAndServe("localhost:80", nil)
 
 	model.InitClient(model.NewLocalStorage())
+	player.InitPlayer()
 	view.RunApp()
 }

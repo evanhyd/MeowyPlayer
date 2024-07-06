@@ -80,7 +80,7 @@ func (p *HomePage) onInstantPlay(result browser.Result) {
 }
 
 func (p *HomePage) showDownloadMenu(result browser.Result) {
-	albums, err := model.GetClient().GetAllAlbums()
+	albums, err := model.Instance().GetAllAlbums()
 	if err != nil {
 		fyne.LogError("download menu can't albums", err)
 	}
@@ -109,5 +109,5 @@ func (p *HomePage) onDownload(key model.AlbumKey, result browser.Result) {
 		fyne.LogError("download failed", err)
 	}
 	defer readCloser.Close()
-	model.GetClient().AddMusicToAlbum(key, result, readCloser)
+	model.Instance().AddMusicToAlbum(key, result, readCloser)
 }

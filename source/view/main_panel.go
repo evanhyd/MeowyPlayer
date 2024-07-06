@@ -2,6 +2,7 @@ package view
 
 import (
 	"playground/model"
+	"playground/view/internal/cwidget"
 	"playground/view/internal/resource"
 
 	"fyne.io/fyne/v2"
@@ -15,8 +16,8 @@ type MainPanel struct {
 	homePage    *HomePage
 	albumPage   *AlbumPage
 	musicPage   *MusicPage
-	accountPage *AccountPage
 	settingPage *SettingPage
+	controller  *cwidget.MediaController
 }
 
 func newMainPanel() *MainPanel {
@@ -24,11 +25,10 @@ func newMainPanel() *MainPanel {
 		homePage:    newHomePage(),
 		albumPage:   newAlbumPage(),
 		musicPage:   newMusicPage(),
-		accountPage: newAccountPage(),
 		settingPage: newSettingPage(),
 	}
-	model.GetClient().OnAlbumViewFocused().AttachFunc(p.showAlbumTab)
-	model.GetClient().OnMusicViewFocused().AttachFunc(p.showMusicTab)
+	model.Instance().OnAlbumViewFocused().AttachFunc(p.showAlbumTab)
+	model.Instance().OnMusicViewFocused().AttachFunc(p.showMusicTab)
 
 	//TODO: create music controller
 	p.ExtendBaseWidget(&p)
@@ -40,7 +40,6 @@ func (p *MainPanel) CreateRenderer() fyne.WidgetRenderer {
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon(resource.KHomeText, theme.HomeIcon(), p.homePage),
 		container.NewTabItemWithIcon(resource.KCollectionText, resource.CollectionTabIcon, container.NewStack(p.albumPage, p.musicPage)),
-		container.NewTabItemWithIcon(resource.KAccountText, theme.AccountIcon(), p.accountPage),
 		container.NewTabItemWithIcon(resource.KSettingText, theme.SettingsIcon(), p.settingPage),
 	)
 	tabs.SetTabLocation(container.TabLocationLeading)

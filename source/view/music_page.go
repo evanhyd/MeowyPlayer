@@ -3,8 +3,10 @@ package view
 import (
 	"fmt"
 	"playground/model"
+	"playground/player"
 	"playground/view/internal/cwidget"
 	"playground/view/internal/resource"
+	"slices"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -18,7 +20,7 @@ type MusicPage struct {
 	widget.BaseWidget
 	list *cwidget.SearchList[model.Music, *cwidget.MusicCard]
 
-	pipeline DataPipeline[model.Music]
+	pipeline dataPipeline[model.Music]
 	current  model.Album
 }
 
@@ -37,11 +39,11 @@ func newMusicPage() *MusicPage {
 	//search bar menu and toolbar
 	p.list.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
 	p.list.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
-	p.list.AddToolbar(cwidget.NewButton(resource.KBackText, theme.NavigateBackIcon(), model.GetClient().FocusAlbumView))
+	p.list.AddToolbar(cwidget.NewButton(resource.KBackText, theme.NavigateBackIcon(), model.Instance().FocusAlbumView))
 
 	//client update callback
-	model.GetClient().OnAlbumSelected().Attach(&p)                                         //update current album and list content when selecting album
-	model.GetClient().OnAlbumsChanged().AttachFunc(func([]model.Album) { p.updateList() }) //update list content when albums get updated
+	model.Instance().OnAlbumSelected().Attach(&p)                                         //update current album and list content when selecting album
+	model.Instance().OnAlbumsChanged().AttachFunc(func([]model.Album) { p.updateList() }) //update list content when albums get updated
 
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -64,11 +66,11 @@ func (p *MusicPage) updateList() {
 	}
 
 	var err error
-	p.current, err = model.GetClient().GetAlbum(p.current.Key())
+	p.current, err = model.Instance().GetAlbum(p.current.Key())
 	if err != nil {
 		fyne.LogError("musicPage updateList fails", err)
 	}
-	p.list.Update(p.pipeline.pass(p.current.Music()))
+	p.list.Update(p.pipeline.apply(p.current.Music()))
 }
 
 func (p *MusicPage) setEntryFilter(substr string) {
@@ -93,7 +95,9 @@ func (p *MusicPage) setTitleComparator() {
 }
 
 func (p *MusicPage) playMusic(music model.Music) {
-	fmt.Println(p.current, music)
+	playlist := p.pipeline.sortCopy(p.current.Music())
+	toPlay := slices.Index(playlist, music)
+	player.Instance().LoadAlbum(playlist, toPlay)
 }
 
 func (p *MusicPage) showMusicMenu(e *fyne.PointEvent, music model.Music) {
@@ -106,7 +110,7 @@ func (p *MusicPage) showDeleteMusicDialog(music model.Music) {
 		widget.NewLabel(fmt.Sprintf(resource.KDeleteMusicTextTemplate, music.Title())),
 		func(confirm bool) {
 			if confirm {
-				if err := model.GetClient().RemoveMusicFromAlbum(p.current.Key(), music.Key()); err != nil {
+				if err := model.Instance().RemoveMusicFromAlbum(p.current.Key(), music.Key()); err != nil {
 					fyne.LogError("failed to remove music", err)
 				}
 			}

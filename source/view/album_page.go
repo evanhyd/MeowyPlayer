@@ -18,7 +18,7 @@ type AlbumPage struct {
 	widget.BaseWidget
 	list *cwidget.SearchList[model.Album, *cwidget.AlbumCard]
 
-	pipeline   DataPipeline[model.Album]
+	pipeline   dataPipeline[model.Album]
 	albumsData []model.Album
 }
 
@@ -41,7 +41,7 @@ func newAlbumPage() *AlbumPage {
 	p.ExtendBaseWidget(&p)
 
 	//client update callback
-	model.GetClient().OnAlbumsChanged().Attach(&p)
+	model.Instance().OnAlbumsChanged().Attach(&p)
 	return &p
 }
 
@@ -55,7 +55,7 @@ func (p *AlbumPage) Notify(albums []model.Album) {
 }
 
 func (p *AlbumPage) updateList() {
-	p.list.Update(p.pipeline.pass(p.albumsData))
+	p.list.Update(p.pipeline.apply(p.albumsData))
 }
 
 func (p *AlbumPage) setEntryFilter(substr string) {
@@ -80,14 +80,14 @@ func (p *AlbumPage) setTitleComparator() {
 }
 
 func (p *AlbumPage) selectAlbum(key model.AlbumKey) {
-	err := model.GetClient().SelectAlbum(key)
+	err := model.Instance().SelectAlbum(key)
 	if err != nil {
 		fyne.LogError("selectAlbum fail", err)
 	}
 }
 
 func (p *AlbumPage) showAlbumMenu(e *fyne.PointEvent, key model.AlbumKey) {
-	album, err := model.GetClient().GetAlbum(key)
+	album, err := model.Instance().GetAlbum(key)
 	if err != nil {
 		fyne.LogError("showAlbumMenu fail", err)
 	}
@@ -103,7 +103,7 @@ func (p *AlbumPage) showEditAlbumDialog(album model.Album) {
 		func(confirm bool) {
 			if confirm {
 				title, cover := editor.state()
-				if err := model.GetClient().EditAlbum(album.Key(), title, cover); err != nil {
+				if err := model.Instance().EditAlbum(album.Key(), title, cover); err != nil {
 					fyne.LogError("failed to edit album", err)
 				}
 			}
@@ -117,7 +117,7 @@ func (p *AlbumPage) showDeleteAlbumDialog(album model.Album) {
 		widget.NewLabel(fmt.Sprintf(resource.KDeleteAlbumTextTemplate, album.Title())),
 		func(confirm bool) {
 			if confirm {
-				if err := model.GetClient().RemoveAlbum(album.Key()); err != nil {
+				if err := model.Instance().RemoveAlbum(album.Key()); err != nil {
 					fyne.LogError("failed to remove album", err)
 				}
 			}
@@ -131,7 +131,7 @@ func (p *AlbumPage) showCreateAlbumDialog() {
 	dialog.ShowCustomConfirm(resource.KCreateAlbumText, resource.KCreateText, resource.KCancelText, editor,
 		func(confirm bool) {
 			if confirm {
-				if err := model.GetClient().CreateAlbum(editor.state()); err != nil {
+				if err := model.Instance().CreateAlbum(editor.state()); err != nil {
 					fyne.LogError("failed to create album", err)
 				}
 			}

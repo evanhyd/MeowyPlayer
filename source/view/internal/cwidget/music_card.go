@@ -44,12 +44,12 @@ func (v *MusicCard) CreateRenderer() fyne.WidgetRenderer {
 
 func (v *MusicCard) MouseIn(*desktop.MouseEvent) {
 	v.shadow.Show()
-	v.shadow.Refresh()
+	v.Refresh()
 }
 
 func (v *MusicCard) MouseOut() {
 	v.shadow.Hide()
-	v.shadow.Refresh()
+	v.Refresh()
 }
 
 func (v *MusicCard) MouseMoved(*desktop.MouseEvent) {

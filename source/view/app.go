@@ -31,7 +31,7 @@ func RunApp() {
 	}
 
 	//run the client
-	if err := model.GetClient().Run(); err != nil {
+	if err := model.Instance().Run(); err != nil {
 		log.Println(err)
 		return
 	}

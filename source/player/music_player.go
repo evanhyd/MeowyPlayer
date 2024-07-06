@@ -1,9 +1,9 @@
 package player
 
 type MusicPlayer interface {
-	play()
-	prev()
-	next()
-	setProgress(float64)
-	setVolume(float64)
+	Play()
+	Prev()
+	Next()
+	SetProgress(float64)
+	SetVolume(float64)
 }

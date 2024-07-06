@@ -8,19 +8,25 @@ type Titler interface {
 	Title() string
 }
 
-type DataPipeline[T Titler] struct {
+type dataPipeline[T Titler] struct {
 	comparator func(T, T) int
 	filter     func(string) bool
 }
 
-func newDataPipeline[T Titler]() DataPipeline[T] {
-	return DataPipeline[T]{
+func newDataPipeline[T Titler]() dataPipeline[T] {
+	return dataPipeline[T]{
 		comparator: func(T, T) int { return -1 },
 		filter:     func(string) bool { return true },
 	}
 }
 
-func (p *DataPipeline[T]) pass(data []T) []T {
+func (p *dataPipeline[T]) sortCopy(data []T) []T {
+	copy := slices.Clone(data)
+	slices.SortStableFunc(copy, p.comparator)
+	return copy
+}
+
+func (p *dataPipeline[T]) apply(data []T) []T {
 	//lazy removal, swapping to the back
 	i, j := 0, len(data)
 	for i < j {

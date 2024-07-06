@@ -32,7 +32,7 @@ func InitClient(storage Storage) {
 	}
 }
 
-func GetClient() *Client {
+func Instance() *Client {
 	return &client
 }
 
