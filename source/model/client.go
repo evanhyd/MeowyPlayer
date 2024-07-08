@@ -14,7 +14,7 @@ import (
 type Client struct {
 	sync.Mutex         //read -> modify -> upload back may have intervene sequence
 	storage            Storage
-	onAlbumsChanged    pattern.Subject[[]Album]
+	onStorageLoad      pattern.Subject[[]Album]
 	onAlbumSelected    pattern.Subject[Album]
 	onAlbumViewFocused pattern.Subject[bool]
 	onMusicViewFocused pattern.Subject[bool]
@@ -25,7 +25,7 @@ var client Client
 func InitClient(storage Storage) {
 	client = Client{
 		storage:            storage,
-		onAlbumsChanged:    pattern.MakeSubject[[]Album](),
+		onStorageLoad:      pattern.MakeSubject[[]Album](),
 		onAlbumSelected:    pattern.MakeSubject[Album](),
 		onAlbumViewFocused: pattern.MakeSubject[bool](),
 		onMusicViewFocused: pattern.MakeSubject[bool](),
@@ -36,11 +36,27 @@ func Instance() *Client {
 	return &client
 }
 
+func (m *Client) OnStorageLoaded() pattern.Subject[[]Album] {
+	return m.onStorageLoad
+}
+
+func (m *Client) OnAlbumSelected() pattern.Subject[Album] {
+	return m.onAlbumSelected
+}
+
+func (m *Client) OnAlbumViewFocused() pattern.Subject[bool] {
+	return m.onAlbumViewFocused
+}
+
+func (m *Client) OnMusicViewFocused() pattern.Subject[bool] {
+	return m.onMusicViewFocused
+}
+
 func (m *Client) Run() error {
 	if err := m.storage.initialize(); err != nil {
 		return err
 	}
-	return m.notifyAlbumsChanges()
+	return m.reloadStorage()
 }
 
 func (m *Client) GetAlbum(key AlbumKey) (Album, error) {
@@ -65,7 +81,7 @@ func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
-	return m.notifyAlbumsChanges()
+	return m.reloadStorage()
 }
 
 func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
@@ -81,7 +97,7 @@ func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) erro
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
-	return m.notifyAlbumsChanges()
+	return m.reloadStorage()
 }
 
 func (m *Client) RemoveAlbum(key AlbumKey) error {
@@ -91,7 +107,7 @@ func (m *Client) RemoveAlbum(key AlbumKey) error {
 	if err := m.storage.removeAlbum(key); err != nil {
 		return err
 	}
-	return m.notifyAlbumsChanges()
+	return m.reloadStorage()
 }
 
 func (m *Client) AddMusicToAlbum(key AlbumKey, result browser.Result, reader io.Reader) error {
@@ -108,7 +124,7 @@ func (m *Client) AddMusicToAlbum(key AlbumKey, result browser.Result, reader io.
 		return err
 	}
 	m.storage.uploadMusic(music, reader)
-	return m.notifyAlbumsChanges()
+	return m.reloadStorage()
 }
 
 func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
@@ -123,7 +139,7 @@ func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
-	return m.notifyAlbumsChanges()
+	return m.reloadStorage()
 }
 
 func (m *Client) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
@@ -145,31 +161,15 @@ func (m *Client) SelectAlbum(key AlbumKey) error {
 	return nil
 }
 
-func (m *Client) FocusAlbumView() {
-	m.onAlbumViewFocused.NotifyAll(true)
-}
-
-func (m *Client) OnAlbumsChanged() pattern.Subject[[]Album] {
-	return m.onAlbumsChanged
-}
-
-func (m *Client) OnAlbumSelected() pattern.Subject[Album] {
-	return m.onAlbumSelected
-}
-
-func (m *Client) OnAlbumViewFocused() pattern.Subject[bool] {
-	return m.onAlbumViewFocused
-}
-
-func (m *Client) OnMusicViewFocused() pattern.Subject[bool] {
-	return m.onMusicViewFocused
-}
-
-func (m *Client) notifyAlbumsChanges() error {
+func (m *Client) reloadStorage() error {
 	albums, err := m.storage.getAllAlbums()
 	if err != nil {
 		return err
 	}
-	m.onAlbumsChanged.NotifyAll(albums)
+	m.onStorageLoad.NotifyAll(albums)
 	return nil
+}
+
+func (m *Client) FocusAlbumView() {
+	m.onAlbumViewFocused.NotifyAll(true)
 }

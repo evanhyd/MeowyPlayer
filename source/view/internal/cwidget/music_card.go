@@ -57,9 +57,8 @@ func (v *MusicCard) MouseMoved(*desktop.MouseEvent) {
 }
 
 func (v *MusicCard) Notify(music model.Music) {
-	length := music.Length().Round(time.Second)
-	mins := length / time.Minute
-	secs := (length - mins*time.Minute) / time.Second
+	mins := music.Length() / time.Minute
+	secs := (music.Length() - mins*time.Minute) / time.Second
 
 	v.music = music
 	v.text.Segments = v.text.Segments[:0]

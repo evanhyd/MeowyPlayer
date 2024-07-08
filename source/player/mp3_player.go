@@ -3,6 +3,7 @@ package player
 import (
 	"math/rand"
 	"playground/model"
+	"playground/pattern"
 	"slices"
 
 	"fyne.io/fyne/v2"
@@ -38,13 +39,11 @@ type MP3Player struct {
 	context  *oto.Context
 	player   *oto.Player
 	mp3Size  int64
+
+	onAlbumPlayed pattern.Subject[model.Album]
 }
 
-var player *MP3Player
-
-func Instance() *MP3Player {
-	return player
-}
+var mp3Player MP3Player
 
 func InitPlayer() {
 	context, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: kSamplingRate, ChannelCount: kChannelCount, Format: oto.FormatSignedInt16LE})
@@ -53,10 +52,15 @@ func InitPlayer() {
 	}
 	<-ready
 
-	player = &MP3Player{
-		commands: make(chan MP3Command, kCommandBufferSize),
-		context:  context,
+	mp3Player = MP3Player{
+		commands:      make(chan MP3Command, kCommandBufferSize),
+		context:       context,
+		onAlbumPlayed: pattern.MakeSubject[model.Album](),
 	}
+}
+
+func Instance() *MP3Player {
+	return &mp3Player
 }
 
 func (p *MP3Player) Play()                        { p.commands <- mp3Play{} }
@@ -65,12 +69,19 @@ func (p *MP3Player) Next()                        { p.commands <- mp3Next{} }
 func (p *MP3Player) SetProgress(progress float64) { p.commands <- mp3Progress{progress} }
 func (p *MP3Player) SetVolume(volume float64)     { p.commands <- m3pVolume{volume} }
 
-func (p *MP3Player) LoadAlbum(music []model.Music, index int) {
+func (p *MP3Player) LoadAlbum(key model.AlbumKey, music []model.Music, index int) error {
+	album, err := model.Instance().GetAlbum(key)
+	if err != nil {
+		return err
+	}
+	p.onAlbumPlayed.NotifyAll(album)
+
 	p.music = music
 	p.playIndex = index
 	p.historyIndex = len(p.history) //move out of the history queue
 	p.shuffleQueue(index)           //reset random play queue
 	mp3Next{}.execute(p)
+	return nil
 }
 
 func (p *MP3Player) appendToHistory(music model.Music) {
@@ -116,4 +127,8 @@ func (p *MP3Player) run() {
 			cmd.execute(p)
 		}
 	}
+}
+
+func (p *MP3Player) OnAlbumPlayed() pattern.Subject[model.Album] {
+	return p.onAlbumPlayed
 }

@@ -2,6 +2,7 @@ package view
 
 import (
 	"playground/model"
+	"playground/player"
 	"playground/view/internal/cwidget"
 	"playground/view/internal/resource"
 
@@ -26,6 +27,7 @@ func newMainPanel() *MainPanel {
 		albumPage:   newAlbumPage(),
 		musicPage:   newMusicPage(),
 		settingPage: newSettingPage(),
+		controller:  cwidget.NewMediaController(player.Instance()),
 	}
 	model.Instance().OnAlbumViewFocused().AttachFunc(p.showAlbumTab)
 	model.Instance().OnMusicViewFocused().AttachFunc(p.showMusicTab)
@@ -43,7 +45,7 @@ func (p *MainPanel) CreateRenderer() fyne.WidgetRenderer {
 		container.NewTabItemWithIcon(resource.KSettingText, theme.SettingsIcon(), p.settingPage),
 	)
 	tabs.SetTabLocation(container.TabLocationLeading)
-	return widget.NewSimpleRenderer(container.NewBorder(nil, widget.NewLabel("Controller"), nil, nil, tabs))
+	return widget.NewSimpleRenderer(container.NewBorder(nil, p.controller, nil, nil, tabs))
 }
 
 func (p *MainPanel) showAlbumTab(bool) {

@@ -1,6 +1,6 @@
 package player
 
-type MusicPlayer interface {
+type MediaPlayer interface {
 	Play()
 	Prev()
 	Next()

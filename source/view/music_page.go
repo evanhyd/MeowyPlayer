@@ -43,7 +43,7 @@ func newMusicPage() *MusicPage {
 
 	//client update callback
 	model.Instance().OnAlbumSelected().Attach(&p)                                         //update current album and list content when selecting album
-	model.Instance().OnAlbumsChanged().AttachFunc(func([]model.Album) { p.updateList() }) //update list content when albums get updated
+	model.Instance().OnStorageLoaded().AttachFunc(func([]model.Album) { p.updateList() }) //update list content when albums get updated
 
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -95,9 +95,11 @@ func (p *MusicPage) setTitleComparator() {
 }
 
 func (p *MusicPage) playMusic(music model.Music) {
-	playlist := p.pipeline.sortCopy(p.current.Music())
+	playlist := p.pipeline.sortCopy(p.current.Music()) //p.current might be outdated
 	toPlay := slices.Index(playlist, music)
-	player.Instance().LoadAlbum(playlist, toPlay)
+	if err := player.Instance().LoadAlbum(p.current.Key(), playlist, toPlay); err != nil {
+		fyne.LogError("failed to play album", err)
+	}
 }
 
 func (p *MusicPage) showMusicMenu(e *fyne.PointEvent, music model.Music) {

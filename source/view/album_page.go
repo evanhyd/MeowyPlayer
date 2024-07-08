@@ -41,7 +41,7 @@ func newAlbumPage() *AlbumPage {
 	p.ExtendBaseWidget(&p)
 
 	//client update callback
-	model.Instance().OnAlbumsChanged().Attach(&p)
+	model.Instance().OnStorageLoaded().Attach(&p)
 	return &p
 }
 
