@@ -28,6 +28,7 @@ type AlbumEditor struct {
 func newAlbumEditor() *AlbumEditor {
 	var v AlbumEditor
 
+	//cover
 	v.cover = canvas.NewImageFromResource(theme.DocumentCreateIcon())
 	v.cover.SetMinSize(resource.KAlbumCoverSize)
 	v.cover.FillMode = canvas.ImageFillContain
@@ -43,12 +44,12 @@ func newAlbumEditor() *AlbumEditor {
 	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
 	upload.SetConfirmText(resource.KUploadText)
 	upload.SetDismissText(resource.KCancelText)
-	v.uploadButton = cwidget.NewTappableIcon(nil, upload.Show)
+	v.uploadButton = cwidget.NewButtonIcon(nil, upload.Show)
 
 	//color picker
 	picker := dialog.NewColorPicker("", "", v.setColor, getWindow())
 	picker.Advanced = true
-	v.pickButton = cwidget.NewTappableIcon(theme.ColorPaletteIcon(), picker.Show)
+	v.pickButton = cwidget.NewButtonIcon(theme.ColorPaletteIcon(), picker.Show)
 
 	//title entry
 	v.titleEntry = widget.NewEntry()

@@ -1,20 +1,22 @@
 package resource
 
-import "fyne.io/fyne/v2"
+import (
+	"fyne.io/fyne/v2"
+)
 
-//Put all the text data here so we can configure the language setting at runtime.
+// Put all the data here so we can configure the language setting at runtime.
 const KGoldenRatio = 1.618033988749
 const KGoldenRatioPercentage = 1 / (1 + KGoldenRatio)
 
 var KWindowSize fyne.Size = fyne.NewSize(600, 650)
 var KAlbumCardSize fyne.Size = fyne.NewSize(140, 180)
 var KAlbumCoverSize fyne.Size = fyne.NewSize(160, 160)
+var KAlbumPreviewSize fyne.Size = fyne.NewSize(140, 140)
 var KThumbnailSize fyne.Size = fyne.NewSize(271, 152)
 
-//Search attempts
 const KSearchAttempts = 5
 
-//Program Text
+// Program Text
 const KWindowTitle = "MeowyPlayer"
 const KDownloadText = "Download"
 const KUploadText = "Upload"
@@ -39,6 +41,9 @@ const KEditAlbumText = "Edit Album"
 const KEnterTitleHint = "Enter title:"
 const KDeleteConfirmationText = "Delete Confirmation"
 const KSelectAlbumText = "(Select an album)"
+const KRandomText = "Random"
+const KOrderedText = "Ordered"
+const KRepeatText = "Repeat"
 
 const KDeleteAlbumTextTemplate = "Delete the album \"%v\" ?"
 const KDeleteMusicTextTemplate = "Delete the music \"%v\" ?"

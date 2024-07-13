@@ -19,7 +19,7 @@ func NewButton(label string, icon fyne.Resource, tapped func()) *widget.Button {
 	return button
 }
 
-func NewTappableIcon(icon fyne.Resource, tapped func()) *widget.Button {
+func NewButtonIcon(icon fyne.Resource, tapped func()) *widget.Button {
 	button := widget.NewButtonWithIcon("", icon, tapped)
 	button.Importance = widget.LowImportance
 	return button

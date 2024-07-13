@@ -25,3 +25,8 @@ var AlphabeticalIcon = &fyne.StaticResource{
 	StaticContent: []byte(
 		"<svg width=\"128\" height=\"128\" viewBox=\"0 0 16 16\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"#fff\" class=\"bi bi-sort-alpha-up\"><path fill-rule=\"evenodd\" d=\"M10.082 5.629 9.664 7H8.598l1.789-5.332h1.234L13.402 7h-1.12l-.419-1.371zm1.57-.785L11 2.687h-.047l-.652 2.157z\"/><path d=\"M12.96 14H9.028v-.691l2.579-3.72v-.054H9.098v-.867h3.785v.691l-2.567 3.72v.054h2.645zm-8.46-.5a.5.5 0 0 1-1 0V3.707L2.354 4.854a.5.5 0 1 1-.708-.708l2-1.999.007-.007a.5.5 0 0 1 .7.006l2 2a.5.5 0 1 1-.707.708L4.5 3.707z\"/></svg>"),
 }
+var RandomIcon = &fyne.StaticResource{
+	StaticName: "random.svg",
+	StaticContent: []byte(
+		"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"348.711\" height=\"348.71\" xml:space=\"preserve\"><circle fill=\"#1A171B\" cx=\"174.355\" cy=\"174.355\" r=\"173.855\"/><circle fill=\"#e8bf28\" cx=\"174.355\" cy=\"174.355\" r=\"158.208\"/><g fill=\"#1A171B\"><path d=\"M103.075 50.469C57.25 76.926 31.67 124.983 31.771 174.355h142.583L103.075 50.469zM245.635 50.469c45.825 26.457 71.404 74.514 71.304 123.886H174.355l71.28-123.886zM103.254 297.606c45.562 26.305 99.606 24.594 142.201.223l-71.288-123.474-70.913 123.251z\"/></g><circle fill=\"#e8bf28\" cx=\"174.354\" cy=\"173.931\" r=\"43.463\"/><circle fill=\"#1A171B\" cx=\"174.355\" cy=\"173.931\" r=\"27.816\"/></svg>"),
+}

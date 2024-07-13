@@ -73,6 +73,7 @@ func (v *SearchList[DataType, WidgetType]) ClearSearchEntry() {
 	if v.searchEntry.OnChanged != nil {
 		v.searchEntry.OnChanged("")
 	}
+	v.searchEntry.Refresh()
 }
 
 func (v *SearchList[DataType, WidgetType]) Update(data []DataType) {

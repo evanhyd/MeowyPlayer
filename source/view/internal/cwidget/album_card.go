@@ -26,7 +26,7 @@ type AlbumCard struct {
 func NewAlbumCardConstructor(onTapped func(model.AlbumKey), onTappedSecondary func(*fyne.PointEvent, model.AlbumKey)) func() *AlbumCard {
 	return func() *AlbumCard {
 		v := AlbumCard{
-			cover: canvas.NewImageFromResource(nil),
+			cover: canvas.NewImageFromResource(resource.WindowIcon),
 			title: widget.NewLabel(""),
 			tip:   widget.NewLabel(""),
 		}
@@ -44,7 +44,8 @@ func (v *AlbumCard) CreateRenderer() fyne.WidgetRenderer {
 	v.tip.Wrapping = fyne.TextWrapWord
 	v.tip.Hide()
 
-	return widget.NewSimpleRenderer(container.NewStack(container.NewBorder(nil, v.title, nil, nil, v.cover), v.tip))
+	return widget.NewSimpleRenderer(container.NewBorder(nil, v.title, nil, nil, container.NewStack(v.cover, v.tip)))
+	// return widget.NewSimpleRenderer(container.NewStack(container.NewBorder(nil, v.title, nil, nil, v.cover), v.tip))
 }
 
 func (v *AlbumCard) MouseIn(e *desktop.MouseEvent) {
@@ -69,4 +70,8 @@ func (v *AlbumCard) Notify(album model.Album) {
 	v.cover.Refresh()
 	v.title.SetText(album.Title())
 	v.tip.SetText(fmt.Sprintf(resource.KAlbumTipTextTemplate, album.Count(), album.Date().Format(time.DateTime)))
+}
+
+func (v *AlbumCard) HideTitle() {
+	v.title.Hide()
 }

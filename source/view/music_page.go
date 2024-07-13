@@ -97,9 +97,7 @@ func (p *MusicPage) setTitleComparator() {
 func (p *MusicPage) playMusic(music model.Music) {
 	playlist := p.pipeline.sortCopy(p.current.Music()) //p.current might be outdated
 	toPlay := slices.Index(playlist, music)
-	if err := player.Instance().LoadAlbum(p.current.Key(), playlist, toPlay); err != nil {
-		fyne.LogError("failed to play album", err)
-	}
+	player.Instance().LoadAlbum(p.current.Key(), playlist, toPlay)
 }
 
 func (p *MusicPage) showMusicMenu(e *fyne.PointEvent, music model.Music) {

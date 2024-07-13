@@ -40,15 +40,15 @@ type bundleFormat struct {
 	path string
 }
 
-func bundleResource(outputFile string, toBundles []bundleFormat) {
+func bundleResource(outputFile string, bundles []bundleFormat) {
 	fyneToolPath := filepath.Join(build.Default.GOPATH, "bin", "fyne")
 
 	getAsset := func(asset string) string {
 		return filepath.Join("asset", asset)
 	}
 
-	run(fyneToolPath, "bundle", "-o", outputFile, "--package", "resource", "--name", toBundles[0].name, getAsset(toBundles[0].path))
-	for _, toBundle := range toBundles[1:] {
+	run(fyneToolPath, "bundle", "-o", outputFile, "--package", "resource", "--name", bundles[0].name, getAsset(bundles[0].path))
+	for _, toBundle := range bundles[1:] {
 		run(fyneToolPath, "bundle", "-o", outputFile, "--append", "--name", toBundle.name, getAsset(toBundle.path))
 	}
 }
@@ -78,8 +78,9 @@ func main() {
 		{"CollectionTabIcon", "collection_tab.svg"},
 		{"YouTubeIcon", "youtube.svg"},
 		{"AlphabeticalIcon", "alphabetical.svg"},
+		{"RandomIcon", "random.svg"},
 	}
-	iconPath := filepath.Join("source", "view", "internal", "resource", "Icon.go")
+	iconPath := filepath.Join("source", "view", "internal", "resource", "icon.go")
 	bundleResource(iconPath, iconBundles)
 	buildBinary()
 }

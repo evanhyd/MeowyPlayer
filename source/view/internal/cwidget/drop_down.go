@@ -15,7 +15,7 @@ type DropDown struct {
 func NewDropDown() *DropDown {
 	var d DropDown
 	d = DropDown{
-		selected: NewTappableIcon(nil, d.showMenu),
+		selected: NewButtonIcon(nil, d.showMenu),
 		menu:     fyne.NewMenu(""),
 	}
 	d.ExtendBaseWidget(&d)

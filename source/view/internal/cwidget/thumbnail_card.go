@@ -32,8 +32,8 @@ func NewThumbnailCardConstructor(
 		c = ThumbnailCard{
 			thumbnail:   canvas.NewImageFromResource(theme.BrokenImageIcon()),
 			summary:     widget.NewRichTextWithText(""),
-			instantPlay: NewTappableIcon(theme.MediaPlayIcon(), func() { onInstantPlay(c.result) }),
-			download:    NewTappableIcon(theme.DownloadIcon(), func() { onDownload(c.result) }),
+			instantPlay: NewButtonIcon(theme.MediaPlayIcon(), func() { onInstantPlay(c.result) }),
+			download:    NewButtonIcon(theme.DownloadIcon(), func() { onDownload(c.result) }),
 			highlight:   canvas.NewRectangle(theme.HoverColor()),
 		}
 		c.ExtendBaseWidget(&c)
