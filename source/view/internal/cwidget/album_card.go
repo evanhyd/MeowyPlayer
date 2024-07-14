@@ -18,8 +18,8 @@ type AlbumCard struct {
 	TappableComponent
 	CursorableComponent
 	cover *canvas.Image
-	title *widget.Label
 	tip   *widget.Label
+	title *widget.Label
 	key   model.AlbumKey
 }
 
@@ -27,8 +27,8 @@ func NewAlbumCardConstructor(onTapped func(model.AlbumKey), onTappedSecondary fu
 	return func() *AlbumCard {
 		v := AlbumCard{
 			cover: canvas.NewImageFromResource(resource.WindowIcon),
-			title: widget.NewLabel(""),
 			tip:   widget.NewLabel(""),
+			title: widget.NewLabel(""),
 		}
 		v.OnTapped = func(*fyne.PointEvent) { onTapped(v.key) }
 		v.OnTappedSecondary = func(e *fyne.PointEvent) { onTappedSecondary(e, v.key) }
@@ -38,25 +38,21 @@ func NewAlbumCardConstructor(onTapped func(model.AlbumKey), onTappedSecondary fu
 }
 
 func (v *AlbumCard) CreateRenderer() fyne.WidgetRenderer {
-	v.cover.FillMode = canvas.ImageFillContain
 	v.title.Truncation = fyne.TextTruncateEllipsis
 	v.title.Alignment = fyne.TextAlignCenter
 	v.tip.Wrapping = fyne.TextWrapWord
 	v.tip.Hide()
 
 	return widget.NewSimpleRenderer(container.NewBorder(nil, v.title, nil, nil, container.NewStack(v.cover, v.tip)))
-	// return widget.NewSimpleRenderer(container.NewStack(container.NewBorder(nil, v.title, nil, nil, v.cover), v.tip))
 }
 
 func (v *AlbumCard) MouseIn(e *desktop.MouseEvent) {
 	v.cover.Translucency = 0.8
-	v.cover.Refresh()
 	v.tip.Show()
 }
 
 func (v *AlbumCard) MouseOut() {
 	v.cover.Translucency = 0.0
-	v.cover.Refresh()
 	v.tip.Hide()
 }
 

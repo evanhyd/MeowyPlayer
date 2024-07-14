@@ -1,6 +1,7 @@
 package cwidget
 
 import (
+	"fmt"
 	"playground/pattern"
 
 	"fyne.io/fyne/v2"
@@ -77,6 +78,7 @@ func (v *SearchList[DataType, WidgetType]) ClearSearchEntry() {
 }
 
 func (v *SearchList[DataType, WidgetType]) Update(data []DataType) {
+	fmt.Println("update")
 	v.data = data
 
 	//resize to fit, keep the capacity
@@ -100,4 +102,12 @@ func (v *SearchList[DataType, WidgetType]) Update(data []DataType) {
 	}
 
 	v.scroll.ScrollToTop()
+}
+
+var cnt = 0
+
+func (v *SearchList[DataType, WidgetType]) Refresh() {
+	v.BaseWidget.Refresh()
+	cnt++
+	fmt.Println("refresh", cnt)
 }

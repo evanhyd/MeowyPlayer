@@ -44,7 +44,6 @@ func NewThumbnailCardConstructor(
 func (c *ThumbnailCard) CreateRenderer() fyne.WidgetRenderer {
 	c.highlight.Hide()
 	c.thumbnail.FillMode = canvas.ImageFillOriginal
-	c.thumbnail.ScaleMode = canvas.ImageScaleFastest
 	c.thumbnail.SetMinSize(resource.KThumbnailSize)
 	c.summary.Wrapping = fyne.TextWrapWord
 	return widget.NewSimpleRenderer(container.NewStack(

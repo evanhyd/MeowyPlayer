@@ -42,6 +42,7 @@ func (p *MainPanel) CreateRenderer() fyne.WidgetRenderer {
 		container.NewTabItemWithIcon(resource.KSettingText, theme.SettingsIcon(), p.settingPage),
 	)
 	tabs.SetTabLocation(container.TabLocationLeading)
+	tabs.SelectIndex(1)
 	return widget.NewSimpleRenderer(container.NewBorder(nil, p.controllerPage, nil, nil, tabs))
 }
 
