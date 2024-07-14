@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -18,7 +17,7 @@ import (
 
 type MusicPage struct {
 	widget.BaseWidget
-	list *cwidget.SearchList[model.Music, *cwidget.MusicCard]
+	searchBar *cwidget.SearchBar[[]model.Music]
 
 	pipeline dataPipeline[model.Music]
 	current  model.Album
@@ -27,9 +26,8 @@ type MusicPage struct {
 func newMusicPage() *MusicPage {
 	var p MusicPage
 	p = MusicPage{
-		list: cwidget.NewSearchList(
-			container.NewVBox(),
-			cwidget.NewMusicCardConstructor(p.playMusic, p.showMusicMenu),
+		searchBar: cwidget.NewSearchBar(
+			cwidget.NewCachedList(cwidget.NewMusicCardConstructor(p.playMusic, p.showMusicMenu)),
 			p.setEntryFilter,
 			nil,
 		),
@@ -37,9 +35,9 @@ func newMusicPage() *MusicPage {
 	}
 
 	//search bar menu and toolbar
-	p.list.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
-	p.list.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
-	p.list.AddToolbar(cwidget.NewButton(resource.KBackText, theme.NavigateBackIcon(), model.Instance().FocusAlbumView))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
+	p.searchBar.AddToolbar(cwidget.NewButton(resource.KBackText, theme.NavigateBackIcon(), model.Instance().FocusAlbumView))
 
 	//client update callback
 	model.Instance().OnAlbumSelected().Attach(&p)                                         //update current album and list content when selecting album
@@ -50,13 +48,13 @@ func newMusicPage() *MusicPage {
 }
 
 func (p *MusicPage) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(p.list)
+	return widget.NewSimpleRenderer(p.searchBar)
 }
 
 func (p *MusicPage) Notify(album model.Album) {
 	if p.current.Key() != album.Key() {
 		p.current = album
-		p.list.ClearSearchEntry()
+		p.searchBar.ClearSearchEntry()
 	}
 }
 
@@ -70,7 +68,7 @@ func (p *MusicPage) updateList() {
 	if err != nil {
 		fyne.LogError("musicPage updateList fails", err)
 	}
-	p.list.Update(p.pipeline.apply(p.current.Music()))
+	p.searchBar.Update(p.pipeline.apply(p.current.Music()))
 }
 
 func (p *MusicPage) setEntryFilter(substr string) {

@@ -16,7 +16,7 @@ import (
 
 type AlbumPage struct {
 	widget.BaseWidget
-	list *cwidget.SearchList[model.Album, *cwidget.AlbumCard]
+	searchBar *cwidget.SearchBar[[]model.Album]
 
 	pipeline   dataPipeline[model.Album]
 	albumsData []model.Album
@@ -25,9 +25,8 @@ type AlbumPage struct {
 func newAlbumPage() *AlbumPage {
 	var p AlbumPage
 	p = AlbumPage{
-		list: cwidget.NewSearchList(
-			container.NewGridWrap(resource.KAlbumCardSize),
-			cwidget.NewAlbumCardConstructor(p.selectAlbum, p.showAlbumMenu),
+		searchBar: cwidget.NewSearchBar(
+			cwidget.NewCustomList(container.NewGridWrap(resource.KAlbumCardSize), cwidget.NewAlbumCardConstructor(p.selectAlbum, p.showAlbumMenu)),
 			p.setEntryFilter,
 			nil,
 		),
@@ -35,9 +34,9 @@ func newAlbumPage() *AlbumPage {
 	}
 
 	//search bar menu and toolbar
-	p.list.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
-	p.list.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
-	p.list.AddToolbar(cwidget.NewButton(resource.KCreateAlbumText, theme.FolderNewIcon(), p.showCreateAlbumDialog))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
+	p.searchBar.AddToolbar(cwidget.NewButton(resource.KCreateAlbumText, theme.FolderNewIcon(), p.showCreateAlbumDialog))
 	p.ExtendBaseWidget(&p)
 
 	//client update callback
@@ -46,7 +45,7 @@ func newAlbumPage() *AlbumPage {
 }
 
 func (p *AlbumPage) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(p.list)
+	return widget.NewSimpleRenderer(p.searchBar)
 }
 
 func (p *AlbumPage) Notify(albums []model.Album) {
@@ -55,7 +54,7 @@ func (p *AlbumPage) Notify(albums []model.Album) {
 }
 
 func (p *AlbumPage) updateList() {
-	p.list.Update(p.pipeline.apply(p.albumsData))
+	p.searchBar.Update(p.pipeline.apply(p.albumsData))
 }
 
 func (p *AlbumPage) setEntryFilter(substr string) {

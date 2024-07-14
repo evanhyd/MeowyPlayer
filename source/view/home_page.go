@@ -16,32 +16,29 @@ import (
 
 type HomePage struct {
 	widget.BaseWidget
-	list *cwidget.SearchList[browser.Result, *cwidget.ThumbnailCard]
-
-	browser browser.Browser
+	searchBar *cwidget.SearchBar[[]browser.Result]
+	browser   browser.Browser
 }
 
 func newHomePage() *HomePage {
 	var p HomePage
 	p = HomePage{
-		list: cwidget.NewSearchList(
-			container.NewVBox(),
-			cwidget.NewThumbnailCardConstructor(p.onInstantPlay, p.showDownloadMenu),
+		searchBar: cwidget.NewSearchBar(
+			cwidget.NewCustomList(container.NewVBox(), cwidget.NewThumbnailCardConstructor(p.onInstantPlay, p.showDownloadMenu)),
 			nil,
 			p.searchTitle,
 		),
 	}
 
 	//menu and toolbar
-	p.list.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon, func() { p.browser = browser.NewYouTubeBrowser() }))
-	p.list.AddToolbar(cwidget.NewDropDown())
-
+	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon, func() { p.browser = browser.NewYouTubeBrowser() }))
+	p.searchBar.AddToolbar(cwidget.NewDropDown())
 	p.ExtendBaseWidget(&p)
 	return &p
 }
 
 func (p *HomePage) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(p.list)
+	return widget.NewSimpleRenderer(p.searchBar)
 }
 
 func (p *HomePage) searchTitle(title string) {
@@ -62,7 +59,7 @@ func (p *HomePage) searchTitle(title string) {
 			fyne.LogError("browser searchTitle failed", err)
 		}
 		if len(results) > 0 {
-			p.list.Update(results)
+			p.searchBar.Update(results)
 			return
 		}
 	}

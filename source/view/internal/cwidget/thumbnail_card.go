@@ -1,7 +1,9 @@
 package cwidget
 
 import (
+	"bytes"
 	"fmt"
+	"image"
 	"playground/browser"
 	"playground/view/internal/resource"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/image/draw"
 )
 
 type ThumbnailCard struct {
@@ -30,7 +33,7 @@ func NewThumbnailCardConstructor(
 	return func() *ThumbnailCard {
 		var c ThumbnailCard
 		c = ThumbnailCard{
-			thumbnail:   canvas.NewImageFromResource(theme.BrokenImageIcon()),
+			thumbnail:   canvas.NewImageFromResource(nil),
 			summary:     widget.NewRichTextWithText(""),
 			instantPlay: NewButtonIcon(theme.MediaPlayIcon(), func() { onInstantPlay(c.result) }),
 			download:    NewButtonIcon(theme.DownloadIcon(), func() { onDownload(c.result) }),
@@ -43,7 +46,6 @@ func NewThumbnailCardConstructor(
 
 func (c *ThumbnailCard) CreateRenderer() fyne.WidgetRenderer {
 	c.highlight.Hide()
-	c.thumbnail.FillMode = canvas.ImageFillOriginal
 	c.thumbnail.SetMinSize(resource.KThumbnailSize)
 	c.summary.Wrapping = fyne.TextWrapWord
 	return widget.NewSimpleRenderer(container.NewStack(
@@ -83,8 +85,17 @@ func (c *ThumbnailCard) Notify(result browser.Result) {
 	channel := &widget.TextSegment{Text: result.ChannelTitle}
 	stats := &widget.TextSegment{Text: result.Stats}
 
+	//resize to reduce refresh time
+	originalThumbnail, typeStr, err := image.Decode(bytes.NewBuffer(result.Thumbnail.Content()))
+	if err != nil {
+		fyne.LogError(fmt.Sprintf("failed to decode image of type %v", typeStr), err)
+		return
+	}
+	scaledThumbnail := image.NewRGBA(image.Rect(0, 0, int(resource.KThumbnailSize.Width), int(resource.KThumbnailSize.Height)))
+	draw.CatmullRom.Scale(scaledThumbnail, scaledThumbnail.Rect, originalThumbnail, originalThumbnail.Bounds(), draw.Over, nil)
+
 	c.result = result
-	c.thumbnail.Resource = result.Thumbnail
+	c.thumbnail.Image = scaledThumbnail
 	c.summary.Segments = c.summary.Segments[:0]
 	c.summary.Segments = append(c.summary.Segments, heading, channel, stats)
 	c.Refresh()

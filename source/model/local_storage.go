@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 var _ Storage = &localStorage{}
@@ -85,7 +84,6 @@ func (f *localStorage) uploadAlbum(album Album) error {
 		return fmt.Errorf("empty key in uploadAlbum")
 	}
 
-	album.date = time.Now()
 	data, err := json.Marshal(&album)
 	if err != nil {
 		return err
@@ -115,7 +113,6 @@ func (f *localStorage) uploadMusic(music Music, reader io.Reader) error {
 		return fmt.Errorf("empty key in uploadMusic")
 	}
 
-	music.date = time.Now()
 	dst, err := os.OpenFile(f.musicPath(key), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err

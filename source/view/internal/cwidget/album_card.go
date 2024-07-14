@@ -42,17 +42,18 @@ func (v *AlbumCard) CreateRenderer() fyne.WidgetRenderer {
 	v.title.Alignment = fyne.TextAlignCenter
 	v.tip.Wrapping = fyne.TextWrapWord
 	v.tip.Hide()
-
 	return widget.NewSimpleRenderer(container.NewBorder(nil, v.title, nil, nil, container.NewStack(v.cover, v.tip)))
 }
 
 func (v *AlbumCard) MouseIn(e *desktop.MouseEvent) {
 	v.cover.Translucency = 0.8
+	v.cover.Refresh()
 	v.tip.Show()
 }
 
 func (v *AlbumCard) MouseOut() {
 	v.cover.Translucency = 0.0
+	v.cover.Refresh()
 	v.tip.Hide()
 }
 

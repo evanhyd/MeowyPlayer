@@ -2,11 +2,15 @@ package view
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
+	"os"
 	"playground/view/internal/cwidget"
 	"playground/view/internal/resource"
+
+	_ "image/jpeg"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -15,6 +19,7 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"golang.org/x/image/draw"
 )
 
 type AlbumEditor struct {
@@ -31,7 +36,6 @@ func newAlbumEditor() *AlbumEditor {
 	//cover
 	v.cover = canvas.NewImageFromResource(theme.DocumentCreateIcon())
 	v.cover.SetMinSize(resource.KAlbumCoverSize)
-	v.cover.FillMode = canvas.ImageFillContain
 
 	//file picker
 	upload := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
@@ -41,7 +45,7 @@ func newAlbumEditor() *AlbumEditor {
 			v.setImage(reader.URI().Path())
 		}
 	}, getWindow())
-	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg", ".bmp"}))
+	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg"}))
 	upload.SetConfirmText(resource.KUploadText)
 	upload.SetDismissText(resource.KCancelText)
 	v.uploadButton = cwidget.NewButtonIcon(nil, upload.Show)
@@ -92,9 +96,24 @@ func (v *AlbumEditor) setColor(coverColor color.Color) {
 }
 
 func (v *AlbumEditor) setImage(path string) {
-	var err error
-	if v.cover.Resource, err = fyne.LoadResourceFromPath(path); err != nil {
+	file, err := os.Open(path)
+	if err != nil {
 		fyne.LogError("failed to set cover image", err)
+		return
 	}
+	defer file.Close()
+
+	//resize to reduce UI rendering time
+	originalImg, typeStr, err := image.Decode(file)
+	if err != nil {
+		fyne.LogError(fmt.Sprintf("failed to decode image of type %v", typeStr), err)
+		return
+	}
+	scaledImge := image.NewRGBA(image.Rect(0, 0, int(resource.KAlbumCoverSize.Width), int(resource.KAlbumCoverSize.Height)))
+	draw.CatmullRom.Scale(scaledImge, scaledImge.Rect, originalImg, originalImg.Bounds(), draw.Over, nil)
+
+	buffer := bytes.Buffer{}
+	png.Encode(&buffer, scaledImge)
+	v.cover.Resource = &fyne.StaticResource{StaticContent: buffer.Bytes()}
 	v.cover.Refresh()
 }

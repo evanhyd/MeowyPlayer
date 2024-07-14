@@ -6,6 +6,7 @@ import (
 	"playground/pattern"
 	"slices"
 	"sync"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"github.com/google/uuid"
@@ -77,7 +78,7 @@ func (m *Client) CreateAlbum(title string, cover fyne.Resource) error {
 	m.Lock()
 	defer m.Unlock()
 
-	album := Album{key: AlbumKey(uuid.NewString()), title: title, cover: cover}
+	album := Album{key: AlbumKey(uuid.NewString()), date: time.Now(), title: title, cover: cover}
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
 	}
@@ -92,6 +93,7 @@ func (m *Client) EditAlbum(key AlbumKey, title string, cover fyne.Resource) erro
 	if err != nil {
 		return err
 	}
+	album.date = time.Now()
 	album.title = title
 	album.cover = cover
 	if err := m.storage.uploadAlbum(album); err != nil {
@@ -118,7 +120,9 @@ func (m *Client) AddMusicToAlbum(key AlbumKey, result browser.Result, reader io.
 	if err != nil {
 		return err
 	}
-	music := Music{title: result.Title, length: result.Length, platform: result.Platform, id: result.VideoID}
+	timestamp := time.Now()
+	music := Music{date: timestamp, title: result.Title, length: result.Length, platform: result.Platform, id: result.VideoID}
+	album.date = timestamp
 	album.music = append(album.music, music)
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
@@ -135,6 +139,7 @@ func (m *Client) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 	if err != nil {
 		return err
 	}
+	album.date = time.Now()
 	album.music = slices.DeleteFunc(album.music, func(m Music) bool { return m.Key() == mKey })
 	if err := m.storage.uploadAlbum(album); err != nil {
 		return err
