@@ -1,22 +1,5 @@
 package resource
 
-import (
-	"fyne.io/fyne/v2"
-)
-
-// Put all the data here so we can configure the language setting at runtime.
-const KGoldenRatio = 1.618033988749
-const KGoldenRatioPercentage = 1 / (1 + KGoldenRatio)
-
-var KWindowSize fyne.Size = fyne.NewSize(600, 650)
-var KAlbumCardSize fyne.Size = fyne.NewSize(140, 180)
-var KAlbumCoverSize fyne.Size = fyne.NewSize(180, 180)
-var KAlbumPreviewSize fyne.Size = fyne.NewSize(140, 140)
-var KThumbnailSize fyne.Size = fyne.NewSize(271, 152)
-
-const KSearchAttempts = 5
-
-// Program Text
 const KWindowTitle = "MeowyPlayer"
 const KDownloadText = "Download"
 const KUploadText = "Upload"
@@ -27,9 +10,9 @@ const KDeleteText = "Delete"
 const KSaveText = "Save"
 const KEditText = "Edit"
 const KHomeText = "Home"
-const KCollectionText = "Collection"
+const KCollectionsText = "Collections"
 const KAccountText = "Account"
-const KSettingText = "Setting"
+const KSettingsText = "Settings"
 const KBackText = "Back"
 const KSearchingText = "Searching"
 const KAttemptsText = "Attempts"

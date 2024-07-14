@@ -38,8 +38,8 @@ func (p *MainPanel) CreateRenderer() fyne.WidgetRenderer {
 	p.musicPage.Hide()
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon(resource.KHomeText, theme.HomeIcon(), p.homePage),
-		container.NewTabItemWithIcon(resource.KCollectionText, resource.CollectionTabIcon, container.NewStack(p.albumPage, p.musicPage)),
-		container.NewTabItemWithIcon(resource.KSettingText, theme.SettingsIcon(), p.settingPage),
+		container.NewTabItemWithIcon(resource.KCollectionsText, resource.CollectionTabIcon, container.NewStack(p.albumPage, p.musicPage)),
+		container.NewTabItemWithIcon(resource.KSettingsText, theme.SettingsIcon(), p.settingPage),
 	)
 	tabs.SetTabLocation(container.TabLocationLeading)
 	tabs.SelectIndex(1)

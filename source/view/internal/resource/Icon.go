@@ -28,5 +28,5 @@ var AlphabeticalIcon = &fyne.StaticResource{
 var RandomIcon = &fyne.StaticResource{
 	StaticName: "random.svg",
 	StaticContent: []byte(
-		"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"348.711\" height=\"348.71\" xml:space=\"preserve\"><circle fill=\"#1A171B\" cx=\"174.355\" cy=\"174.355\" r=\"173.855\"/><circle fill=\"#e8bf28\" cx=\"174.355\" cy=\"174.355\" r=\"158.208\"/><g fill=\"#1A171B\"><path d=\"M103.075 50.469C57.25 76.926 31.67 124.983 31.771 174.355h142.583L103.075 50.469zM245.635 50.469c45.825 26.457 71.404 74.514 71.304 123.886H174.355l71.28-123.886zM103.254 297.606c45.562 26.305 99.606 24.594 142.201.223l-71.288-123.474-70.913 123.251z\"/></g><circle fill=\"#e8bf28\" cx=\"174.354\" cy=\"173.931\" r=\"43.463\"/><circle fill=\"#1A171B\" cx=\"174.355\" cy=\"173.931\" r=\"27.816\"/></svg>"),
+		"<svg width=\"64\" height=\"64\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"4\" y=\"4\" width=\"56\" height=\"56\" rx=\"10\" ry=\"10\" fill=\"none\" stroke=\"#fff\" stroke-width=\"4\"/><circle cx=\"20\" cy=\"20\" r=\"5\" fill=\"#fff\"/><circle cx=\"32\" cy=\"32\" r=\"5\" fill=\"#fff\"/><circle cx=\"44\" cy=\"44\" r=\"5\" fill=\"#fff\"/></svg>"),
 }
