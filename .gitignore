@@ -34,11 +34,10 @@
 
 ### MeowyPlayer ###
 # Resources
-collection/**
-music/**
-source/core/resource/Font.go
-source/core/resource/Icon.go
+storage/**
 out/**
+icon.go
 *.txt
 *.log
 *.json
+*.pdf
