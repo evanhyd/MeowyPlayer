@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/theme"
 )
 
 func RunApp() {
@@ -16,7 +15,7 @@ func RunApp() {
 	mainApp := app.NewWithID(resource.KWindowTitle)
 	fyne.SetCurrentApp(mainApp)
 	mainApp.SetIcon(resource.WindowIcon)
-	mainApp.Settings().SetTheme(theme.DarkTheme())
+	mainApp.Settings().SetTheme(resource.NewVanillaTheme())
 
 	//create main window
 	window := mainApp.NewWindow(resource.KWindowTitle)

@@ -34,10 +34,9 @@
 
 ### MeowyPlayer ###
 # Resources
-source/resource/Font.go
-source/resource/Icon.go
 storage/**
 out/**
+icon.go
 *.txt
 *.log
 *.json
