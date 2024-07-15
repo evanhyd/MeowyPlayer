@@ -20,6 +20,7 @@ type MP3Player struct {
 	context *oto.Context
 	decoder *mp3.Decoder
 	player  *oto.Player
+	volume  float64
 
 	onAlbumPlayed     pattern.Subject[model.AlbumKey]
 	onMusicPlayed     pattern.Subject[model.Music]
@@ -33,6 +34,7 @@ func InitPlayer() {
 		kSamplingRate      = 44100
 		kChannelCount      = 2
 		kCommandBufferSize = 128
+		kDefaultVolume     = 0.5
 	)
 
 	context, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: kSamplingRate, ChannelCount: kChannelCount, Format: oto.FormatSignedInt16LE})
@@ -44,6 +46,7 @@ func InitPlayer() {
 	mp3Player = MP3Player{
 		commands:          make(chan MP3PlayerCommand, kCommandBufferSize),
 		context:           context,
+		volume:            kDefaultVolume,
 		onAlbumPlayed:     pattern.MakeSubject[model.AlbumKey](),
 		onMusicPlayed:     pattern.MakeSubject[model.Music](),
 		onProgressUpdated: pattern.MakeSubject[float64](),
@@ -70,7 +73,10 @@ func (p *MP3Player) Play() {
 }
 
 func (p *MP3Player) SetVolume(percent float64) {
-	p.commands <- func() { p.player.SetVolume(percent * percent) }
+	p.commands <- func() {
+		p.volume = percent * percent
+		p.player.SetVolume(p.volume)
+	}
 }
 
 func (p *MP3Player) SetProgress(percent float64) {
@@ -113,6 +119,7 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 		p.player.Close()
 	}
 	p.player = p.context.NewPlayer(p.decoder)
+	p.player.SetVolume(p.volume)
 	p.player.Play()
 	p.onMusicPlayed.NotifyAll(*music)
 }
