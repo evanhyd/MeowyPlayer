@@ -2,10 +2,10 @@ package view
 
 import (
 	"fmt"
-	"playground/model"
-	"playground/player"
-	"playground/view/internal/cwidget"
-	"playground/view/internal/resource"
+	"meowyplayer/model"
+	"meowyplayer/player"
+	"meowyplayer/view/internal/cwidget"
+	"meowyplayer/view/internal/resource"
 	"slices"
 	"strings"
 
@@ -35,9 +35,9 @@ func newMusicPage() *MusicPage {
 	}
 
 	//search bar menu and toolbar
-	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
-	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
-	p.searchBar.AddToolbar(cwidget.NewButton(resource.KBackText, theme.NavigateBackIcon(), model.Instance().FocusAlbumView))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.MostRecentText(), theme.HistoryIcon(), p.setDateComparator))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.AlphabeticalText(), resource.AlphabeticalIcon(), p.setTitleComparator))
+	p.searchBar.AddToolbar(cwidget.NewButton(resource.BackText(), theme.NavigateBackIcon(), model.Instance().FocusAlbumView))
 
 	//client update callback
 	model.Instance().OnAlbumSelected().Attach(&p)                                         //update current album and list content when selecting album
@@ -99,13 +99,13 @@ func (p *MusicPage) playMusic(music model.Music) {
 }
 
 func (p *MusicPage) showMusicMenu(e *fyne.PointEvent, music model.Music) {
-	deleteMenu := cwidget.NewMenuItem(resource.KDeleteText, theme.DeleteIcon(), func() { p.showDeleteMusicDialog(music) })
+	deleteMenu := cwidget.NewMenuItem(resource.DeleteText(), theme.DeleteIcon(), func() { p.showDeleteMusicDialog(music) })
 	widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
 }
 
 func (p *MusicPage) showDeleteMusicDialog(music model.Music) {
-	dialog.ShowCustomConfirm(resource.KDeleteConfirmationText, resource.KDeleteText, resource.KCancelText,
-		widget.NewLabel(fmt.Sprintf(resource.KDeleteMusicTextTemplate, music.Title())),
+	dialog.ShowCustomConfirm(resource.DeleteConfirmationText(), resource.DeleteText(), resource.CancelText(),
+		widget.NewLabel(fmt.Sprintf(resource.DeleteMusicTextTemplate(), music.Title())),
 		func(confirm bool) {
 			if confirm {
 				if err := model.Instance().RemoveMusicFromAlbum(p.current.Key(), music.Key()); err != nil {

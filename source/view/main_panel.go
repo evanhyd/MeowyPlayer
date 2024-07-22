@@ -1,8 +1,8 @@
 package view
 
 import (
-	"playground/model"
-	"playground/view/internal/resource"
+	"meowyplayer/model"
+	"meowyplayer/view/internal/resource"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -37,9 +37,9 @@ func newMainPanel() *MainPanel {
 func (p *MainPanel) CreateRenderer() fyne.WidgetRenderer {
 	p.musicPage.Hide()
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon(resource.KHomeText, theme.HomeIcon(), p.homePage),
-		container.NewTabItemWithIcon(resource.KCollectionsText, resource.CollectionTabIcon, container.NewStack(p.albumPage, p.musicPage)),
-		container.NewTabItemWithIcon(resource.KSettingsText, theme.SettingsIcon(), p.settingPage),
+		container.NewTabItemWithIcon(resource.HomeText(), theme.HomeIcon(), p.homePage),
+		container.NewTabItemWithIcon(resource.CollectionsText(), resource.CollectionTabIcon(), container.NewStack(p.albumPage, p.musicPage)),
+		container.NewTabItemWithIcon(resource.SettingsText(), theme.SettingsIcon(), p.settingPage),
 	)
 	tabs.SetTabLocation(container.TabLocationLeading)
 	tabs.SelectIndex(1)

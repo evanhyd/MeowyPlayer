@@ -6,9 +6,9 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"meowyplayer/view/internal/cwidget"
+	"meowyplayer/view/internal/resource"
 	"os"
-	"playground/view/internal/cwidget"
-	"playground/view/internal/resource"
 
 	_ "image/jpeg"
 
@@ -46,8 +46,8 @@ func newAlbumEditor() *AlbumEditor {
 		}
 	}, getWindow())
 	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg"}))
-	upload.SetConfirmText(resource.KUploadText)
-	upload.SetDismissText(resource.KCancelText)
+	upload.SetConfirmText(resource.UploadText())
+	upload.SetDismissText(resource.CancelText())
 	v.uploadButton = cwidget.NewButtonIcon(nil, upload.Show)
 
 	//color picker
@@ -57,7 +57,7 @@ func newAlbumEditor() *AlbumEditor {
 
 	//title entry
 	v.titleEntry = widget.NewEntry()
-	v.titleEntry.PlaceHolder = resource.KEnterTitleHint
+	v.titleEntry.PlaceHolder = resource.EnterTitleHint()
 
 	v.ExtendBaseWidget(&v)
 	return &v

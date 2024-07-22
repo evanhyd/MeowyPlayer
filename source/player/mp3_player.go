@@ -2,8 +2,8 @@ package player
 
 import (
 	"io"
-	"playground/model"
-	"playground/pattern"
+	"meowyplayer/model"
+	"meowyplayer/pattern"
 	"time"
 
 	"fyne.io/fyne/v2"

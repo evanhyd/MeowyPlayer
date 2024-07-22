@@ -2,16 +2,20 @@ package view
 
 import (
 	"fmt"
+	"meowyplayer/browser"
+	"meowyplayer/model"
+	"meowyplayer/view/internal/cwidget"
+	"meowyplayer/view/internal/resource"
 	"net/url"
-	"playground/browser"
-	"playground/model"
-	"playground/view/internal/cwidget"
-	"playground/view/internal/resource"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+)
+
+const (
+	kSearchAttempts = 5
 )
 
 type HomePage struct {
@@ -31,7 +35,7 @@ func newHomePage() *HomePage {
 	}
 
 	//menu and toolbar
-	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon, func() { p.browser = browser.NewYouTubeBrowser() }))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon(), func() { p.browser = browser.NewYouTubeBrowser() }))
 	p.searchBar.AddToolbar(cwidget.NewDropDown())
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -46,14 +50,14 @@ func (p *HomePage) searchTitle(title string) {
 
 	progress := widget.NewProgressBar()
 	progress.TextFormatter = func() string {
-		return fmt.Sprintf("%v / %v %v", attempts, resource.KSearchAttempts, resource.KAttemptsText)
+		return fmt.Sprintf("%v / %v %v", attempts, kSearchAttempts, resource.AttemptsText())
 	}
-	waitDialog := dialog.NewCustomWithoutButtons(resource.KSearchingText, progress, getWindow())
+	waitDialog := dialog.NewCustomWithoutButtons(resource.SearchingText(), progress, getWindow())
 	waitDialog.Show()
 	defer waitDialog.Hide()
 
-	for ; attempts < resource.KSearchAttempts; attempts++ {
-		progress.SetValue(float64(attempts) / resource.KSearchAttempts)
+	for ; attempts < kSearchAttempts; attempts++ {
+		progress.SetValue(float64(attempts) / kSearchAttempts)
 		results, err := p.browser.Search(title)
 		if err != nil {
 			fyne.LogError("browser searchTitle failed", err)
@@ -88,8 +92,8 @@ func (p *HomePage) showDownloadMenu(result browser.Result) {
 	}
 
 	selects := widget.NewSelect(options, nil)
-	selects.PlaceHolder = resource.KSelectAlbumText
-	dialog.ShowCustomConfirm(resource.KDownloadText, resource.KDownloadText, resource.KCancelText, selects, func(confirm bool) {
+	selects.PlaceHolder = resource.SelectAlbumText()
+	dialog.ShowCustomConfirm(resource.DownloadText(), resource.DownloadText(), resource.CancelText(), selects, func(confirm bool) {
 		if index := selects.SelectedIndex(); index != -1 && confirm {
 			go p.onDownload(albums[index].Key(), result)
 		}
@@ -97,7 +101,7 @@ func (p *HomePage) showDownloadMenu(result browser.Result) {
 }
 
 func (p *HomePage) onDownload(key model.AlbumKey, result browser.Result) {
-	waitDialog := dialog.NewCustomWithoutButtons(resource.KDownloadText, widget.NewProgressBarInfinite(), getWindow())
+	waitDialog := dialog.NewCustomWithoutButtons(resource.DownloadText(), widget.NewProgressBarInfinite(), getWindow())
 	waitDialog.Show()
 	defer waitDialog.Hide()
 

@@ -1,7 +1,7 @@
 package cwidget
 
 import (
-	"playground/pattern"
+	"meowyplayer/pattern"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"

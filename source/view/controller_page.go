@@ -3,10 +3,10 @@ package view
 import (
 	"fmt"
 	"image/color"
-	"playground/model"
-	"playground/player"
-	"playground/view/internal/cwidget"
-	"playground/view/internal/resource"
+	"meowyplayer/model"
+	"meowyplayer/player"
+	"meowyplayer/view/internal/cwidget"
+	"meowyplayer/view/internal/resource"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -46,9 +46,9 @@ func newControllerPage() *ControllerPage {
 		volumeSlider:   cwidget.NewVolumeSlider(player.Instance().SetVolume),
 	}
 
-	p.modeButton.Add(cwidget.NewMenuItem(resource.KRandomText, resource.RandomIcon, func() { player.Instance().SetMode(player.KRandomMode) }))
-	p.modeButton.Add(cwidget.NewMenuItem(resource.KOrderedText, theme.MailForwardIcon(), func() { player.Instance().SetMode(player.KOrderedMode) }))
-	p.modeButton.Add(cwidget.NewMenuItem(resource.KRepeatText, theme.MediaReplayIcon(), func() { player.Instance().SetMode(player.KRepeatMode) }))
+	p.modeButton.Add(cwidget.NewMenuItem(resource.RandomText(), resource.RandomIcon(), func() { player.Instance().SetMode(player.KRandomMode) }))
+	p.modeButton.Add(cwidget.NewMenuItem(resource.OrderedText(), theme.MailForwardIcon(), func() { player.Instance().SetMode(player.KOrderedMode) }))
+	p.modeButton.Add(cwidget.NewMenuItem(resource.RepeatText(), theme.MediaReplayIcon(), func() { player.Instance().SetMode(player.KRepeatMode) }))
 
 	player.Instance().OnAlbumPlayed().AttachFunc(p.setCover)
 	player.Instance().OnMusicPlayed().AttachFunc(p.setTitle)

@@ -2,8 +2,8 @@ package model
 
 import (
 	"io"
-	"playground/browser"
-	"playground/pattern"
+	"meowyplayer/browser"
+	"meowyplayer/pattern"
 	"slices"
 	"sync"
 	"time"

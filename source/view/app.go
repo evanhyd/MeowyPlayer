@@ -2,8 +2,8 @@ package view
 
 import (
 	"log"
-	"playground/model"
-	"playground/view/internal/resource"
+	"meowyplayer/model"
+	"meowyplayer/view/internal/resource"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -11,20 +11,21 @@ import (
 )
 
 func RunApp() {
+	resource.RegisterTranslation()
+
 	//create main app
-	mainApp := app.NewWithID(resource.KWindowTitle)
-	fyne.SetCurrentApp(mainApp)
-	mainApp.SetIcon(resource.WindowIcon)
+	mainApp := app.New()
+	mainApp.SetIcon(resource.WindowIcon())
 	mainApp.Settings().SetTheme(resource.NewVanillaTheme())
 
 	//create main window
-	window := mainApp.NewWindow(resource.KWindowTitle)
-	window.SetCloseIntercept(window.Hide)
-	window.CenterOnScreen()
+	window := mainApp.NewWindow(resource.WindowTitle())
 	window.Resize(resource.KWindowSize)
+	window.CenterOnScreen()
 	window.SetContent(newMainPanel())
 
 	//create system tray
+	window.SetCloseIntercept(window.Hide)
 	if desktop, ok := mainApp.(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
 	}

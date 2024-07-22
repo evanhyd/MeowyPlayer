@@ -2,8 +2,8 @@ package cwidget
 
 import (
 	"fmt"
-	"playground/model"
-	"playground/view/internal/resource"
+	"meowyplayer/model"
+	"meowyplayer/view/internal/resource"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -26,7 +26,7 @@ type AlbumCard struct {
 func NewAlbumCardConstructor(onTapped func(model.AlbumKey), onTappedSecondary func(*fyne.PointEvent, model.AlbumKey)) func() *AlbumCard {
 	return func() *AlbumCard {
 		v := AlbumCard{
-			cover: canvas.NewImageFromResource(resource.WindowIcon),
+			cover: canvas.NewImageFromResource(resource.WindowIcon()),
 			tip:   widget.NewLabel(""),
 			title: widget.NewLabel(""),
 		}
@@ -66,7 +66,7 @@ func (v *AlbumCard) Notify(album model.Album) {
 	v.cover.Resource = album.Cover()
 	v.cover.Refresh()
 	v.title.SetText(album.Title())
-	v.tip.SetText(fmt.Sprintf(resource.KAlbumTipTextTemplate, album.Count(), album.Date().Format(time.DateTime)))
+	v.tip.SetText(fmt.Sprintf(resource.AlbumTipTextTemplate(), album.Count(), album.Date().Format(time.DateTime)))
 }
 
 func (v *AlbumCard) HideTitle() {

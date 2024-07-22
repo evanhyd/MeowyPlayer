@@ -1,33 +1,44 @@
 package resource
 
-const KWindowTitle = "MeowyPlayer"
-const KDownloadText = "Download"
-const KUploadText = "Upload"
-const KQueueText = "Queue"
-const KCancelText = "Cancel"
-const KCreateText = "Create"
-const KDeleteText = "Delete"
-const KSaveText = "Save"
-const KEditText = "Edit"
-const KHomeText = "Home"
-const KCollectionsText = "Collections"
-const KAccountText = "Account"
-const KSettingsText = "Settings"
-const KBackText = "Back"
-const KSearchingText = "Searching"
-const KAttemptsText = "Attempts"
-const KSortMenuText = "Sort By"
-const KMostRecentText = "Most Recent"
-const KAlphabeticalText = "Alphabetical"
-const KCreateAlbumText = "Create Album"
-const KEditAlbumText = "Edit Album"
-const KEnterTitleHint = "Enter title:"
-const KDeleteConfirmationText = "Delete Confirmation"
-const KSelectAlbumText = "(Select an album)"
-const KRandomText = "Random"
-const KOrderedText = "Ordered"
-const KRepeatText = "Repeat"
+import (
+	"embed"
 
-const KDeleteAlbumTextTemplate = "Delete the album \"%v\" ?"
-const KDeleteMusicTextTemplate = "Delete the music \"%v\" ?"
-const KAlbumTipTextTemplate = "Songs: %v\n\nLast Edit: %v"
+	"fyne.io/fyne/v2/lang"
+)
+
+//go:embed translation
+var translations embed.FS
+
+func RegisterTranslation() {
+	lang.AddTranslationsFS(translations, "translation")
+}
+
+func WindowTitle() string             { return lang.L("MeowyPlayer") }
+func DownloadText() string            { return lang.L("Download") }
+func UploadText() string              { return lang.L("Upload") }
+func CancelText() string              { return lang.L("Cancel") }
+func CreateText() string              { return lang.L("Create") }
+func DeleteText() string              { return lang.L("Delete") }
+func SaveText() string                { return lang.L("Save") }
+func EditText() string                { return lang.L("Edit") }
+func HomeText() string                { return lang.L("Home") }
+func CollectionsText() string         { return lang.L("Collections") }
+func AccountText() string             { return lang.L("Account") }
+func SettingsText() string            { return lang.L("Settings") }
+func BackText() string                { return lang.L("Back") }
+func SearchingText() string           { return lang.L("Searching") }
+func AttemptsText() string            { return lang.L("Attempts") }
+func SortMenuText() string            { return lang.L("Sort By") }
+func MostRecentText() string          { return lang.L("Most Recent") }
+func AlphabeticalText() string        { return lang.L("Alphabetical") }
+func CreateAlbumText() string         { return lang.L("Create Album") }
+func EditAlbumText() string           { return lang.L("Edit Album") }
+func EnterTitleHint() string          { return lang.L("Enter title:") }
+func DeleteConfirmationText() string  { return lang.L("Delete Confirmation") }
+func SelectAlbumText() string         { return lang.L("(Select an album)") }
+func RandomText() string              { return lang.L("Random") }
+func OrderedText() string             { return lang.L("Ordered") }
+func RepeatText() string              { return lang.L("Repeat") }
+func DeleteAlbumTextTemplate() string { return lang.L("Delete the album \"%v\" ?") }
+func DeleteMusicTextTemplate() string { return lang.L("Delete the music \"%v\" ?") }
+func AlbumTipTextTemplate() string    { return lang.L("Songs: %v\n\nLast Edit: %v") }

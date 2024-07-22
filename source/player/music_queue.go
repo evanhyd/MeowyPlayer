@@ -2,7 +2,7 @@ package player
 
 import (
 	"math/rand"
-	"playground/model"
+	"meowyplayer/model"
 	"slices"
 )
 
@@ -64,7 +64,7 @@ func (q *MusicQueue) appendToHistory(index int) {
 		}
 		q.historyQueue = append(q.historyQueue, q.musicQueue[index])
 	}
-	q.historyIndex = len(q.historyQueue)
+	q.historyIndex = len(q.historyQueue) - 1
 }
 
 func (q *MusicQueue) shuffleQueue(toPlay int) {
@@ -100,6 +100,6 @@ func (q *MusicQueue) next() *model.Music {
 	case KRepeatMode:
 		//nothing
 	}
-
+	q.appendToHistory(q.lastPlayedIndex)
 	return &q.musicQueue[q.lastPlayedIndex]
 }

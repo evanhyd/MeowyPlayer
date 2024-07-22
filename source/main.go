@@ -3,9 +3,9 @@ package main
 import (
 	_ "net/http/pprof"
 
-	"playground/model"
-	"playground/player"
-	"playground/view"
+	"meowyplayer/model"
+	"meowyplayer/player"
+	"meowyplayer/view"
 )
 
 func main() {

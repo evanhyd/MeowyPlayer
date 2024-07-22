@@ -9,5 +9,3 @@ var KAlbumCardSize fyne.Size = fyne.NewSize(140, 180)
 var KAlbumCoverSize fyne.Size = fyne.NewSize(180, 180)
 var KAlbumPreviewSize fyne.Size = fyne.NewSize(140, 140)
 var KThumbnailSize fyne.Size = fyne.NewSize(271, 152)
-
-const KSearchAttempts = 5

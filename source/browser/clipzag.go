@@ -1,6 +1,7 @@
 package browser
 
 import (
+	"fmt"
 	"html"
 	"io"
 	"log"
@@ -50,6 +51,9 @@ func (s *clipzagScraper) fetchPage(title string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("[Clipzag] error response: %v", resp.Status)
+	}
 	data, err := io.ReadAll(resp.Body)
 	return string(data), err
 }

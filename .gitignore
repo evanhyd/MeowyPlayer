@@ -36,8 +36,6 @@
 # Resources
 storage/**
 out/**
-icon.go
 *.txt
 *.log
-*.json
 *.pdf

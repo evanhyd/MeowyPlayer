@@ -1,0 +1,8 @@
+Website = "https://github.com/evanhyd"
+
+[Details]
+  Icon = "view/internal/resource/asset/icon.png"
+  Name = "meowyplayer"
+  ID = "com.meowyplayer"
+  Version = "2.4.1"
+  Build = 19

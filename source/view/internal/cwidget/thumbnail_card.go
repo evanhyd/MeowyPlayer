@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"playground/browser"
-	"playground/view/internal/resource"
+	"meowyplayer/browser"
+	"meowyplayer/view/internal/resource"
 	"time"
 
 	"fyne.io/fyne/v2"

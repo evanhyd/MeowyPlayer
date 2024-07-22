@@ -2,7 +2,7 @@ package cwidget
 
 import (
 	"fmt"
-	"playground/model"
+	"meowyplayer/model"
 	"time"
 
 	"fyne.io/fyne/v2"

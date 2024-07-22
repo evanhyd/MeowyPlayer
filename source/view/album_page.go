@@ -2,9 +2,9 @@ package view
 
 import (
 	"fmt"
-	"playground/model"
-	"playground/view/internal/cwidget"
-	"playground/view/internal/resource"
+	"meowyplayer/model"
+	"meowyplayer/view/internal/cwidget"
+	"meowyplayer/view/internal/resource"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -34,9 +34,9 @@ func newAlbumPage() *AlbumPage {
 	}
 
 	//search bar menu and toolbar
-	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KMostRecentText, theme.HistoryIcon(), p.setDateComparator))
-	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.KAlphabeticalText, resource.AlphabeticalIcon, p.setTitleComparator))
-	p.searchBar.AddToolbar(cwidget.NewButton(resource.KCreateAlbumText, theme.FolderNewIcon(), p.showCreateAlbumDialog))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.MostRecentText(), theme.HistoryIcon(), p.setDateComparator))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.AlphabeticalText(), resource.AlphabeticalIcon(), p.setTitleComparator))
+	p.searchBar.AddToolbar(cwidget.NewButton(resource.CreateAlbumText(), theme.FolderNewIcon(), p.showCreateAlbumDialog))
 	p.ExtendBaseWidget(&p)
 
 	//client update callback
@@ -91,14 +91,14 @@ func (p *AlbumPage) showAlbumMenu(e *fyne.PointEvent, key model.AlbumKey) {
 		fyne.LogError("showAlbumMenu fail", err)
 	}
 
-	editMenu := cwidget.NewMenuItem(resource.KEditText, theme.DocumentCreateIcon(), func() { p.showEditAlbumDialog(album) })
-	deleteMenu := cwidget.NewMenuItem(resource.KDeleteText, theme.DeleteIcon(), func() { p.showDeleteAlbumDialog(album) })
+	editMenu := cwidget.NewMenuItem(resource.EditText(), theme.DocumentCreateIcon(), func() { p.showEditAlbumDialog(album) })
+	deleteMenu := cwidget.NewMenuItem(resource.DeleteText(), theme.DeleteIcon(), func() { p.showDeleteAlbumDialog(album) })
 	widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), getWindow().Canvas(), e.AbsolutePosition)
 }
 
 func (p *AlbumPage) showEditAlbumDialog(album model.Album) {
 	editor := newAlbumEditorWithState(album.Title(), album.Cover())
-	dialog.ShowCustomConfirm(resource.KEditAlbumText, resource.KSaveText, resource.KCancelText, editor,
+	dialog.ShowCustomConfirm(resource.EditAlbumText(), resource.SaveText(), resource.CancelText(), editor,
 		func(confirm bool) {
 			if confirm {
 				title, cover := editor.state()
@@ -112,8 +112,8 @@ func (p *AlbumPage) showEditAlbumDialog(album model.Album) {
 }
 
 func (p *AlbumPage) showDeleteAlbumDialog(album model.Album) {
-	dialog.ShowCustomConfirm(resource.KDeleteConfirmationText, resource.KDeleteText, resource.KCancelText,
-		widget.NewLabel(fmt.Sprintf(resource.KDeleteAlbumTextTemplate, album.Title())),
+	dialog.ShowCustomConfirm(resource.DeleteConfirmationText(), resource.DeleteText(), resource.CancelText(),
+		widget.NewLabel(fmt.Sprintf(resource.DeleteAlbumTextTemplate(), album.Title())),
 		func(confirm bool) {
 			if confirm {
 				if err := model.Instance().RemoveAlbum(album.Key()); err != nil {
@@ -127,7 +127,7 @@ func (p *AlbumPage) showDeleteAlbumDialog(album model.Album) {
 
 func (p *AlbumPage) showCreateAlbumDialog() {
 	editor := newAlbumEditor()
-	dialog.ShowCustomConfirm(resource.KCreateAlbumText, resource.KCreateText, resource.KCancelText, editor,
+	dialog.ShowCustomConfirm(resource.CreateAlbumText(), resource.CreateText(), resource.CancelText(), editor,
 		func(confirm bool) {
 			if confirm {
 				if err := model.Instance().CreateAlbum(editor.state()); err != nil {
