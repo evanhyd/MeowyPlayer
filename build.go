@@ -5,15 +5,13 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"runtime"
+	"path/filepath"
 )
 
-var platform string
-var release bool
+var releaseFlag bool
 
 func init() {
-	flag.StringVar(&platform, "platform", runtime.GOOS, "The executable plaforms: windows, linux, darwin.")
-	flag.BoolVar(&release, "debug", false, "Run the binary in debug mode after building.")
+	flag.BoolVar(&releaseFlag, "release", false, "Compile the build in release mode.")
 	flag.Parse()
 }
 
@@ -34,9 +32,11 @@ func run(command string, args ...string) {
 }
 
 func main() {
-	if release {
-		run("fyne", "package", "--src", "source", "--exe", "..", "--release")
+	const kExeName = "meowyplayer.exe"
+	if releaseFlag {
+		run("fyne", "package", "--src", "source", "--exe", filepath.Join("..", kExeName), "--release")
 	} else {
-		run("fyne", "package", "--src", "source", "--exe", "..")
+		runAt("source", "go", "build", "-o", filepath.Join("..", kExeName), "main.go")
+		run("./meowyplayer")
 	}
 }

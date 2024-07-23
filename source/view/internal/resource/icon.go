@@ -8,7 +8,7 @@ import (
 
 //go:embed asset/icon.png
 var windowIcon []byte
-var windowIconResource = fyne.StaticResource{StaticContent: windowIcon}
+var windowIconResource = fyne.StaticResource{StaticName: "icon.png", StaticContent: windowIcon}
 
 func WindowIcon() fyne.Resource {
 	return &windowIconResource
@@ -16,7 +16,7 @@ func WindowIcon() fyne.Resource {
 
 //go:embed asset/collection_tab.svg
 var collectionTabIcon []byte
-var collectionTabIconResource = fyne.StaticResource{StaticContent: collectionTabIcon}
+var collectionTabIconResource = fyne.StaticResource{StaticName: "collection_tab.svg", StaticContent: collectionTabIcon}
 
 func CollectionTabIcon() fyne.Resource {
 	return &collectionTabIconResource
@@ -24,7 +24,7 @@ func CollectionTabIcon() fyne.Resource {
 
 //go:embed asset/youtube.svg
 var youtubeIcon []byte
-var youtubeIconResource = fyne.StaticResource{StaticContent: youtubeIcon}
+var youtubeIconResource = fyne.StaticResource{StaticName: "youtube.svg", StaticContent: youtubeIcon}
 
 func YouTubeIcon() fyne.Resource {
 	return &youtubeIconResource
@@ -32,7 +32,7 @@ func YouTubeIcon() fyne.Resource {
 
 //go:embed asset/alphabetical.svg
 var alphabeticalIcon []byte
-var alphabeticalIconResource = fyne.StaticResource{StaticContent: alphabeticalIcon}
+var alphabeticalIconResource = fyne.StaticResource{StaticName: "alphabetical.svg", StaticContent: alphabeticalIcon}
 
 func AlphabeticalIcon() fyne.Resource {
 	return &alphabeticalIconResource
@@ -40,7 +40,7 @@ func AlphabeticalIcon() fyne.Resource {
 
 //go:embed asset/random.svg
 var randomIcon []byte
-var randomIconResource = fyne.StaticResource{StaticContent: randomIcon}
+var randomIconResource = fyne.StaticResource{StaticName: "random.svg", StaticContent: randomIcon}
 
 func RandomIcon() fyne.Resource {
 	return &randomIconResource
