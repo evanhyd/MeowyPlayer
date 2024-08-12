@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type MainPanel struct {
+type MainPage struct {
 	widget.BaseWidget
 	homePage       *HomePage
 	albumPage      *AlbumPage
@@ -19,22 +19,22 @@ type MainPanel struct {
 	controllerPage *ControllerPage
 }
 
-func newMainPanel() *MainPanel {
-	p := MainPanel{
+func newMainPanel() *MainPage {
+	p := MainPage{
 		homePage:       newHomePage(),
 		albumPage:      newAlbumPage(),
 		musicPage:      newMusicPage(),
 		settingPage:    newSettingPage(),
 		controllerPage: newControllerPage(),
 	}
-	model.Instance().OnAlbumViewFocused().AttachFunc(p.showAlbumTab)
-	model.Instance().OnMusicViewFocused().AttachFunc(p.showMusicTab)
+	model.UIClient().OnAlbumViewFocused().AttachFunc(p.showAlbumTab)
+	model.UIClient().OnMusicViewFocused().AttachFunc(p.showMusicTab)
 
 	p.ExtendBaseWidget(&p)
 	return &p
 }
 
-func (p *MainPanel) CreateRenderer() fyne.WidgetRenderer {
+func (p *MainPage) CreateRenderer() fyne.WidgetRenderer {
 	p.musicPage.Hide()
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon(resource.HomeText(), theme.HomeIcon(), p.homePage),
@@ -46,12 +46,12 @@ func (p *MainPanel) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(nil, p.controllerPage, nil, nil, tabs))
 }
 
-func (p *MainPanel) showAlbumTab(bool) {
+func (p *MainPage) showAlbumTab(bool) {
 	p.albumPage.Show()
 	p.musicPage.Hide()
 }
 
-func (p *MainPanel) showMusicTab(bool) {
+func (p *MainPage) showMusicTab(bool) {
 	p.albumPage.Hide()
 	p.musicPage.Show()
 }

@@ -77,7 +77,7 @@ func (p *ControllerPage) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (p *ControllerPage) setCover(key model.AlbumKey) {
-	album, err := model.Instance().GetAlbum(key)
+	album, err := model.UIClient().GetAlbum(key)
 	if err != nil {
 		fyne.LogError("failed to get album", err)
 	}
@@ -101,7 +101,7 @@ func (p *ControllerPage) setProgress(percent float64) {
 
 func (p *ControllerPage) jumpToAlbum(key model.AlbumKey) {
 	if !key.IsEmpty() {
-		err := model.Instance().SelectAlbum(key)
+		err := model.UIClient().SelectAlbum(key)
 		if err != nil {
 			fyne.LogError("failed to select album", err)
 		}

@@ -15,7 +15,7 @@ type localStorage struct {
 	musicDir string
 }
 
-func NewLocalStorage() *localStorage {
+func newLocalStorage() *localStorage {
 	const kStorage = "storage"
 	return &localStorage{
 		albumDir: filepath.Join(kStorage, "album"),
@@ -23,27 +23,27 @@ func NewLocalStorage() *localStorage {
 	}
 }
 
-func (f *localStorage) albumPath(key AlbumKey) string {
-	return filepath.Join(f.albumDir, fmt.Sprintf("%v.json", key))
-}
-
-func (f *localStorage) musicPath(key MusicKey) string {
-	return filepath.Join(f.musicDir, fmt.Sprintf("%v.mp3", key))
-}
-
-func (f *localStorage) initialize() error {
-	if err := os.MkdirAll(f.albumDir, 0700); err != nil {
+func (s *localStorage) initialize() error {
+	if err := os.MkdirAll(s.albumDir, 0700); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(f.musicDir, 0700); err != nil {
+	if err := os.MkdirAll(s.musicDir, 0700); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (f *localStorage) getAllAlbums() ([]Album, error) {
+func (s *localStorage) albumPath(key AlbumKey) string {
+	return filepath.Join(s.albumDir, fmt.Sprintf("%v.json", key))
+}
+
+func (s *localStorage) musicPath(key MusicKey) string {
+	return filepath.Join(s.musicDir, fmt.Sprintf("%v.mp3", key))
+}
+
+func (s *localStorage) getAllAlbums() ([]Album, error) {
 	const kFileExt = ".json"
-	entries, err := os.ReadDir(f.albumDir)
+	entries, err := os.ReadDir(s.albumDir)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (f *localStorage) getAllAlbums() ([]Album, error) {
 	albums := make([]Album, 0, len(entries))
 	for _, entry := range entries {
 		if !entry.IsDir() && filepath.Ext(entry.Name()) == kFileExt {
-			data, err := os.ReadFile(filepath.Join(f.albumDir, entry.Name()))
+			data, err := os.ReadFile(filepath.Join(s.albumDir, entry.Name()))
 			if err != nil {
 				return nil, err
 			}
@@ -66,54 +66,54 @@ func (f *localStorage) getAllAlbums() ([]Album, error) {
 	return albums, nil
 }
 
-func (f *localStorage) getAlbum(key AlbumKey) (album Album, err error) {
+func (s *localStorage) getAlbum(key AlbumKey) (album Album, err error) {
 	if key.IsEmpty() {
 		return album, fmt.Errorf("empty key in getAlbum")
 	}
 
-	data, err := os.ReadFile(f.albumPath(key))
+	data, err := os.ReadFile(s.albumPath(key))
 	if err == nil {
 		err = json.Unmarshal(data, &album)
 	}
 	return
 }
 
-func (f *localStorage) uploadAlbum(album Album) error {
+func (s *localStorage) uploadAlbum(album Album) error {
 	key := album.Key()
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in uploadAlbum")
 	}
 
-	data, err := json.Marshal(&album)
+	data, err := json.Marshal(album)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(f.albumPath(key), data, 0600)
+	return os.WriteFile(s.albumPath(key), data, 0600)
 }
 
-func (f *localStorage) removeAlbum(key AlbumKey) error {
+func (s *localStorage) removeAlbum(key AlbumKey) error {
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in removeAlbum")
 	}
 
-	return os.Remove(f.albumPath(key))
+	return os.Remove(s.albumPath(key))
 }
 
-func (f *localStorage) getMusic(key MusicKey) (io.ReadSeekCloser, error) {
+func (s *localStorage) getMusic(key MusicKey) (io.ReadSeekCloser, error) {
 	if key.IsEmpty() {
 		return nil, fmt.Errorf("empty key in getMusic")
 	}
 
-	return os.Open(f.musicPath(key))
+	return os.Open(s.musicPath(key))
 }
 
-func (f *localStorage) uploadMusic(music Music, reader io.Reader) error {
+func (s *localStorage) uploadMusic(music Music, reader io.Reader) error {
 	key := music.Key()
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in uploadMusic")
 	}
 
-	dst, err := os.OpenFile(f.musicPath(key), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	dst, err := os.OpenFile(s.musicPath(key), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
@@ -123,12 +123,12 @@ func (f *localStorage) uploadMusic(music Music, reader io.Reader) error {
 	return err
 }
 
-func (f *localStorage) removeMusic(key MusicKey) error {
+func (s *localStorage) removeMusic(key MusicKey) error {
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in removeMusic")
 	}
 
-	return os.Remove(f.musicPath(key))
+	return os.Remove(s.musicPath(key))
 }
 
 // func (d *localStorage) sanatizeFileName(filename string) string {

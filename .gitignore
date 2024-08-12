@@ -39,3 +39,6 @@ out/**
 *.txt
 *.log
 *.pdf
+*.zip
+*.7z
+

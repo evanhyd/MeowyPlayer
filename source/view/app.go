@@ -1,7 +1,6 @@
 package view
 
 import (
-	"log"
 	"meowyplayer/model"
 	"meowyplayer/view/internal/resource"
 
@@ -31,8 +30,12 @@ func RunApp() {
 	}
 
 	//run the client
-	if err := model.Instance().Run(); err != nil {
-		log.Println(err)
+	if err := model.UIClient().Run(); err != nil {
+		fyne.LogError("failed to run the UI client", err)
+		return
+	}
+	if err := model.NetworkClient().Run(); err != nil {
+		fyne.LogError("failed to run the network client", err)
 		return
 	}
 	window.ShowAndRun()

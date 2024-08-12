@@ -34,7 +34,9 @@ func run(command string, args ...string) {
 func main() {
 	const kExeName = "meowyplayer.exe"
 	if releaseFlag {
-		run("fyne", "package", "--src", "source", "--exe", filepath.Join("..", kExeName), "--release")
+		// run("fyne", "package", "--src", "source", "--exe", filepath.Join("..", kExeName), "--release") //missing icon bug
+		run("fyne", "package", "--src", "source", "--exe", kExeName, "--release")
+		run("mv", filepath.Join("source", kExeName), ".")
 	} else {
 		runAt("source", "go", "build", "-o", filepath.Join("..", kExeName), "main.go")
 		run("./meowyplayer")

@@ -1,7 +1,7 @@
 package cwidget
 
 import (
-	"meowyplayer/pattern"
+	"meowyplayer/util"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -10,7 +10,7 @@ import (
 
 type WidgetObserver[T any] interface {
 	fyne.Widget
-	pattern.Observer[T]
+	util.Observer[T]
 }
 
 type cachedList[T any] struct {
@@ -25,6 +25,7 @@ func NewCachedList[T any, WidgetType WidgetObserver[T]](itemConstructor func() W
 		CreateItem: func() fyne.CanvasObject { return itemConstructor() },
 		UpdateItem: func(i widget.ListItemID, item fyne.CanvasObject) { item.(WidgetObserver[T]).Notify(l.data[i]) },
 	}}
+	l.HideSeparators = true
 	l.ExtendBaseWidget(&l)
 	return &l
 }
@@ -42,8 +43,7 @@ type customList[T any] struct {
 }
 
 func NewCustomList[T any, WidgetType WidgetObserver[T]](itemContainer *fyne.Container, itemConstructor func() WidgetType) *customList[T] {
-	var l customList[T]
-	l = customList[T]{
+	l := customList[T]{
 		Scroll:          container.Scroll{Direction: container.ScrollBoth, Content: itemContainer},
 		itemContainer:   itemContainer,
 		itemConstructor: func() fyne.Widget { return itemConstructor() },

@@ -6,6 +6,8 @@ import (
 	"meowyplayer/model"
 	"meowyplayer/player"
 	"meowyplayer/view"
+
+	"fyne.io/fyne/v2"
 )
 
 func main() {
@@ -13,7 +15,15 @@ func main() {
 	//go tool pprof profile.log
 	//go http.ListenAndServe("localhost:80", nil)
 
-	model.InitClient(model.NewLocalStorage())
+	if err := model.InitUIClient(); err != nil {
+		fyne.LogError("failed to initialize the UI client", err)
+		return
+	}
+	if err := model.InitNetworkClient(); err != nil {
+		fyne.LogError("failed to initialize the UI client", err)
+		return
+	}
+
 	player.InitPlayer()
 	view.RunApp()
 }

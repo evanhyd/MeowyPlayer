@@ -3,7 +3,7 @@ package player
 import (
 	"io"
 	"meowyplayer/model"
-	"meowyplayer/pattern"
+	"meowyplayer/util"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -22,9 +22,9 @@ type MP3Player struct {
 	player  *oto.Player
 	volume  float64
 
-	onAlbumPlayed     pattern.Subject[model.AlbumKey]
-	onMusicPlayed     pattern.Subject[model.Music]
-	onProgressUpdated pattern.Subject[float64]
+	onAlbumPlayed     util.Subject[model.AlbumKey]
+	onMusicPlayed     util.Subject[model.Music]
+	onProgressUpdated util.Subject[float64]
 }
 
 var mp3Player MP3Player
@@ -47,20 +47,20 @@ func InitPlayer() {
 		commands:          make(chan MP3PlayerCommand, kCommandBufferSize),
 		context:           context,
 		volume:            kDefaultVolume,
-		onAlbumPlayed:     pattern.MakeSubject[model.AlbumKey](),
-		onMusicPlayed:     pattern.MakeSubject[model.Music](),
-		onProgressUpdated: pattern.MakeSubject[float64](),
+		onAlbumPlayed:     util.MakeSubject[model.AlbumKey](),
+		onMusicPlayed:     util.MakeSubject[model.Music](),
+		onProgressUpdated: util.MakeSubject[float64](),
 	}
 	mp3Player.run()
 }
 
-func Instance() *MP3Player                                          { return &mp3Player }
-func (p *MP3Player) OnAlbumPlayed() pattern.Subject[model.AlbumKey] { return p.onAlbumPlayed }
-func (p *MP3Player) OnMusicPlayed() pattern.Subject[model.Music]    { return p.onMusicPlayed }
-func (p *MP3Player) OnProgressUpdated() pattern.Subject[float64]    { return p.onProgressUpdated }
-func (p *MP3Player) SetMode(mode QueueMode)                         { p.queue.setMode(mode) }
-func (p *MP3Player) Prev()                                          { p.commands <- func() { p.loadMusic(p.queue.prev()) } }
-func (p *MP3Player) Next()                                          { p.commands <- func() { p.loadMusic(p.queue.next()) } }
+func Instance() *MP3Player                                       { return &mp3Player }
+func (p *MP3Player) OnAlbumPlayed() util.Subject[model.AlbumKey] { return p.onAlbumPlayed }
+func (p *MP3Player) OnMusicPlayed() util.Subject[model.Music]    { return p.onMusicPlayed }
+func (p *MP3Player) OnProgressUpdated() util.Subject[float64]    { return p.onProgressUpdated }
+func (p *MP3Player) SetMode(mode QueueMode)                      { p.queue.setMode(mode) }
+func (p *MP3Player) Prev()                                       { p.commands <- func() { p.loadMusic(p.queue.prev()) } }
+func (p *MP3Player) Next()                                       { p.commands <- func() { p.loadMusic(p.queue.next()) } }
 
 func (p *MP3Player) Play() {
 	p.commands <- func() {
@@ -103,7 +103,7 @@ func (p *MP3Player) LoadAlbum(key model.AlbumKey, musicQueue []model.Music, inde
 
 func (p *MP3Player) loadMusic(music *model.Music) {
 	//decode mp3
-	reader, err := model.Instance().GetMusic(music.Key())
+	reader, err := model.UIClient().GetMusic(music.Key())
 	if err != nil {
 		fyne.LogError("failed to get music reader", err)
 		return

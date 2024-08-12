@@ -1,4 +1,4 @@
-package pattern
+package util
 
 var _ Subject[int] = &subjectBase[int]{}
 
