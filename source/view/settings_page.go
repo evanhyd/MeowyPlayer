@@ -45,23 +45,76 @@ func showRegisterDialog() {
 	}, getWindow())
 }
 
-type SettingPage struct {
+type LocalState struct {
 	widget.BaseWidget
-	index          *widget.RichText
+	hintLabel      *widget.Label
 	loginButton    *widget.Button
 	registerButton *widget.Button
 }
 
-func newSettingPage() *SettingPage {
-	v := SettingPage{
-		index:          widget.NewRichTextWithText("Login to continue!"),
+func newLocalState() *LocalState {
+	s := LocalState{
+		hintLabel:      widget.NewLabel(resource.LoginToContinueText()),
 		loginButton:    cwidget.NewButton(resource.LoginText(), nil, showLoginDialog),
 		registerButton: cwidget.NewButton(resource.RegisterText(), nil, showRegisterDialog),
 	}
-	v.ExtendBaseWidget(&v)
-	return &v
+	s.ExtendBaseWidget(&s)
+	return &s
 }
 
-func (v *SettingPage) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewVBox(v.index, v.loginButton, v.registerButton))
+func (s *LocalState) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewVBox(s.hintLabel, s.loginButton, s.registerButton))
+}
+
+type RemoteState struct {
+	widget.BaseWidget
+	usernameLabel *widget.Label
+	logoutButton  *widget.Button
+}
+
+func newRemoteState() *RemoteState {
+	s := RemoteState{
+		usernameLabel: widget.NewLabel(""),
+		logoutButton:  cwidget.NewButton(resource.LogoutText(), nil, model.NetworkClient().Logout),
+	}
+	s.ExtendBaseWidget(&s)
+	return &s
+}
+
+func (s *RemoteState) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewVBox(s.usernameLabel, s.logoutButton))
+}
+
+type SettingPage struct {
+	widget.BaseWidget
+	userstate fyne.CanvasObject
+	vbox      *fyne.Container
+}
+
+func newSettingPage() *SettingPage {
+	p := SettingPage{vbox: container.NewVBox()}
+	p.setState(newLocalState())
+	p.ExtendBaseWidget(&p)
+
+	model.NetworkClient().OnConnectionChanged().Attach(&p)
+	return &p
+}
+
+func (p *SettingPage) setState(state fyne.CanvasObject) {
+	p.userstate = state
+	p.vbox.RemoveAll()
+	p.vbox.Add(state)
+	p.Refresh()
+}
+
+func (p *SettingPage) Notify(isConnected bool) {
+	if isConnected {
+		p.setState(newRemoteState())
+	} else {
+		p.setState(newLocalState())
+	}
+}
+
+func (p *SettingPage) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(p.vbox)
 }

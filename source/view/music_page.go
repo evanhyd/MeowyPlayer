@@ -60,6 +60,7 @@ func (p *MusicPage) Notify(album model.Album) {
 
 func (p *MusicPage) updateList() {
 	if p.current.Key().IsEmpty() {
+		p.searchBar.Update(nil)
 		return
 	}
 

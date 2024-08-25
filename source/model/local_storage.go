@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"fyne.io/fyne/v2"
 )
 
 var _ Storage = &localStorage{}
@@ -17,20 +19,17 @@ type localStorage struct {
 
 func newLocalStorage() *localStorage {
 	const kStorage = "storage"
-	return &localStorage{
-		albumDir: filepath.Join(kStorage, "album"),
+	s := localStorage{
+		albumDir: filepath.Join(kStorage, "local"),
 		musicDir: filepath.Join(kStorage, "music"),
 	}
-}
-
-func (s *localStorage) initialize() error {
 	if err := os.MkdirAll(s.albumDir, 0700); err != nil {
-		return err
+		fyne.LogError("can not create local storage album dir", err)
 	}
 	if err := os.MkdirAll(s.musicDir, 0700); err != nil {
-		return err
+		fyne.LogError("can not create music dir", err)
 	}
-	return nil
+	return &s
 }
 
 func (s *localStorage) albumPath(key AlbumKey) string {

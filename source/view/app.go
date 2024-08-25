@@ -10,6 +10,7 @@ import (
 )
 
 func RunApp() {
+	//initialize locale
 	resource.RegisterTranslation()
 
 	//create main app
@@ -30,14 +31,7 @@ func RunApp() {
 	}
 
 	//run the client
-	if err := model.UIClient().Run(); err != nil {
-		fyne.LogError("failed to run the UI client", err)
-		return
-	}
-	if err := model.NetworkClient().Run(); err != nil {
-		fyne.LogError("failed to run the network client", err)
-		return
-	}
+	model.NetworkClient().LoginWithConfig()
 	window.ShowAndRun()
 }
 

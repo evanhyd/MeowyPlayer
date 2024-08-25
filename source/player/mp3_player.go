@@ -29,7 +29,7 @@ type MP3Player struct {
 
 var mp3Player MP3Player
 
-func InitPlayer() {
+func InitPlayer() error {
 	const (
 		kSamplingRate      = 44100
 		kChannelCount      = 2
@@ -39,7 +39,7 @@ func InitPlayer() {
 
 	context, ready, err := oto.NewContext(&oto.NewContextOptions{SampleRate: kSamplingRate, ChannelCount: kChannelCount, Format: oto.FormatSignedInt16LE})
 	if err != nil {
-		fyne.LogError("failed to initialize mp3 context", err)
+		return err
 	}
 	<-ready
 
@@ -52,6 +52,7 @@ func InitPlayer() {
 		onProgressUpdated: util.MakeSubject[float64](),
 	}
 	mp3Player.run()
+	return nil
 }
 
 func Instance() *MP3Player                                       { return &mp3Player }

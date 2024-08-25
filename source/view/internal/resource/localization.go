@@ -42,7 +42,9 @@ func RepeatText() string              { return lang.L("Repeat") }
 func UsernameText() string            { return lang.L("Username") }
 func PasswordText() string            { return lang.L("Password") }
 func LoginText() string               { return lang.L("Login") }
+func LogoutText() string              { return lang.L("Logout") }
 func RegisterText() string            { return lang.L("Register") }
+func LoginToContinueText() string     { return lang.L("Login to continue") }
 func DeleteAlbumTextTemplate() string { return lang.L("Delete the album \"%v\" ?") }
 func DeleteMusicTextTemplate() string { return lang.L("Delete the music \"%v\" ?") }
 func AlbumTipTextTemplate() string    { return lang.L("Songs: %v\n\nLast Edit: %v") }
