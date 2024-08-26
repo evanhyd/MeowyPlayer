@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 
@@ -28,4 +29,51 @@ func newRemoteStorage() *remoteStorage {
 		fyne.LogError("can not create music dir", err)
 	}
 	return &s
+}
+
+func (s *remoteStorage) getAllAlbums() ([]Album, error) {
+	albums, err := NetworkClient().getAllAlbums()
+	if err != nil {
+		return nil, err
+	}
+
+	//remove old albums
+	dirs, err := os.ReadDir(s.localStorage.albumDir)
+	if err != nil {
+		return nil, err
+	}
+	for _, dir := range dirs {
+		if err := os.RemoveAll(filepath.Join(s.albumDir, dir.Name())); err != nil {
+			return nil, err
+		}
+	}
+
+	//get new albums
+	for i := range albums {
+		file, err := os.OpenFile(s.albumPath(albums[i].Key()), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		if err != nil {
+			return nil, nil
+		}
+		defer file.Close()
+
+		if err := json.NewEncoder(file).Encode(albums[i]); err != nil {
+			return nil, nil
+		}
+	}
+
+	return albums, nil
+}
+
+func (s *remoteStorage) uploadAlbum(album Album) error {
+	if err := s.localStorage.uploadAlbum(album); err != nil {
+		return err
+	}
+	return NetworkClient().uploadAlbum(album)
+}
+
+func (s *remoteStorage) removeAlbum(key AlbumKey) error {
+	if err := s.localStorage.removeAlbum(key); err != nil {
+		return err
+	}
+	return NetworkClient().removeAlbum(key)
 }

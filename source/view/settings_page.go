@@ -96,7 +96,14 @@ func newSettingPage() *SettingPage {
 	p.setState(newLocalState())
 	p.ExtendBaseWidget(&p)
 
-	model.NetworkClient().OnConnectionChanged().Attach(&p)
+	model.NetworkClient().OnConnected().AttachFunc(func(info model.UserInfo) {
+		p.setState(newRemoteState())
+		p.userstate.(*RemoteState).usernameLabel.SetText(info.Username)
+	})
+
+	model.NetworkClient().OnDisconnected().AttachFunc(func(_ bool) {
+		p.setState(newLocalState())
+	})
 	return &p
 }
 
@@ -105,14 +112,6 @@ func (p *SettingPage) setState(state fyne.CanvasObject) {
 	p.vbox.RemoveAll()
 	p.vbox.Add(state)
 	p.Refresh()
-}
-
-func (p *SettingPage) Notify(isConnected bool) {
-	if isConnected {
-		p.setState(newRemoteState())
-	} else {
-		p.setState(newLocalState())
-	}
 }
 
 func (p *SettingPage) CreateRenderer() fyne.WidgetRenderer {
