@@ -6,13 +6,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"meowyplayer/util"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
+)
 
-	"fyne.io/fyne/v2"
+const (
+	kAlbumKeyParam = "albumKey"
 )
 
 type UserInfo struct {
@@ -27,6 +32,7 @@ type networkClientConfig struct {
 }
 
 type networkClient struct {
+	sync.Mutex
 	configDir      string
 	config         networkClientConfig
 	onConnected    util.Subject[UserInfo]
@@ -86,19 +92,23 @@ func (c *networkClient) setConfig(username string, password string) error {
 	return c.save()
 }
 
-func (c *networkClient) sendPost(method string, endpoint string, username string, password string, content io.Reader) (*http.Response, error) {
-	//populate URL and request fields
+func (c *networkClient) getURL(endpoint string) string {
 	url, err := url.JoinPath(c.config.ServerURL, endpoint)
 	if err != nil {
-		return nil, err
+		log.Panicln(err)
 	}
-	req, err := http.NewRequest(method, url, content)
+	return url
+}
+
+func (c *networkClient) sendRequest(method string, endpoint string, contentType string, content io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, c.getURL(endpoint), content)
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(username, password)
+	req.Header.Set("Content-Type", contentType)
+	req.SetBasicAuth(c.config.Username, c.config.Password)
 
-	//send request
+	//execute the request
 	rsp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -116,68 +126,105 @@ func (c *networkClient) sendPost(method string, endpoint string, username string
 	return rsp, nil
 }
 
+func (c *networkClient) sendPostJson(endpoint string, object json.Marshaler) (*http.Response, error) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(object); err != nil {
+		return nil, err
+	}
+	return c.sendRequest(http.MethodPost, endpoint, "application/json", &buf)
+}
+
+func (c *networkClient) sendPostForm(endpoint string, form url.Values) (*http.Response, error) {
+	return c.sendRequest(http.MethodPost, endpoint, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+}
+
+func (c *networkClient) sendPostEmpty(endpoint string) (*http.Response, error) {
+	return c.sendRequest(http.MethodPost, endpoint, "", nil)
+}
+
 func (c *networkClient) Login(username string, password string) error {
-	if _, err := c.sendPost(http.MethodGet, "login", username, password, nil); err != nil {
-		UIClient().setStorage(newLocalStorage())
-		c.onDisconnected.NotifyAll(true)
+	c.Lock()
+	defer c.Unlock()
+	oldUsername, oldPassword := c.config.Username, c.config.Password
+	c.config.Username, c.config.Password = username, password
+
+	if _, err := c.sendPostEmpty("login"); err != nil {
+		//restore the old config if fails to login
+		c.config.Username, c.config.Password = oldUsername, oldPassword
 		return err
 	}
-	UIClient().setStorage(newRemoteStorage())
+
+	if err := c.setConfig(username, password); err != nil {
+		return err
+	}
 	c.onConnected.NotifyAll(UserInfo{Username: username})
-	return c.setConfig(username, password)
+	return UIClient().setStorage(newRemoteStorage())
 }
 
 func (c *networkClient) LoginWithConfig() {
-	c.Login(c.config.Username, c.config.Password)
+	if err := c.Login(c.config.Username, c.config.Password); err != nil {
+		c.Logout()
+	}
 }
 
-func (c *networkClient) Logout() {
-	UIClient().setStorage(newLocalStorage())
+func (c *networkClient) Logout() error {
+	c.Lock()
+	defer c.Unlock()
+	if err := c.setConfig("", ""); err != nil {
+		return err
+	}
 	c.onDisconnected.NotifyAll(true)
+	return UIClient().setStorage(newLocalStorage())
 }
 
 func (c *networkClient) Register(username string, password string) error {
-	if _, err := c.sendPost(http.MethodPost, "register", username, password, nil); err != nil {
-		return err
-	}
-	return c.setConfig(username, password)
+	c.Lock()
+	defer c.Unlock()
+	_, err := c.sendPostEmpty("register")
+	return err
 }
 
 func (c *networkClient) getAllAlbums() ([]Album, error) {
-	resp, err := c.sendPost(http.MethodGet, "downloadAll", c.config.Username, c.config.Password, nil)
+	c.Lock()
+	defer c.Unlock()
+	resp, err := c.sendPostEmpty("downloadAll")
 	if err != nil {
-		fyne.LogError("failed to download all albums", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var albums []Album
-	if err := json.NewDecoder(resp.Body).Decode(&albums); err != nil {
-		fyne.LogError("failed to decode albums", err)
-		return nil, err
-	}
-	return albums, nil
+	err = json.NewDecoder(resp.Body).Decode(&albums)
+	return albums, err
 }
 
 func (c *networkClient) uploadAlbum(album Album) error {
-	content := bytes.Buffer{}
-	if err := json.NewEncoder(&content).Encode(album); err != nil {
-		return err
-	}
-
-	_, err := c.sendPost(http.MethodPost, "upload", c.config.Username, c.config.Password, &content)
-	if err != nil {
-		fyne.LogError("failed to upload album", err)
-		return err
-	}
-	return nil
+	c.Lock()
+	defer c.Unlock()
+	_, err := c.sendPostJson("upload", album)
+	return err
 }
 
 func (c *networkClient) removeAlbum(key AlbumKey) error {
-	_, err := c.sendPost(http.MethodPost, "remove", c.config.Username, c.config.Password, bytes.NewBufferString(key.String()))
+	c.Lock()
+	defer c.Unlock()
+	_, err := c.sendPostForm("remove", url.Values{kAlbumKeyParam: {key.String()}})
+	return err
+}
+
+func (c *networkClient) MigrateLocalToRemote() error {
+	c.Lock()
+	defer c.Unlock()
+
+	albums, err := newLocalStorage().getAllAlbums()
 	if err != nil {
-		fyne.LogError("failed to remove album", err)
 		return err
+	}
+
+	for _, album := range albums {
+		if err := UIClient().UploadAlbum(album); err != nil {
+			return err
+		}
 	}
 	return nil
 }

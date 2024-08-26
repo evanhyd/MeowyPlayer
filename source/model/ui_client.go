@@ -66,6 +66,15 @@ func (c *uiClient) GetAllAlbums() ([]Album, error) {
 	return c.storage.getAllAlbums()
 }
 
+func (c *uiClient) UploadAlbum(album Album) error {
+	c.Lock()
+	defer c.Unlock()
+	if err := c.storage.uploadAlbum(album); err != nil {
+		return err
+	}
+	return c.reloadStorage()
+}
+
 func (c *uiClient) CreateAlbum(title string, cover fyne.Resource) error {
 	c.Lock()
 	defer c.Unlock()
@@ -92,6 +101,18 @@ func (c *uiClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource) er
 	return c.reloadStorage()
 }
 
+func (c *uiClient) SelectAlbum(key AlbumKey) error {
+	c.Lock()
+	defer c.Unlock()
+	album, err := c.storage.getAlbum(key)
+	if err != nil {
+		return err
+	}
+	c.onAlbumSelected.NotifyAll(album)
+	c.onMusicViewFocused.NotifyAll(true)
+	return nil
+}
+
 func (c *uiClient) RemoveAlbum(key AlbumKey) error {
 	c.Lock()
 	defer c.Unlock()
@@ -99,6 +120,12 @@ func (c *uiClient) RemoveAlbum(key AlbumKey) error {
 		return err
 	}
 	return c.reloadStorage()
+}
+
+func (c *uiClient) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
+	c.Lock()
+	defer c.Unlock()
+	return c.storage.getMusic(key)
 }
 
 func (c *uiClient) AddMusicToAlbum(key AlbumKey, result browser.Result, reader io.Reader) error {
@@ -135,24 +162,6 @@ func (c *uiClient) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 		return err
 	}
 	return c.reloadStorage()
-}
-
-func (c *uiClient) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
-	c.Lock()
-	defer c.Unlock()
-	return c.storage.getMusic(key)
-}
-
-func (c *uiClient) SelectAlbum(key AlbumKey) error {
-	c.Lock()
-	defer c.Unlock()
-	album, err := c.storage.getAlbum(key)
-	if err != nil {
-		return err
-	}
-	c.onAlbumSelected.NotifyAll(album)
-	c.onMusicViewFocused.NotifyAll(true)
-	return nil
 }
 
 func (c *uiClient) FocusAlbumView() {

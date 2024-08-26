@@ -65,15 +65,15 @@ func (s *remoteStorage) getAllAlbums() ([]Album, error) {
 }
 
 func (s *remoteStorage) uploadAlbum(album Album) error {
-	if err := s.localStorage.uploadAlbum(album); err != nil {
+	if err := NetworkClient().uploadAlbum(album); err != nil {
 		return err
 	}
-	return NetworkClient().uploadAlbum(album)
+	return s.localStorage.uploadAlbum(album)
 }
 
 func (s *remoteStorage) removeAlbum(key AlbumKey) error {
-	if err := s.localStorage.removeAlbum(key); err != nil {
+	if err := NetworkClient().removeAlbum(key); err != nil {
 		return err
 	}
-	return NetworkClient().removeAlbum(key)
+	return s.localStorage.removeAlbum(key)
 }

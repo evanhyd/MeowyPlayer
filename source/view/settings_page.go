@@ -45,6 +45,16 @@ func showRegisterDialog() {
 	}, getWindow())
 }
 
+func showLocalToRemoteDialog() {
+	dialog.ShowConfirm(resource.MigrateAlbumsText(), resource.MigrateConfirmationText(), func(yes bool) {
+		if yes {
+			if err := model.NetworkClient().MigrateLocalToRemote(); err != nil {
+				fyne.LogError("failed to migrate local albums to remote", err)
+			}
+		}
+	}, getWindow())
+}
+
 type LocalState struct {
 	widget.BaseWidget
 	hintLabel      *widget.Label
@@ -70,19 +80,28 @@ type RemoteState struct {
 	widget.BaseWidget
 	usernameLabel *widget.Label
 	logoutButton  *widget.Button
+	migrateButton *widget.Button
 }
 
 func newRemoteState() *RemoteState {
-	s := RemoteState{
+	var s RemoteState
+	s = RemoteState{
 		usernameLabel: widget.NewLabel(""),
-		logoutButton:  cwidget.NewButton(resource.LogoutText(), nil, model.NetworkClient().Logout),
+		logoutButton:  cwidget.NewButton(resource.LogoutText(), nil, s.logout),
+		migrateButton: cwidget.NewButton(resource.MigrateToRemoteText(), nil, showLocalToRemoteDialog),
 	}
 	s.ExtendBaseWidget(&s)
 	return &s
 }
 
 func (s *RemoteState) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewVBox(s.usernameLabel, s.logoutButton))
+	return widget.NewSimpleRenderer(container.NewVBox(s.usernameLabel, s.logoutButton, s.migrateButton))
+}
+
+func (s *RemoteState) logout() {
+	if err := model.NetworkClient().Logout(); err != nil {
+		fyne.LogError("failed to logout", err)
+	}
 }
 
 type SettingPage struct {
