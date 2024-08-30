@@ -184,9 +184,23 @@ func (c *networkClient) Register(username string, password string) error {
 	return err
 }
 
-func (c *networkClient) getAllAlbums() ([]Album, error) {
+func (c *networkClient) MigrateLocalToRemote() error {
 	c.Lock()
 	defer c.Unlock()
+	albums, err := newLocalStorage().getAllAlbums()
+	if err != nil {
+		return err
+	}
+
+	for _, album := range albums {
+		if err := UIClient().UploadAlbum(album); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *networkClient) getAllAlbums() ([]Album, error) {
 	resp, err := c.sendPostEmpty("downloadAll")
 	if err != nil {
 		return nil, err
@@ -199,32 +213,11 @@ func (c *networkClient) getAllAlbums() ([]Album, error) {
 }
 
 func (c *networkClient) uploadAlbum(album Album) error {
-	c.Lock()
-	defer c.Unlock()
 	_, err := c.sendPostJson("upload", album)
 	return err
 }
 
 func (c *networkClient) removeAlbum(key AlbumKey) error {
-	c.Lock()
-	defer c.Unlock()
 	_, err := c.sendPostForm("remove", url.Values{kAlbumKeyParam: {key.String()}})
 	return err
-}
-
-func (c *networkClient) MigrateLocalToRemote() error {
-	c.Lock()
-	defer c.Unlock()
-
-	albums, err := newLocalStorage().getAllAlbums()
-	if err != nil {
-		return err
-	}
-
-	for _, album := range albums {
-		if err := UIClient().UploadAlbum(album); err != nil {
-			return err
-		}
-	}
-	return nil
 }

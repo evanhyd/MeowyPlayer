@@ -23,7 +23,7 @@ type clipzagScraper struct {
 func newClipzagScraper() *clipzagScraper {
 	const pattern = `<a class="title-color" href="watch\?v=(.+)">\n` + //videoID
 		`<div class="video-thumbs">\n` +
-		`<img class="videosthumbs-style" data-thumb-m data-thumb="//(.+)" src="//.+"><span class="duration">(.+)</span></div>\n` + //thumbnail, length
+		`<img class="videosthumbs-style" data-thumb-m=".+" data-thumb="//(.+)" src="//.+"><span class="duration">(.+)</span></div>\n` + //thumbnail, length
 		`<div class="title-style" title="(.+)">.+</div>\n` + //title
 		`</a>\n` +
 		`<div class="viewsanduser">\n` +
