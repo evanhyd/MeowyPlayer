@@ -1,6 +1,6 @@
 # MeowyPlayer V2  
 
-<img align="left" width="50%" height="50%" src="https://i.imgur.com/xm5z93Q.png">  
+<img align="left" width="50%" height="50%" src="https://i.imgur.com/P4nT3sU.png">  
   
 ## Customizable Music Player  
 ✅ Cross-platform support on Windows, Linux, and Mac.<br />
@@ -9,7 +9,7 @@
 
 ---
 
-<img align="right" width="50%" height="50%" src="https://i.imgur.com/2NZY8WR.png">  
+<img align="right" width="50%" height="50%" src="https://i.imgur.com/RtvToUT.png">  
   
 ## Premium Music Resource
 ✅ Download music from YouTube, BiliBili, and various platforms.<br />
@@ -18,20 +18,12 @@
 
 ---
 
-<img align="left" width="50%" height="50%" src="https://i.imgur.com/2XfZb6Z.pngg">  
+<img align="left" width="50%" height="50%" src="https://i.imgur.com/y2RpDI2.png">  
   
 ## Personal Backup Server
-✅ Backup music collection in just 1 click.<br />
-✅ Share music collection with friends in a [customized server](https://github.com/evanhyd/MeowyPlayerServer).<br />
+✅ Register now and backup your music collection!<br />
+✅ Host your own free open-sourced [music server](https://github.com/evanhyd/MeowyPlayerServer).<br />
 <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-
----
-
-# Public Server
-![public](https://i.imgur.com/z4cWPJM.png)
-Enter the following information in the client tab, then click connection icon on the top right  
-Server URL: http://132.145.98.4  
-Username: Guest  
 
 ---
 
@@ -41,7 +33,7 @@ Requirement:
 - Install GCC
 - Linux Only: `sudo apt install libxcursor-dev libxinerama-dev libxrandr-dev libxi-dev libgl-dev libxxf86vm-dev`  
 - Run `go install fyne.io/fyne/v2/cmd/fyne@latest`  
-- Run `go run build.go` to compile the program
+- Run `go run build.go` to compile the program with optional `-release` flag
 
 # Why MeowyPlayer
 
