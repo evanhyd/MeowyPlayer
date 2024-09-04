@@ -101,10 +101,6 @@ func (p *HomePage) showDownloadMenu(result browser.Result) {
 }
 
 func (p *HomePage) onDownload(key model.AlbumKey, result browser.Result) {
-	waitDialog := dialog.NewCustomWithoutButtons(resource.DownloadText(), widget.NewProgressBarInfinite(), getWindow())
-	waitDialog.Show()
-	defer waitDialog.Hide()
-
 	if err := model.StorageClient().SyncMusic(result); err != nil {
 		fyne.LogError("failed to sync music", err)
 		return

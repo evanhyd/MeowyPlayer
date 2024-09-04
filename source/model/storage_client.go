@@ -12,13 +12,20 @@ import (
 	"fyne.io/fyne/v2"
 )
 
+type ViewID int
+
+const (
+	KAlbumView ViewID = iota
+	KMusicView
+)
+
 type storageClient struct {
-	sync.Mutex         //read -> modify -> upload back may have intervene sequence
-	storage            Storage
-	onStorageLoad      util.Subject[[]Album]
-	onAlbumSelected    util.Subject[Album]
-	onAlbumViewFocused util.Subject[bool]
-	onMusicViewFocused util.Subject[bool]
+	sync.Mutex           //read -> modify -> upload back may have intervene sequence
+	storage              Storage
+	onStorageLoad        util.Subject[[]Album]
+	onAlbumSelected      util.Subject[Album]
+	onViewFocused        util.Subject[ViewID]
+	onMusicSyncActivated util.Subject[bool]
 }
 
 var storageClientInstance storageClient
@@ -28,13 +35,14 @@ func StorageClient() *storageClient {
 }
 
 func InitStorageClient() error {
+	const kStorage = "storage"
 	storageClientInstance = storageClient{
-		onStorageLoad:      util.MakeSubject[[]Album](),
-		onAlbumSelected:    util.MakeSubject[Album](),
-		onAlbumViewFocused: util.MakeSubject[bool](),
-		onMusicViewFocused: util.MakeSubject[bool](),
+		onStorageLoad:        util.MakeSubject[[]Album](),
+		onAlbumSelected:      util.MakeSubject[Album](),
+		onViewFocused:        util.MakeSubject[ViewID](),
+		onMusicSyncActivated: util.MakeSubject[bool](),
 	}
-	return os.MkdirAll("storage", 0600)
+	return os.MkdirAll(kStorage, 0700)
 }
 
 func (c *storageClient) reloadStorage() error {
@@ -50,7 +58,7 @@ func (c *storageClient) setStorage(storage Storage) error {
 	c.Lock()
 	defer c.Unlock()
 	c.onAlbumSelected.NotifyAll(Album{})
-	c.onAlbumViewFocused.NotifyAll(true)
+	c.onViewFocused.NotifyAll(KAlbumView)
 	c.storage = storage
 	return c.reloadStorage()
 }
@@ -110,7 +118,7 @@ func (c *storageClient) SelectAlbum(key AlbumKey) error {
 		return err
 	}
 	c.onAlbumSelected.NotifyAll(album)
-	c.onMusicViewFocused.NotifyAll(true)
+	c.onViewFocused.NotifyAll(KMusicView)
 	return nil
 }
 
@@ -130,14 +138,16 @@ func (c *storageClient) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
 }
 
 func (c *storageClient) SyncMusic(result browser.Result) error {
+	c.Lock()
+	defer c.Unlock()
+	c.onMusicSyncActivated.NotifyAll(true)
+	defer c.onMusicSyncActivated.NotifyAll(false)
+
 	content, err := browser.NewYouTubeDownloader().Download(&result)
 	if err != nil {
 		return err
 	}
 	defer content.Close()
-
-	c.Lock()
-	defer c.Unlock()
 	return c.storage.uploadMusic(Music{platform: result.Platform, id: result.ID}, content)
 }
 
@@ -180,7 +190,7 @@ func (c *storageClient) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error 
 }
 
 func (c *storageClient) FocusAlbumView() {
-	c.onAlbumViewFocused.NotifyAll(true)
+	c.onViewFocused.NotifyAll(KAlbumView)
 }
 
 func (c *storageClient) OnStorageLoaded() util.Subject[[]Album] {
@@ -191,10 +201,10 @@ func (c *storageClient) OnAlbumSelected() util.Subject[Album] {
 	return c.onAlbumSelected
 }
 
-func (c *storageClient) OnAlbumViewFocused() util.Subject[bool] {
-	return c.onAlbumViewFocused
+func (c *storageClient) OnViewFocused() util.Subject[ViewID] {
+	return c.onViewFocused
 }
 
-func (c *storageClient) OnMusicViewFocused() util.Subject[bool] {
-	return c.onMusicViewFocused
+func (c *storageClient) OnMusicSyncActivated() util.Subject[bool] {
+	return c.onMusicSyncActivated
 }

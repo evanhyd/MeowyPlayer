@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "net/http/pprof"
+	// _ "net/http/pprof"
 
 	"meowyplayer/model"
 	"meowyplayer/player"
@@ -11,9 +11,9 @@ import (
 )
 
 func main() {
+	//go http.ListenAndServe("localhost:80", nil)
 	//curl http://localhost/debug/pprof/heap -O profile.log
 	//go tool pprof profile.log
-	//go http.ListenAndServe("localhost:80", nil)
 	if err := model.InitStorageClient(); err != nil {
 		fyne.LogError("failed to initialize the UI client", err)
 		return
