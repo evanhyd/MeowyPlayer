@@ -14,11 +14,11 @@ func main() {
 	//curl http://localhost/debug/pprof/heap -O profile.log
 	//go tool pprof profile.log
 	//go http.ListenAndServe("localhost:80", nil)
-	if err := model.InitNetworkClient(); err != nil {
+	if err := model.InitStorageClient(); err != nil {
 		fyne.LogError("failed to initialize the UI client", err)
 		return
 	}
-	if err := model.InitStorageClient(); err != nil {
+	if err := model.InitNetworkClient(); err != nil {
 		fyne.LogError("failed to initialize the UI client", err)
 		return
 	}

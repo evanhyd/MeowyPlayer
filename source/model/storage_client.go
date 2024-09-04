@@ -4,6 +4,7 @@ import (
 	"io"
 	"meowyplayer/browser"
 	"meowyplayer/util"
+	"os"
 	"slices"
 	"sync"
 	"time"
@@ -33,7 +34,7 @@ func InitStorageClient() error {
 		onAlbumViewFocused: util.MakeSubject[bool](),
 		onMusicViewFocused: util.MakeSubject[bool](),
 	}
-	return nil
+	return os.MkdirAll("storage", 0600)
 }
 
 func (c *storageClient) reloadStorage() error {
