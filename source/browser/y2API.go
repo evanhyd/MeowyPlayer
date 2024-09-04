@@ -79,7 +79,7 @@ func (d *y2APIDownloader) getConverter(video *Result) (string, string, error) {
 		return "", "", err
 	}
 	if len(widgetResp.Formats.Audio.Mp3) == 0 {
-		return "", "", fmt.Errorf("video is too long, max allowed 30:00")
+		return "", "", fmt.Errorf("video is too long or unavailable")
 	}
 
 	return widgetResp.Formats.Audio.Mp3[0].Token, resp.Header.Get("authorization"), nil

@@ -123,7 +123,7 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 
 	p.decoder, err = mp3.NewDecoder(reader)
 	if err != nil {
-		fyne.LogError("failed to get decode music reader", err)
+		fyne.LogError("failed to decode music content", err)
 		return
 	}
 
