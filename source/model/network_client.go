@@ -180,8 +180,15 @@ func (c *networkClient) Logout() error {
 func (c *networkClient) Register(username string, password string) error {
 	c.Lock()
 	defer c.Unlock()
-	_, err := c.sendPostEmpty("register")
-	return err
+
+	oldUsername, oldPassword := c.config.Username, c.config.Password
+	c.config.Username, c.config.Password = username, password
+	if _, err := c.sendPostEmpty("register"); err != nil {
+		//restore the old config if fails to login
+		c.config.Username, c.config.Password = oldUsername, oldPassword
+		return err
+	}
+	return nil
 }
 
 func (c *networkClient) MigrateLocalToRemote() error {
