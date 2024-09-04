@@ -25,6 +25,8 @@ func (m *Music) Key() MusicKey         { return MusicKey(m.platform + m.id) }
 func (m *Music) Date() time.Time       { return m.date }
 func (m Music) Title() string          { return m.title }
 func (m *Music) Length() time.Duration { return m.length }
+func (m *Music) Platform() string      { return m.platform }
+func (m *Music) ID() string            { return m.id }
 
 type musicJson struct {
 	Date     int64  `json:"date"` //epoch seconds

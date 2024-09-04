@@ -158,7 +158,7 @@ func (c *networkClient) Login(username string, password string) error {
 		return err
 	}
 	c.onConnected.NotifyAll(UserInfo{Username: username})
-	return UIClient().setStorage(newRemoteStorage())
+	return StorageClient().setStorage(newRemoteStorage())
 }
 
 func (c *networkClient) LoginWithConfig() {
@@ -174,7 +174,7 @@ func (c *networkClient) Logout() error {
 		return err
 	}
 	c.onDisconnected.NotifyAll(true)
-	return UIClient().setStorage(newLocalStorage())
+	return StorageClient().setStorage(newLocalStorage())
 }
 
 func (c *networkClient) Register(username string, password string) error {
@@ -193,7 +193,7 @@ func (c *networkClient) MigrateLocalToRemote() error {
 	}
 
 	for _, album := range albums {
-		if err := UIClient().UploadAlbum(album); err != nil {
+		if err := StorageClient().UploadAlbum(album); err != nil {
 			return err
 		}
 	}

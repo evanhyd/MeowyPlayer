@@ -106,7 +106,7 @@ func (s *localStorage) getMusic(key MusicKey) (io.ReadSeekCloser, error) {
 	return os.Open(s.musicPath(key))
 }
 
-func (s *localStorage) uploadMusic(music Music, reader io.Reader) error {
+func (s *localStorage) uploadMusic(music Music, content io.Reader) error {
 	key := music.Key()
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in uploadMusic")
@@ -118,7 +118,7 @@ func (s *localStorage) uploadMusic(music Music, reader io.Reader) error {
 	}
 	defer dst.Close()
 
-	_, err = io.Copy(dst, reader)
+	_, err = io.Copy(dst, content)
 	return err
 }
 

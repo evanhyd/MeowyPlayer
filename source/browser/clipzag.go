@@ -110,7 +110,7 @@ func (s *clipzagScraper) parseMatch(match []string, result *Result, errors chan<
 
 	*result = Result{
 		Platform:     "YouTube",
-		VideoID:      match[1],
+		ID:           match[1],
 		Thumbnail:    thumbnail,
 		Length:       time.Duration(totalSecond * int64(time.Second)),
 		Title:        html.UnescapeString(match[4]),

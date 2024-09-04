@@ -27,8 +27,8 @@ func newMainPanel() *MainPage {
 		settingPage:    newSettingPage(),
 		controllerPage: newControllerPage(),
 	}
-	model.UIClient().OnAlbumViewFocused().AttachFunc(p.showAlbumTab)
-	model.UIClient().OnMusicViewFocused().AttachFunc(p.showMusicTab)
+	model.StorageClient().OnAlbumViewFocused().AttachFunc(p.showAlbumTab)
+	model.StorageClient().OnMusicViewFocused().AttachFunc(p.showMusicTab)
 
 	p.ExtendBaseWidget(&p)
 	return &p

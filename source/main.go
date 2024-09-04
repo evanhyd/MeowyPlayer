@@ -18,7 +18,7 @@ func main() {
 		fyne.LogError("failed to initialize the UI client", err)
 		return
 	}
-	if err := model.InitUIClient(); err != nil {
+	if err := model.InitStorageClient(); err != nil {
 		fyne.LogError("failed to initialize the UI client", err)
 		return
 	}

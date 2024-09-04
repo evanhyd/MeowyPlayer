@@ -40,7 +40,7 @@ func newAlbumPage() *AlbumPage {
 	p.ExtendBaseWidget(&p)
 
 	//client update callback
-	model.UIClient().OnStorageLoaded().Attach(&p)
+	model.StorageClient().OnStorageLoaded().Attach(&p)
 	return &p
 }
 
@@ -79,14 +79,14 @@ func (p *AlbumPage) setTitleComparator() {
 }
 
 func (p *AlbumPage) selectAlbum(key model.AlbumKey) {
-	err := model.UIClient().SelectAlbum(key)
+	err := model.StorageClient().SelectAlbum(key)
 	if err != nil {
 		fyne.LogError("selectAlbum fail", err)
 	}
 }
 
 func (p *AlbumPage) showAlbumMenu(e *fyne.PointEvent, key model.AlbumKey) {
-	album, err := model.UIClient().GetAlbum(key)
+	album, err := model.StorageClient().GetAlbum(key)
 	if err != nil {
 		fyne.LogError("showAlbumMenu fail", err)
 	}
@@ -102,7 +102,7 @@ func (p *AlbumPage) showEditAlbumDialog(album model.Album) {
 		func(confirm bool) {
 			if confirm {
 				title, cover := editor.state()
-				if err := model.UIClient().EditAlbum(album.Key(), title, cover); err != nil {
+				if err := model.StorageClient().EditAlbum(album.Key(), title, cover); err != nil {
 					fyne.LogError("failed to edit album", err)
 				}
 			}
@@ -116,7 +116,7 @@ func (p *AlbumPage) showDeleteAlbumDialog(album model.Album) {
 		widget.NewLabel(fmt.Sprintf(resource.DeleteAlbumTextTemplate(), album.Title())),
 		func(confirm bool) {
 			if confirm {
-				if err := model.UIClient().RemoveAlbum(album.Key()); err != nil {
+				if err := model.StorageClient().RemoveAlbum(album.Key()); err != nil {
 					fyne.LogError("failed to remove album", err)
 				}
 			}
@@ -130,7 +130,7 @@ func (p *AlbumPage) showCreateAlbumDialog() {
 	dialog.ShowCustomConfirm(resource.CreateAlbumText(), resource.CreateText(), resource.CancelText(), editor,
 		func(confirm bool) {
 			if confirm {
-				if err := model.UIClient().CreateAlbum(editor.state()); err != nil {
+				if err := model.StorageClient().CreateAlbum(editor.state()); err != nil {
 					fyne.LogError("failed to create album", err)
 				}
 			}

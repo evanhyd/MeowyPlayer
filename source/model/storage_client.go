@@ -11,7 +11,7 @@ import (
 	"fyne.io/fyne/v2"
 )
 
-type uiClient struct {
+type storageClient struct {
 	sync.Mutex         //read -> modify -> upload back may have intervene sequence
 	storage            Storage
 	onStorageLoad      util.Subject[[]Album]
@@ -20,14 +20,14 @@ type uiClient struct {
 	onMusicViewFocused util.Subject[bool]
 }
 
-var uiClientInstance uiClient
+var storageClientInstance storageClient
 
-func UIClient() *uiClient {
-	return &uiClientInstance
+func StorageClient() *storageClient {
+	return &storageClientInstance
 }
 
-func InitUIClient() error {
-	uiClientInstance = uiClient{
+func InitStorageClient() error {
+	storageClientInstance = storageClient{
 		onStorageLoad:      util.MakeSubject[[]Album](),
 		onAlbumSelected:    util.MakeSubject[Album](),
 		onAlbumViewFocused: util.MakeSubject[bool](),
@@ -36,7 +36,7 @@ func InitUIClient() error {
 	return nil
 }
 
-func (c *uiClient) reloadStorage() error {
+func (c *storageClient) reloadStorage() error {
 	albums, err := c.storage.getAllAlbums()
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (c *uiClient) reloadStorage() error {
 	return nil
 }
 
-func (c *uiClient) setStorage(storage Storage) error {
+func (c *storageClient) setStorage(storage Storage) error {
 	c.Lock()
 	defer c.Unlock()
 	c.onAlbumSelected.NotifyAll(Album{})
@@ -54,19 +54,19 @@ func (c *uiClient) setStorage(storage Storage) error {
 	return c.reloadStorage()
 }
 
-func (c *uiClient) GetAlbum(key AlbumKey) (Album, error) {
+func (c *storageClient) GetAlbum(key AlbumKey) (Album, error) {
 	c.Lock()
 	defer c.Unlock()
 	return c.storage.getAlbum(key)
 }
 
-func (c *uiClient) GetAllAlbums() ([]Album, error) {
+func (c *storageClient) GetAllAlbums() ([]Album, error) {
 	c.Lock()
 	defer c.Unlock()
 	return c.storage.getAllAlbums()
 }
 
-func (c *uiClient) UploadAlbum(album Album) error {
+func (c *storageClient) UploadAlbum(album Album) error {
 	c.Lock()
 	defer c.Unlock()
 	if err := c.storage.uploadAlbum(album); err != nil {
@@ -75,7 +75,7 @@ func (c *uiClient) UploadAlbum(album Album) error {
 	return c.reloadStorage()
 }
 
-func (c *uiClient) CreateAlbum(title string, cover fyne.Resource) error {
+func (c *storageClient) CreateAlbum(title string, cover fyne.Resource) error {
 	c.Lock()
 	defer c.Unlock()
 	album := Album{key: newRandomAlbumKey(), date: time.Now(), title: title, cover: cover}
@@ -85,7 +85,7 @@ func (c *uiClient) CreateAlbum(title string, cover fyne.Resource) error {
 	return c.reloadStorage()
 }
 
-func (c *uiClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
+func (c *storageClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
 	c.Lock()
 	defer c.Unlock()
 	album, err := c.storage.getAlbum(key)
@@ -101,7 +101,7 @@ func (c *uiClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource) er
 	return c.reloadStorage()
 }
 
-func (c *uiClient) SelectAlbum(key AlbumKey) error {
+func (c *storageClient) SelectAlbum(key AlbumKey) error {
 	c.Lock()
 	defer c.Unlock()
 	album, err := c.storage.getAlbum(key)
@@ -113,7 +113,7 @@ func (c *uiClient) SelectAlbum(key AlbumKey) error {
 	return nil
 }
 
-func (c *uiClient) RemoveAlbum(key AlbumKey) error {
+func (c *storageClient) RemoveAlbum(key AlbumKey) error {
 	c.Lock()
 	defer c.Unlock()
 	if err := c.storage.removeAlbum(key); err != nil {
@@ -122,13 +122,25 @@ func (c *uiClient) RemoveAlbum(key AlbumKey) error {
 	return c.reloadStorage()
 }
 
-func (c *uiClient) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
+func (c *storageClient) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
 	c.Lock()
 	defer c.Unlock()
 	return c.storage.getMusic(key)
 }
 
-func (c *uiClient) AddMusicToAlbum(key AlbumKey, result browser.Result, reader io.Reader) error {
+func (c *storageClient) SyncMusic(result browser.Result) error {
+	content, err := browser.NewYouTubeDownloader().Download(&result)
+	if err != nil {
+		return err
+	}
+	defer content.Close()
+
+	c.Lock()
+	defer c.Unlock()
+	return c.storage.uploadMusic(Music{platform: result.Platform, id: result.ID}, content)
+}
+
+func (c *storageClient) UploadMusicToAlbum(key AlbumKey, result browser.Result) error {
 	c.Lock()
 	defer c.Unlock()
 	album, err := c.storage.getAlbum(key)
@@ -136,19 +148,21 @@ func (c *uiClient) AddMusicToAlbum(key AlbumKey, result browser.Result, reader i
 		return err
 	}
 	timestamp := time.Now()
-	music := Music{date: timestamp, title: result.Title, length: result.Length, platform: result.Platform, id: result.VideoID}
 	album.date = timestamp
-	album.music = append(album.music, music)
+	album.music = append(album.music, Music{
+		date:     timestamp,
+		title:    result.Title,
+		length:   result.Length,
+		platform: result.Platform,
+		id:       result.ID},
+	)
 	if err := c.storage.uploadAlbum(album); err != nil {
-		return err
-	}
-	if err := c.storage.uploadMusic(music, reader); err != nil {
 		return err
 	}
 	return c.reloadStorage()
 }
 
-func (c *uiClient) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
+func (c *storageClient) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 	c.Lock()
 	defer c.Unlock()
 
@@ -164,22 +178,22 @@ func (c *uiClient) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
 	return c.reloadStorage()
 }
 
-func (c *uiClient) FocusAlbumView() {
+func (c *storageClient) FocusAlbumView() {
 	c.onAlbumViewFocused.NotifyAll(true)
 }
 
-func (c *uiClient) OnStorageLoaded() util.Subject[[]Album] {
+func (c *storageClient) OnStorageLoaded() util.Subject[[]Album] {
 	return c.onStorageLoad
 }
 
-func (c *uiClient) OnAlbumSelected() util.Subject[Album] {
+func (c *storageClient) OnAlbumSelected() util.Subject[Album] {
 	return c.onAlbumSelected
 }
 
-func (c *uiClient) OnAlbumViewFocused() util.Subject[bool] {
+func (c *storageClient) OnAlbumViewFocused() util.Subject[bool] {
 	return c.onAlbumViewFocused
 }
 
-func (c *uiClient) OnMusicViewFocused() util.Subject[bool] {
+func (c *storageClient) OnMusicViewFocused() util.Subject[bool] {
 	return c.onMusicViewFocused
 }

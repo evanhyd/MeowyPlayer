@@ -21,7 +21,7 @@ const (
 type HomePage struct {
 	widget.BaseWidget
 	searchBar *cwidget.SearchBar[[]browser.Result]
-	browser   browser.Browser
+	searcher  browser.Searcher
 }
 
 func newHomePage() *HomePage {
@@ -35,7 +35,7 @@ func newHomePage() *HomePage {
 	}
 
 	//menu and toolbar
-	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon(), func() { p.browser = browser.NewYouTubeBrowser() }))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon(), func() { p.searcher = browser.NewYouTubeSearcher() }))
 	p.searchBar.AddToolbar(cwidget.NewDropDown())
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -58,7 +58,7 @@ func (p *HomePage) searchTitle(title string) {
 
 	for ; attempts < kSearchAttempts; attempts++ {
 		progress.SetValue(float64(attempts) / kSearchAttempts)
-		results, err := p.browser.Search(title)
+		results, err := p.searcher.Search(title)
 		if err != nil {
 			fyne.LogError("browser searchTitle failed", err)
 		}
@@ -70,7 +70,7 @@ func (p *HomePage) searchTitle(title string) {
 }
 
 func (p *HomePage) onInstantPlay(result browser.Result) {
-	url, err := url.Parse(fmt.Sprintf("https://www.youtube.com/watch?v=%v", result.VideoID))
+	url, err := url.Parse(fmt.Sprintf("https://www.youtube.com/watch?v=%v", result.ID))
 	if err != nil {
 		fyne.LogError("instantPlay parsing URL failed", err)
 	}
@@ -81,7 +81,7 @@ func (p *HomePage) onInstantPlay(result browser.Result) {
 }
 
 func (p *HomePage) showDownloadMenu(result browser.Result) {
-	albums, err := model.UIClient().GetAllAlbums()
+	albums, err := model.StorageClient().GetAllAlbums()
 	if err != nil {
 		fyne.LogError("download menu can't albums", err)
 	}
@@ -105,10 +105,11 @@ func (p *HomePage) onDownload(key model.AlbumKey, result browser.Result) {
 	waitDialog.Show()
 	defer waitDialog.Hide()
 
-	readCloser, err := p.browser.Download(&result)
-	if err != nil {
-		fyne.LogError("download failed", err)
+	if err := model.StorageClient().SyncMusic(result); err != nil {
+		fyne.LogError("failed to sync music", err)
+		return
 	}
-	defer readCloser.Close()
-	model.UIClient().AddMusicToAlbum(key, result, readCloser)
+	if err := model.StorageClient().UploadMusicToAlbum(key, result); err != nil {
+		fyne.LogError("failed to upload music to album", err)
+	}
 }

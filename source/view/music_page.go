@@ -37,11 +37,11 @@ func newMusicPage() *MusicPage {
 	//search bar menu and toolbar
 	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.MostRecentText(), theme.HistoryIcon(), p.setDateComparator))
 	p.searchBar.AddDropDown(cwidget.NewMenuItem(resource.AlphabeticalText(), resource.AlphabeticalIcon(), p.setTitleComparator))
-	p.searchBar.AddToolbar(cwidget.NewButton(resource.BackText(), theme.NavigateBackIcon(), model.UIClient().FocusAlbumView))
+	p.searchBar.AddToolbar(cwidget.NewButton(resource.BackText(), theme.NavigateBackIcon(), model.StorageClient().FocusAlbumView))
 
 	//client update callback
-	model.UIClient().OnAlbumSelected().Attach(&p)                                         //update current album and list content when selecting album
-	model.UIClient().OnStorageLoaded().AttachFunc(func([]model.Album) { p.updateList() }) //update list content when albums get updated
+	model.StorageClient().OnAlbumSelected().Attach(&p)                                         //update current album and list content when selecting album
+	model.StorageClient().OnStorageLoaded().AttachFunc(func([]model.Album) { p.updateList() }) //update list content when albums get updated
 
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -65,7 +65,7 @@ func (p *MusicPage) updateList() {
 	}
 
 	var err error
-	p.current, err = model.UIClient().GetAlbum(p.current.Key())
+	p.current, err = model.StorageClient().GetAlbum(p.current.Key())
 	if err != nil {
 		fyne.LogError("musicPage updateList fails", err)
 	}
@@ -109,7 +109,7 @@ func (p *MusicPage) showDeleteMusicDialog(music model.Music) {
 		widget.NewLabel(fmt.Sprintf(resource.DeleteMusicTextTemplate(), music.Title())),
 		func(confirm bool) {
 			if confirm {
-				if err := model.UIClient().RemoveMusicFromAlbum(p.current.Key(), music.Key()); err != nil {
+				if err := model.StorageClient().RemoveMusicFromAlbum(p.current.Key(), music.Key()); err != nil {
 					fyne.LogError("failed to remove music", err)
 				}
 			}

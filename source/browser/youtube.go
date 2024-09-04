@@ -1,12 +1,9 @@
 package browser
 
-var _ Browser = &youTubeBrowser{}
-
-type youTubeBrowser struct {
-	*clipzagScraper
-	*y2MateDownloader
+func NewYouTubeSearcher() Searcher {
+	return newClipzagScraper()
 }
 
-func NewYouTubeBrowser() *youTubeBrowser {
-	return &youTubeBrowser{newClipzagScraper(), newY2MateDownloader()}
+func NewYouTubeDownloader() Downloader {
+	return newMultiDownloader(newY2APIDownloader(), newY2MateDownloader())
 }

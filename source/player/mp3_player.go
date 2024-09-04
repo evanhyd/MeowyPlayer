@@ -2,6 +2,7 @@ package player
 
 import (
 	"io"
+	"meowyplayer/browser"
 	"meowyplayer/model"
 	"meowyplayer/util"
 	"time"
@@ -104,11 +105,22 @@ func (p *MP3Player) LoadAlbum(key model.AlbumKey, musicQueue []model.Music, inde
 
 func (p *MP3Player) loadMusic(music *model.Music) {
 	//decode mp3
-	reader, err := model.UIClient().GetMusic(music.Key())
+	reader, err := model.StorageClient().GetMusic(music.Key())
 	if err != nil {
-		fyne.LogError("failed to get music reader", err)
-		return
+		//sync music content to the storage
+		if err := model.StorageClient().SyncMusic(browser.Result{Platform: music.Platform(), ID: music.ID()}); err != nil {
+			fyne.LogError("failed to sync music", err)
+			return
+		}
+
+		//reload
+		reader, err = model.StorageClient().GetMusic(music.Key())
+		if err != nil {
+			fyne.LogError("failed to get music content", err)
+			return
+		}
 	}
+
 	p.decoder, err = mp3.NewDecoder(reader)
 	if err != nil {
 		fyne.LogError("failed to get decode music reader", err)
