@@ -10,7 +10,7 @@
     <h4>🎨 Minimalism UI with customizable album cover.</h4>
   </ul>
 </div>
-<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 
 ---
 
@@ -24,7 +24,7 @@
     <h4>🎵 Listen to your favorite OST even without internet.</h4>
   </ul>
 </div>
-<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 
 ---
 
@@ -39,9 +39,8 @@
     <h4><a href="https://github.com/evanhyd/MeowyPlayerServer">🔧 Or host your own free open-sourced music server.</a></h4>
   </ul>
 </div>
-<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
 
----
 
 # Build
 Requirement:  
