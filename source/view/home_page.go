@@ -61,8 +61,7 @@ func (p *HomePage) searchTitle(title string) {
 		results, err := p.searcher.Search(title)
 		if err != nil {
 			fyne.LogError("browser searchTitle failed", err)
-		}
-		if len(results) > 0 {
+		} else if len(results) > 0 {
 			p.searchBar.Update(results)
 			return
 		}
