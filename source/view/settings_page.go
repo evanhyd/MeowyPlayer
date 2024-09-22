@@ -46,7 +46,7 @@ func showRegisterDialog() {
 }
 
 func showLocalToRemoteDialog() {
-	dialog.ShowConfirm(resource.MigrateAlbumsText(), resource.MigrateConfirmationText(), func(yes bool) {
+	dialog.ShowConfirm(resource.MigrateToRemoteText(), resource.MigrateConfirmationText(), func(yes bool) {
 		if yes {
 			if err := model.NetworkClient().MigrateLocalToRemote(); err != nil {
 				fyne.LogError("failed to migrate local albums to remote", err)
