@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -44,8 +43,6 @@ func (s *clipzagScraper) Search(title string) ([]Result, error) {
 
 func (s *clipzagScraper) fetchPage(title string) (string, error) {
 	url := `https://clipzag.com/search?` + url.Values{"q": {title}, "order": {"relevance"}}.Encode()
-	log.Printf("[Clipzag] scraping %v\n", url)
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -63,8 +60,6 @@ func (s *clipzagScraper) scrapePage(content string) ([]Result, error) {
 	matches := s.regex.FindAllStringSubmatch(content, -1)
 	results := make([]Result, len(matches))
 	errors := make(chan error, len(matches))
-
-	log.Printf("[Clipzag] list %v results\n", len(matches))
 
 	//parse into the results
 	wg := sync.WaitGroup{}
