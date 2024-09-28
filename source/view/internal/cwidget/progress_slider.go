@@ -34,7 +34,7 @@ func (s *ProgressSlider) DragEnd() {
 	}
 }
 
-func (s *ProgressSlider) setValue(percent float64) {
+func (s *ProgressSlider) SetValue(percent float64) {
 	if !s.isBeingControlled {
 		s.Slider.SetValue(percent)
 	}
