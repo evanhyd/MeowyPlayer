@@ -9,9 +9,11 @@ import (
 )
 
 var releaseFlag bool
+var platformFlag string
 
 func init() {
 	flag.BoolVar(&releaseFlag, "release", false, "Compile the build in release mode.")
+	flag.StringVar(&platformFlag, "platform", "desktop", "Target platform (desktop, android).")
 	flag.Parse()
 }
 
@@ -33,12 +35,17 @@ func run(command string, args ...string) {
 
 func main() {
 	const kExeName = "meowyplayer.exe"
-	if releaseFlag {
-		// run("fyne", "package", "--src", "source", "--exe", filepath.Join("..", kExeName), "--release") //missing icon bug
-		run("fyne", "package", "--src", "source", "--exe", kExeName, "--release")
-		run("mv", filepath.Join("source", kExeName), ".")
+
+	if platformFlag == "desktop" {
+		if releaseFlag {
+			run("fyne", "package", "--src", "source", "--exe", kExeName, "--release") //-o has missing icon bug
+			run("mv", filepath.Join("source", kExeName), ".")
+		} else {
+			runAt("source", "go", "build", "-o", filepath.Join("..", kExeName), "main.go")
+			run("./meowyplayer")
+		}
 	} else {
-		runAt("source", "go", "build", "-o", filepath.Join("..", kExeName), "main.go")
-		run("./meowyplayer")
+		runAt("source", "fyne", "package", "--os", platformFlag, "--release")
+		run("mv", filepath.Join("source", kExeName), ".")
 	}
 }

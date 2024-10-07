@@ -3,7 +3,6 @@ package player
 import (
 	"fmt"
 	"io"
-	"log"
 	"meowyplayer/browser"
 	"meowyplayer/model"
 	"meowyplayer/util"
@@ -141,14 +140,13 @@ func (p *MP3Player) LoadAlbum(key model.AlbumKey, musicQueue []model.Music, inde
 func (p *MP3Player) loadMusic(music *model.Music) {
 	reader, err := model.StorageClient().GetMusic(music.Key())
 	if err != nil {
-		fyne.LogError("failed to get music from the storage", err)
+		fyne.LogError(fmt.Sprintf("failed to get music from the storage: %v, %v", music.Title(), music.Key()), err)
 
 		//sync music content to the storage
 		if err := model.StorageClient().SyncMusic(browser.Result{Platform: music.Platform(), ID: music.ID()}); err != nil {
 			fyne.LogError("failed to sync music", err)
 			return
 		}
-		log.Println("synced music", music.Title(), music.Key())
 
 		//reload
 		reader, err = model.StorageClient().GetMusic(music.Key())
@@ -165,7 +163,6 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 		return
 	}
 	speaker.Play(beep.Seq(p.stream, beep.Callback(func() {
-		fmt.Println("execute")
 		p.stream.Close()
 		p.Next()
 	})))
