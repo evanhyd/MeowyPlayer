@@ -5,5 +5,5 @@ func NewYouTubeSearcher() Searcher {
 }
 
 func NewYouTubeDownloader() Downloader {
-	return newMultiDownloader(newCnvmp3Downloader(), newY2APIDownloader(), newY2MateDownloader())
+	return newMultiDownloader(newCnvmp3Downloader(), newY2APIDownloader())
 }

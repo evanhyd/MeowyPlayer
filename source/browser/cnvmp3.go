@@ -17,17 +17,19 @@ func newCnvmp3Downloader() *cnvmp3Downloader {
 
 func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
 	type cnvmp3Payload struct {
-		URL             string `json:"url"`
-		IsAudioOnly     bool   `json:"isAudioOnly"`
-		FilenamePattern string `json:"filenamePattern"`
+		URL           string `json:"url"`
+		DownloadMode  string `json:"downloadMode"`
+		FilenameStyle string `json:"filenameStyle"`
+		AudioBitrate  string `json:"audioBitrate"`
 	}
 
 	type cnvmp3Response struct {
-		Status string `json:"status"`
-		URL    string `json:"url"`
+		Status   string `json:"status"`
+		URL      string `json:"url"`
+		Filename string `json:"filename"`
 	}
 
-	payloadData, err := json.Marshal(cnvmp3Payload{URL: "https://www.youtube.com/watch?v=" + video.ID, IsAudioOnly: true, FilenamePattern: "pretty"})
+	payloadData, err := json.Marshal(cnvmp3Payload{URL: "https://www.youtube.com/watch?v=" + video.ID, DownloadMode: "audio", FilenameStyle: "pretty", AudioBitrate: "320"})
 	if err != nil {
 		return nil, err
 	}
@@ -45,10 +47,12 @@ func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
 
 	response := cnvmp3Response{}
 	if err := json.NewDecoder(convertRsp.Body).Decode(&response); err != nil {
-		return nil, err
+		errData, _ := io.ReadAll(convertRsp.Body)
+		defer convertRsp.Body.Close()
+		return nil, fmt.Errorf("%s", errData)
 	}
 
-	if response.Status != "stream" { //"error"
+	if response.Status != "tunnel" { //"error"
 		return nil, fmt.Errorf("%v", response.URL)
 	}
 
