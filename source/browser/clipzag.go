@@ -20,15 +20,15 @@ type clipzagScraper struct {
 }
 
 func newClipzagScraper() *clipzagScraper {
-	const pattern = `<a class="title-color" href="watch\?v=(.+)">\n` + //videoID
-		`<div class="video-thumbs">\n` +
-		`<img class="videosthumbs-style" data-thumb-m(?:=".+")? data-thumb="//(.+)" src="//.+"><span class="duration">(.+)</span></div>\n` + //thumbnail, length
-		`<div class="title-style" title="(.+)">.+</div>\n` + //title
-		`</a>\n` +
-		`<div class="viewsanduser">\n` +
-		`<span style="font-weight:bold;"><a class="by-user" href="/channel\?id=(.+)">(.+)</a><br/>(.+)</span>\n` + //channel id, channel title, stats
-		`</div>\n` +
-		`<div class="postdiscription">(.+)</div>` //description
+	pattern := `<a class='title-color' href='watch\?v=(.+?)'>\s*` + // videoID
+		`<div class='video-thumbs'>\s*` +
+		`<img class='videosthumbs-style' data-thumb-m(?:='.+?')? data-thumb='//(.+?)' src='//.+?'><span class='duration'>(.+?)</span></div>\s*` + // thumbnail, length
+		`<div class='title-style' title='(.+?)'>.+?</div>\s*` + // title
+		`</a>\s*` +
+		`<div class='viewsanduser'>\s*` +
+		`<span style='font-weight:bold;'><a class='by-user' href='/channel\?id=(.+?)'>(.+?)</a><br/>(.+?)</span>\s*` + // channel id, channel title, stats
+		`</div>\s*` +
+		`<div class='postdiscription'>(.+?)</div>` // description
 
 	return &clipzagScraper{regexp.MustCompile(pattern)}
 }

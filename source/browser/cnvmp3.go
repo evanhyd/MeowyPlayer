@@ -48,7 +48,6 @@ func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
 	response := cnvmp3Response{}
 	if err := json.NewDecoder(convertRsp.Body).Decode(&response); err != nil {
 		errData, _ := io.ReadAll(convertRsp.Body)
-		defer convertRsp.Body.Close()
 		return nil, fmt.Errorf("%s", errData)
 	}
 
