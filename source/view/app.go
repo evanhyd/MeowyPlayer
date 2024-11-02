@@ -2,6 +2,7 @@ package view
 
 import (
 	"meowyplayer/model"
+	"meowyplayer/player"
 	"meowyplayer/view/internal/resource"
 
 	"fyne.io/fyne/v2"
@@ -27,7 +28,12 @@ func RunApp() {
 	//create system tray
 	window.SetCloseIntercept(window.Hide)
 	if desktop, ok := mainApp.(desktop.App); ok {
-		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", window.Show)))
+		desktop.SetSystemTrayMenu(fyne.NewMenu("",
+			fyne.NewMenuItem("Previous", player.Instance().Prev),
+			fyne.NewMenuItem("Skip", player.Instance().Next),
+			fyne.NewMenuItem("Play", player.Instance().Play),
+			fyne.NewMenuItem("Show", window.Show),
+		))
 	}
 
 	//run the client
