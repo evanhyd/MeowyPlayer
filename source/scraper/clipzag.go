@@ -1,4 +1,4 @@
-package browser
+package scraper
 
 import (
 	"fmt"
@@ -16,11 +16,12 @@ import (
 )
 
 type clipzagScraper struct {
-	regex *regexp.Regexp
+	matchResultRegex *regexp.Regexp
+	queryIDRegex     *regexp.Regexp
 }
 
 func newClipzagScraper() *clipzagScraper {
-	pattern := `<a class='title-color' href='watch\?v=(.+?)'>\s*` + // videoID
+	matchResultPattern := `<a class='title-color' href='watch\?v=(.+?)'>\s*` + // videoID
 		`<div class='video-thumbs'>\s*` +
 		`<img class='videosthumbs-style' data-thumb-m(?:='.+?')? data-thumb='//(.+?)' src='//.+?'><span class='duration'>(.+?)</span></div>\s*` + // thumbnail, length
 		`<div class='title-style' title='(.+?)'>.+?</div>\s*` + // title
@@ -30,20 +31,21 @@ func newClipzagScraper() *clipzagScraper {
 		`</div>\s*` +
 		`<div class='postdiscription'>(.+?)</div>` // description
 
-	return &clipzagScraper{regexp.MustCompile(pattern)}
+	queryIDPattern := `data: {id:'(.+)'},` // queryID
+	return &clipzagScraper{regexp.MustCompile(matchResultPattern), regexp.MustCompile(queryIDPattern)}
 }
 
 func (s *clipzagScraper) Search(title string) ([]Result, error) {
-	page, err := s.fetchPage(title)
+	page, err := s.fetchSearchPage(title)
 	if err != nil {
 		return nil, err
 	}
-	return s.scrapePage(page)
+	return s.scrapeSearchPage(page)
 }
 
-func (s *clipzagScraper) fetchPage(title string) (string, error) {
-	url := `https://clipzag.com/search?` + url.Values{"q": {title}, "order": {"relevance"}}.Encode()
-	resp, err := http.Get(url)
+func (s *clipzagScraper) fetchSearchPage(title string) (string, error) {
+	endpoint := `https://clipzag.com/search?` + url.Values{"q": {title}, "order": {"relevance"}}.Encode()
+	resp, err := http.Get(endpoint)
 	if err != nil {
 		return "", err
 	}
@@ -55,21 +57,20 @@ func (s *clipzagScraper) fetchPage(title string) (string, error) {
 	return string(data), err
 }
 
-func (s *clipzagScraper) scrapePage(content string) ([]Result, error) {
+func (s *clipzagScraper) scrapeSearchPage(content string) ([]Result, error) {
 	//parse regex and prepare output buffers
-	matches := s.regex.FindAllStringSubmatch(content, -1)
+	matches := s.matchResultRegex.FindAllStringSubmatch(content, -1)
 	results := make([]Result, len(matches))
 	errors := make(chan error, len(matches))
 
 	//parse into the results
 	wg := sync.WaitGroup{}
 	wg.Add(len(matches))
-
 	go func() {
 		for i := range matches {
 			go func(match []string, result *Result) {
 				defer wg.Done()
-				s.parseMatch(match, result, errors)
+				s.parseMatchResult(match, result, errors)
 			}(matches[i], &results[i])
 		}
 		wg.Wait()
@@ -84,7 +85,7 @@ func (s *clipzagScraper) scrapePage(content string) ([]Result, error) {
 	return results, nil
 }
 
-func (s *clipzagScraper) parseMatch(match []string, result *Result, errors chan<- error) {
+func (s *clipzagScraper) parseMatchResult(match []string, result *Result, errors chan<- error) {
 	//download thumbnail
 	thumbnail, err := fyne.LoadResourceFromURLString(`https://` + match[2])
 	if err != nil {
@@ -115,3 +116,49 @@ func (s *clipzagScraper) parseMatch(match []string, result *Result, errors chan<
 		Description:  html.UnescapeString(match[8]),
 	}
 }
+
+// func (s *clipzagScraper) Download(result *Result) (io.ReadCloser, error) {
+// 	// Fetch video query ID
+// 	queryID, err := s.fetchVideoQueryID(result)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	// Query to get mp3 conversion link
+
+// 	return nil, nil
+// }
+
+// func (s *clipzagScraper) fetchVideoQueryID(result *Result) (string, error) {
+// 	endpoint := `https://clipzag.com/watch?` + url.Values{"v": {result.ID}}.Encode()
+// 	resp, err := http.Get(endpoint)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer resp.Body.Close()
+
+// 	// Grab the video query ID.
+// 	data, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	queryID := s.queryIDRegex.FindStringSubmatch(string(data))[1]
+// 	return queryID, nil
+// }
+
+// func (s *clipzagScraper) fetchMP3ConversionLink(queryID string) {
+// 	encodedQueryID := s.encodeQueryES(queryID, 3) // 3 is a magic number
+// 	endpoint := `https://clipzag.com/process/player?` + url.Values{"v": {encodedQueryID}}.Encode()
+// 	_, _ = http.PostForm(endpoint, url.Values{"id": {queryID}})
+// }
+
+// func (s *clipzagScraper) encodeQueryES(id string, offset byte) string {
+// 	shifted := make([]byte, len(id))
+// 	for i := range id {
+// 		shifted[i] = id[i] + offset
+// 	}
+
+// 	encoded := []byte(base64.StdEncoding.EncodeToString(shifted))
+// 	slices.Reverse(encoded)
+// 	return string(encoded)
+// }

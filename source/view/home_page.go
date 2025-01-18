@@ -2,8 +2,8 @@ package view
 
 import (
 	"fmt"
-	"meowyplayer/browser"
 	"meowyplayer/model"
+	"meowyplayer/scraper"
 	"meowyplayer/view/internal/cwidget"
 	"meowyplayer/view/internal/resource"
 	"net/url"
@@ -20,8 +20,8 @@ const (
 
 type HomePage struct {
 	widget.BaseWidget
-	searchBar *cwidget.SearchBar[[]browser.Result]
-	searcher  browser.Searcher
+	searchBar *cwidget.SearchBar[[]scraper.Result]
+	searcher  scraper.Searcher
 }
 
 func newHomePage() *HomePage {
@@ -35,7 +35,7 @@ func newHomePage() *HomePage {
 	}
 
 	//menu and toolbar
-	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon(), func() { p.searcher = browser.NewYouTubeSearcher() }))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon(), func() { p.searcher = scraper.NewYouTubeSearcher() }))
 	p.searchBar.AddToolbar(cwidget.NewDropDown())
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -68,7 +68,7 @@ func (p *HomePage) searchTitle(title string) {
 	}
 }
 
-func (p *HomePage) onInstantPlay(result browser.Result) {
+func (p *HomePage) onInstantPlay(result scraper.Result) {
 	url, err := url.Parse(fmt.Sprintf("https://www.youtube.com/watch?v=%v", result.ID))
 	if err != nil {
 		fyne.LogError("instantPlay parsing URL failed", err)
@@ -79,7 +79,7 @@ func (p *HomePage) onInstantPlay(result browser.Result) {
 	}
 }
 
-func (p *HomePage) showDownloadMenu(result browser.Result) {
+func (p *HomePage) showDownloadMenu(result scraper.Result) {
 	albums, err := model.StorageClient().GetAllAlbums()
 	if err != nil {
 		fyne.LogError("download menu can't albums", err)
@@ -99,7 +99,7 @@ func (p *HomePage) showDownloadMenu(result browser.Result) {
 	}, getWindow())
 }
 
-func (p *HomePage) onDownload(key model.AlbumKey, result browser.Result) {
+func (p *HomePage) onDownload(key model.AlbumKey, result scraper.Result) {
 	if err := model.StorageClient().SyncMusic(result); err != nil {
 		fyne.LogError("failed to sync music", err)
 		return

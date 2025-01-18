@@ -1,4 +1,4 @@
-package browser
+package scraper
 
 import (
 	"fmt"
@@ -19,6 +19,7 @@ type Result struct {
 	Length       time.Duration
 	Thumbnail    fyne.Resource
 }
+
 type Searcher interface {
 	Search(string) ([]Result, error)
 }

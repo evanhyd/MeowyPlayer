@@ -3,8 +3,8 @@ package player
 import (
 	"fmt"
 	"io"
-	"meowyplayer/browser"
 	"meowyplayer/model"
+	"meowyplayer/scraper"
 	"meowyplayer/util"
 	"time"
 
@@ -143,7 +143,7 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 		fyne.LogError(fmt.Sprintf("failed to get music from the storage: %v, %v", music.Title(), music.Key()), err)
 
 		//sync music content to the storage
-		if err := model.StorageClient().SyncMusic(browser.Result{Platform: music.Platform(), ID: music.ID()}); err != nil {
+		if err := model.StorageClient().SyncMusic(scraper.Result{Platform: music.Platform(), ID: music.ID()}); err != nil {
 			fyne.LogError("failed to sync music", err)
 			return
 		}

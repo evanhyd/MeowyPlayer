@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"meowyplayer/browser"
+	"meowyplayer/scraper"
 	"meowyplayer/view/internal/resource"
 	"time"
 
@@ -24,12 +24,12 @@ type ThumbnailCard struct {
 	instantPlay *widget.Button
 	download    *widget.Button
 	highlight   *canvas.Rectangle
-	result      browser.Result
+	result      scraper.Result
 }
 
 func NewThumbnailCardConstructor(
-	onInstantPlay func(browser.Result),
-	onDownload func(browser.Result)) func() *ThumbnailCard {
+	onInstantPlay func(scraper.Result),
+	onDownload func(scraper.Result)) func() *ThumbnailCard {
 	return func() *ThumbnailCard {
 		var c ThumbnailCard
 		c = ThumbnailCard{
@@ -74,7 +74,7 @@ func (v *ThumbnailCard) MouseMoved(*desktop.MouseEvent) {
 	//satisfy MouseMovement interface
 }
 
-func (c *ThumbnailCard) Notify(result browser.Result) {
+func (c *ThumbnailCard) Notify(result scraper.Result) {
 	length := result.Length.Round(time.Second)
 	mins := length / time.Minute
 	secs := (length - mins*time.Minute) / time.Second

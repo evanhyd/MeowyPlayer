@@ -2,7 +2,7 @@ package model
 
 import (
 	"io"
-	"meowyplayer/browser"
+	"meowyplayer/scraper"
 	"meowyplayer/util"
 	"os"
 	"slices"
@@ -137,13 +137,13 @@ func (c *storageClient) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
 	return c.storage.getMusic(key)
 }
 
-func (c *storageClient) SyncMusic(result browser.Result) error {
+func (c *storageClient) SyncMusic(result scraper.Result) error {
 	c.Lock()
 	defer c.Unlock()
 	c.onMusicSyncActivated.NotifyAll(true)
 	defer c.onMusicSyncActivated.NotifyAll(false)
 
-	content, err := browser.NewYouTubeDownloader().Download(&result)
+	content, err := scraper.NewYouTubeDownloader().Download(&result)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (c *storageClient) SyncMusic(result browser.Result) error {
 	return c.storage.uploadMusic(Music{platform: result.Platform, id: result.ID}, content)
 }
 
-func (c *storageClient) UploadMusicToAlbum(key AlbumKey, result browser.Result) error {
+func (c *storageClient) UploadMusicToAlbum(key AlbumKey, result scraper.Result) error {
 	c.Lock()
 	defer c.Unlock()
 	album, err := c.storage.getAlbum(key)

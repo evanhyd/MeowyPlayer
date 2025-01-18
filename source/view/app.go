@@ -3,11 +3,13 @@ package view
 import (
 	"meowyplayer/model"
 	"meowyplayer/player"
+	"meowyplayer/view/internal/cwidget"
 	"meowyplayer/view/internal/resource"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
 )
 
 func RunApp() {
@@ -29,9 +31,9 @@ func RunApp() {
 	window.SetCloseIntercept(window.Hide)
 	if desktop, ok := mainApp.(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("",
-			fyne.NewMenuItem("Previous", player.Instance().Prev),
-			fyne.NewMenuItem("Skip", player.Instance().Next),
-			fyne.NewMenuItem("Play", player.Instance().Play),
+			cwidget.NewMenuItem("", theme.MediaSkipPreviousIcon(), player.Instance().Prev),
+			cwidget.NewMenuItem("", theme.RadioButtonCheckedIcon(), player.Instance().Play),
+			cwidget.NewMenuItem("", theme.MediaSkipNextIcon(), player.Instance().Next),
 			fyne.NewMenuItem("Show", window.Show),
 		))
 	}
