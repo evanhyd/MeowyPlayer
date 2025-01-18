@@ -17,13 +17,12 @@ import (
 
 type clipzagScraper struct {
 	matchResultRegex *regexp.Regexp
-	queryIDRegex     *regexp.Regexp
 }
 
 func newClipzagScraper() *clipzagScraper {
 	matchResultPattern := `<a class='title-color' href='watch\?v=(.+?)'>\s*` + // videoID
 		`<div class='video-thumbs'>\s*` +
-		`<img class='videosthumbs-style' data-thumb-m(?:='.+?')? data-thumb='//(.+?)' src='//.+?'><span class='duration'>(.+?)</span></div>\s*` + // thumbnail, length
+		`<img class='videosthumbs-style' data-thumb-m(?:='.*?')? data-thumb='//(.+?)' src='//.+?'><span class='duration'>(.+?)</span></div>\s*` + // thumbnail, length
 		`<div class='title-style' title='(.+?)'>.+?</div>\s*` + // title
 		`</a>\s*` +
 		`<div class='viewsanduser'>\s*` +
@@ -31,8 +30,7 @@ func newClipzagScraper() *clipzagScraper {
 		`</div>\s*` +
 		`<div class='postdiscription'>(.+?)</div>` // description
 
-	queryIDPattern := `data: {id:'(.+)'},` // queryID
-	return &clipzagScraper{regexp.MustCompile(matchResultPattern), regexp.MustCompile(queryIDPattern)}
+	return &clipzagScraper{regexp.MustCompile(matchResultPattern)}
 }
 
 func (s *clipzagScraper) Search(title string) ([]Result, error) {
@@ -116,49 +114,3 @@ func (s *clipzagScraper) parseMatchResult(match []string, result *Result, errors
 		Description:  html.UnescapeString(match[8]),
 	}
 }
-
-// func (s *clipzagScraper) Download(result *Result) (io.ReadCloser, error) {
-// 	// Fetch video query ID
-// 	queryID, err := s.fetchVideoQueryID(result)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Query to get mp3 conversion link
-
-// 	return nil, nil
-// }
-
-// func (s *clipzagScraper) fetchVideoQueryID(result *Result) (string, error) {
-// 	endpoint := `https://clipzag.com/watch?` + url.Values{"v": {result.ID}}.Encode()
-// 	resp, err := http.Get(endpoint)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	defer resp.Body.Close()
-
-// 	// Grab the video query ID.
-// 	data, err := io.ReadAll(resp.Body)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	queryID := s.queryIDRegex.FindStringSubmatch(string(data))[1]
-// 	return queryID, nil
-// }
-
-// func (s *clipzagScraper) fetchMP3ConversionLink(queryID string) {
-// 	encodedQueryID := s.encodeQueryES(queryID, 3) // 3 is a magic number
-// 	endpoint := `https://clipzag.com/process/player?` + url.Values{"v": {encodedQueryID}}.Encode()
-// 	_, _ = http.PostForm(endpoint, url.Values{"id": {queryID}})
-// }
-
-// func (s *clipzagScraper) encodeQueryES(id string, offset byte) string {
-// 	shifted := make([]byte, len(id))
-// 	for i := range id {
-// 		shifted[i] = id[i] + offset
-// 	}
-
-// 	encoded := []byte(base64.StdEncoding.EncodeToString(shifted))
-// 	slices.Reverse(encoded)
-// 	return string(encoded)
-// }
