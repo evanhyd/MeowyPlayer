@@ -140,18 +140,19 @@ func (p *MP3Player) LoadAlbum(key model.AlbumKey, musicQueue []model.Music, inde
 func (p *MP3Player) loadMusic(music *model.Music) {
 	reader, err := model.StorageClient().GetMusic(music.Key())
 	if err != nil {
-		fyne.LogError(fmt.Sprintf("failed to get music from the storage: %v, %v", music.Title(), music.Key()), err)
+		badMusicLogInfo := fmt.Sprintf("%s, %s", music.Title(), music.Key())
+		fyne.LogError("synchronizing missing music: "+badMusicLogInfo, err)
 
 		//sync music content to the storage
 		if err := model.StorageClient().SyncMusic(scraper.Result{Platform: music.Platform(), ID: music.ID()}); err != nil {
-			fyne.LogError("failed to sync music", err)
+			fyne.LogError("failed to sync music: "+badMusicLogInfo, err)
 			return
 		}
 
 		//reload
 		reader, err = model.StorageClient().GetMusic(music.Key())
 		if err != nil {
-			fyne.LogError("failed to get music after retry", err)
+			fyne.LogError("detected missing music after sync: "+badMusicLogInfo, err)
 			return
 		}
 	}
@@ -159,7 +160,8 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 	//create mp3 stream and controllers
 	p.stream, err = newMp3Stream(reader, p.volumePercent)
 	if err != nil {
-		fyne.LogError("failed to create mp3 stream", err)
+		badMusicLogInfo := fmt.Sprintf("%s, %s", music.Title(), music.Key())
+		fyne.LogError("detected bad mp3 file: "+badMusicLogInfo, err)
 		return
 	}
 	speaker.Play(beep.Seq(p.stream, beep.Callback(func() {
