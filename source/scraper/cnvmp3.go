@@ -22,7 +22,7 @@ func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
 	if err := d.getVideoData(video); err != nil {
 		return nil, err
 	}
-	filelink, err := d.downloadVideo(video)
+	filelink, err := d.saveVideo(video)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 	return nil
 }
 
-func (d *cnvmp3Downloader) downloadVideo(video *Result) (string, error) {
+func (d *cnvmp3Downloader) saveVideo(video *Result) (string, error) {
 	type DownloadVideoRequest struct {
 		URL         string `json:"url"`
 		Quality     int64  `json:"quality"`
@@ -90,7 +90,7 @@ func (d *cnvmp3Downloader) downloadVideo(video *Result) (string, error) {
 	}
 
 	// Prepare the request.
-	const endpoint = `https://cnvmp3.com/download_video.php`
+	const endpoint = `https://cnvmp3.com/save_video.php`
 	request := DownloadVideoRequest{
 		URL:         `https://www.youtube.com/watch?` + url.Values{"v": {video.ID}}.Encode(),
 		Quality:     0,
