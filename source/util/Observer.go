@@ -30,6 +30,6 @@ func (s *subjectBase[T]) AttachFunc(callback func(T)) {
 
 func (s *subjectBase[T]) NotifyAll(t T) {
 	for _, observer := range s.observers {
-		go observer(t) //does threading work well with GUI?
+		observer(t)
 	}
 }

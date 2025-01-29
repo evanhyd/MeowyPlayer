@@ -6,7 +6,6 @@ import (
 	"meowyplayer/util"
 	"os"
 	"slices"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -20,7 +19,6 @@ const (
 )
 
 type storageClient struct {
-	sync.Mutex           //read -> modify -> upload back may have intervene sequence
 	storage              Storage
 	onStorageLoad        util.Subject[[]Album]
 	onAlbumSelected      util.Subject[Album]
@@ -46,7 +44,7 @@ func InitStorageClient() error {
 }
 
 func (c *storageClient) reloadStorage() error {
-	albums, err := c.storage.getAllAlbums()
+	albums, err := c.GetAllAlbums()
 	if err != nil {
 		return err
 	}
@@ -55,29 +53,21 @@ func (c *storageClient) reloadStorage() error {
 }
 
 func (c *storageClient) setStorage(storage Storage) error {
-	c.Lock()
-	defer c.Unlock()
+	c.storage = storage
 	c.onAlbumSelected.NotifyAll(Album{})
 	c.onViewFocused.NotifyAll(KAlbumView)
-	c.storage = storage
 	return c.reloadStorage()
 }
 
 func (c *storageClient) GetAlbum(key AlbumKey) (Album, error) {
-	c.Lock()
-	defer c.Unlock()
 	return c.storage.getAlbum(key)
 }
 
 func (c *storageClient) GetAllAlbums() ([]Album, error) {
-	c.Lock()
-	defer c.Unlock()
 	return c.storage.getAllAlbums()
 }
 
 func (c *storageClient) UploadAlbum(album Album) error {
-	c.Lock()
-	defer c.Unlock()
 	if err := c.storage.uploadAlbum(album); err != nil {
 		return err
 	}
@@ -85,35 +75,29 @@ func (c *storageClient) UploadAlbum(album Album) error {
 }
 
 func (c *storageClient) CreateAlbum(title string, cover fyne.Resource) error {
-	c.Lock()
-	defer c.Unlock()
-	album := Album{key: newRandomAlbumKey(), date: time.Now(), title: title, cover: cover}
-	if err := c.storage.uploadAlbum(album); err != nil {
-		return err
-	}
-	return c.reloadStorage()
+	return c.UploadAlbum(Album{key: newRandomAlbumKey(), date: time.Now(), title: title, cover: cover})
 }
 
 func (c *storageClient) EditAlbum(key AlbumKey, title string, cover fyne.Resource) error {
-	c.Lock()
-	defer c.Unlock()
-	album, err := c.storage.getAlbum(key)
+	album, err := c.GetAlbum(key)
 	if err != nil {
 		return err
 	}
 	album.date = time.Now()
 	album.title = title
 	album.cover = cover
-	if err := c.storage.uploadAlbum(album); err != nil {
+	return c.UploadAlbum(album)
+}
+
+func (c *storageClient) RemoveAlbum(key AlbumKey) error {
+	if err := c.storage.removeAlbum(key); err != nil {
 		return err
 	}
 	return c.reloadStorage()
 }
 
 func (c *storageClient) SelectAlbum(key AlbumKey) error {
-	c.Lock()
-	defer c.Unlock()
-	album, err := c.storage.getAlbum(key)
+	album, err := c.GetAlbum(key)
 	if err != nil {
 		return err
 	}
@@ -122,25 +106,12 @@ func (c *storageClient) SelectAlbum(key AlbumKey) error {
 	return nil
 }
 
-func (c *storageClient) RemoveAlbum(key AlbumKey) error {
-	c.Lock()
-	defer c.Unlock()
-	if err := c.storage.removeAlbum(key); err != nil {
-		return err
-	}
-	return c.reloadStorage()
-}
-
 func (c *storageClient) GetMusic(key MusicKey) (io.ReadSeekCloser, error) {
-	c.Lock()
-	defer c.Unlock()
 	return c.storage.getMusic(key)
 }
 
 func (c *storageClient) SyncMusic(result scraper.Result) error {
-	c.Lock()
-	defer c.Unlock()
-	c.onMusicSyncActivated.NotifyAll(true)
+	c.onMusicSyncActivated.NotifyAll(true) // UI update callback
 	defer c.onMusicSyncActivated.NotifyAll(false)
 
 	content, err := scraper.NewYouTubeDownloader().Download(&result)
@@ -152,16 +123,13 @@ func (c *storageClient) SyncMusic(result scraper.Result) error {
 }
 
 func (c *storageClient) UploadMusicToAlbum(key AlbumKey, result scraper.Result) error {
-	c.Lock()
-	defer c.Unlock()
 	album, err := c.storage.getAlbum(key)
 	if err != nil {
 		return err
 	}
-	timestamp := time.Now()
-	album.date = timestamp
+	album.date = time.Now()
 	album.music = append(album.music, Music{
-		date:     timestamp,
+		date:     album.date,
 		title:    result.Title,
 		length:   result.Length,
 		platform: result.Platform,
@@ -173,16 +141,13 @@ func (c *storageClient) UploadMusicToAlbum(key AlbumKey, result scraper.Result) 
 	return c.reloadStorage()
 }
 
-func (c *storageClient) RemoveMusicFromAlbum(key AlbumKey, mKey MusicKey) error {
-	c.Lock()
-	defer c.Unlock()
-
-	album, err := c.storage.getAlbum(key)
+func (c *storageClient) RemoveMusicFromAlbum(albumKey AlbumKey, musicKey MusicKey) error {
+	album, err := c.storage.getAlbum(albumKey)
 	if err != nil {
 		return err
 	}
 	album.date = time.Now()
-	album.music = slices.DeleteFunc(album.music, func(m Music) bool { return m.Key() == mKey }) //consider map
+	album.music = slices.DeleteFunc(album.music, func(m Music) bool { return m.Key() == musicKey }) //consider map
 	if err := c.storage.uploadAlbum(album); err != nil {
 		return err
 	}

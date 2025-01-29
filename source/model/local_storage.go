@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"fyne.io/fyne/v2"
 )
@@ -13,6 +14,7 @@ import (
 var _ Storage = &localStorage{}
 
 type localStorage struct {
+	sync.Mutex
 	albumDir string
 	musicDir string
 }
@@ -41,6 +43,9 @@ func (s *localStorage) musicPath(key MusicKey) string {
 }
 
 func (s *localStorage) getAllAlbums() ([]Album, error) {
+	s.Lock()
+	defer s.Unlock()
+
 	const kFileExt = ".json"
 	entries, err := os.ReadDir(s.albumDir)
 	if err != nil {
@@ -65,19 +70,28 @@ func (s *localStorage) getAllAlbums() ([]Album, error) {
 	return albums, nil
 }
 
-func (s *localStorage) getAlbum(key AlbumKey) (album Album, err error) {
+func (s *localStorage) getAlbum(key AlbumKey) (Album, error) {
+	s.Lock()
+	defer s.Unlock()
+
 	if key.IsEmpty() {
-		return album, fmt.Errorf("empty key in getAlbum")
+		return Album{}, fmt.Errorf("empty key in getAlbum")
 	}
 
 	data, err := os.ReadFile(s.albumPath(key))
-	if err == nil {
-		err = json.Unmarshal(data, &album)
+	if err != nil {
+		return Album{}, err
 	}
-	return
+
+	album := Album{}
+	err = json.Unmarshal(data, &album)
+	return album, err
 }
 
 func (s *localStorage) uploadAlbum(album Album) error {
+	s.Lock()
+	defer s.Unlock()
+
 	key := album.Key()
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in uploadAlbum")
@@ -91,42 +105,51 @@ func (s *localStorage) uploadAlbum(album Album) error {
 }
 
 func (s *localStorage) removeAlbum(key AlbumKey) error {
+	s.Lock()
+	defer s.Unlock()
+
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in removeAlbum")
 	}
-
 	return os.Remove(s.albumPath(key))
 }
 
 func (s *localStorage) getMusic(key MusicKey) (io.ReadSeekCloser, error) {
+	s.Lock()
+	defer s.Unlock()
+
 	if key.IsEmpty() {
 		return nil, fmt.Errorf("empty key in getMusic")
 	}
-
 	return os.Open(s.musicPath(key))
 }
 
 func (s *localStorage) uploadMusic(music Music, content io.Reader) error {
+	s.Lock()
+	defer s.Unlock()
+
 	key := music.Key()
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in uploadMusic")
 	}
 
-	dst, err := os.OpenFile(s.musicPath(key), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(s.musicPath(key), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
-	defer dst.Close()
+	defer file.Close()
 
-	_, err = io.Copy(dst, content)
+	_, err = io.Copy(file, content)
 	return err
 }
 
 func (s *localStorage) removeMusic(key MusicKey) error {
+	s.Lock()
+	defer s.Unlock()
+
 	if key.IsEmpty() {
 		return fmt.Errorf("empty key in removeMusic")
 	}
-
 	return os.Remove(s.musicPath(key))
 }
 

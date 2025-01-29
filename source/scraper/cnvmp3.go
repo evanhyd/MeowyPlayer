@@ -90,7 +90,7 @@ func (d *cnvmp3Downloader) saveVideo(video *Result) (string, error) {
 	}
 
 	// Prepare the request.
-	const endpoint = `https://cnvmp3.com/save_video.php`
+	const endpoint = `https://cnvmp3.com/download_video_h4k5.php`
 	request := DownloadVideoRequest{
 		URL:         `https://www.youtube.com/watch?` + url.Values{"v": {video.ID}}.Encode(),
 		Quality:     0,
@@ -104,7 +104,7 @@ func (d *cnvmp3Downloader) saveVideo(video *Result) (string, error) {
 
 	// Send the request.
 	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(requestData))
-	req.Header.Set("referer", `https://cnvmp3.com/v3`)
+	req.Header.Set("referer", `https://cnvmp3.com`)
 	if err != nil {
 		return "", err
 	}
