@@ -21,7 +21,7 @@ func showLoginDialog() {
 
 	dialog.ShowForm(resource.LoginText(), resource.LoginText(), resource.CancelText(), items, func(login bool) {
 		if login {
-			if err := model.NetworkClient().Login(username.Text, password.Text); err != nil {
+			if err := model.NetworkClient().LoginManually(username.Text, password.Text); err != nil {
 				dialog.ShowError(err, getWindow())
 			}
 		}
@@ -45,11 +45,29 @@ func showRegisterDialog() {
 	}, getWindow())
 }
 
-func showLocalToRemoteDialog() {
-	dialog.ShowConfirm(resource.MigrateToRemoteText(), resource.MigrateConfirmationText(), func(yes bool) {
+func showUploadLocalToTheAccountDialog() {
+	dialog.ShowConfirm(resource.UploadLocalAlbumsToTheAccountText(), resource.MigrateConfirmationText(), func(yes bool) {
 		if yes {
-			if err := model.NetworkClient().MigrateLocalToRemote(); err != nil {
-				fyne.LogError("failed to migrate local albums to remote", err)
+			progressBar := dialog.NewCustomWithoutButtons(resource.UploadText(), widget.NewProgressBarInfinite(), getWindow())
+			progressBar.Show()
+			defer progressBar.Hide()
+
+			if err := model.NetworkClient().UploadLocalToTheAccount(); err != nil {
+				fyne.LogError("failed to upload local albums to remote", err)
+			}
+		}
+	}, getWindow())
+}
+
+func showBackupAlbumsToLocalDialog() {
+	dialog.ShowConfirm(resource.BackupAlbumsToLocalText(), resource.MigrateConfirmationText(), func(yes bool) {
+		if yes {
+			progressBar := dialog.NewCustomWithoutButtons(resource.UploadText(), widget.NewProgressBarInfinite(), getWindow())
+			progressBar.Show()
+			defer progressBar.Hide()
+
+			if err := model.NetworkClient().BackupAlbumsToLocal(); err != nil {
+				fyne.LogError("failed to backup albums to local", err)
 			}
 		}
 	}, getWindow())
@@ -78,24 +96,26 @@ func (s *LocalState) CreateRenderer() fyne.WidgetRenderer {
 
 type RemoteState struct {
 	widget.BaseWidget
-	usernameLabel *widget.Label
-	logoutButton  *widget.Button
-	migrateButton *widget.Button
+	usernameLabel         *widget.Label
+	logoutButton          *widget.Button
+	uploadToAccountButton *widget.Button
+	backupToLocalButton   *widget.Button
 }
 
 func newRemoteState() *RemoteState {
 	var s RemoteState
 	s = RemoteState{
-		usernameLabel: widget.NewLabel(""),
-		logoutButton:  cwidget.NewButton(resource.LogoutText(), nil, s.logout),
-		migrateButton: cwidget.NewButton(resource.MigrateToRemoteText(), nil, showLocalToRemoteDialog),
+		usernameLabel:         widget.NewLabel(""),
+		logoutButton:          cwidget.NewButton(resource.LogoutText(), nil, s.logout),
+		uploadToAccountButton: cwidget.NewButton(resource.UploadLocalAlbumsToTheAccountText(), nil, showUploadLocalToTheAccountDialog),
+		backupToLocalButton:   cwidget.NewButton(resource.BackupAlbumsToLocalText(), nil, showBackupAlbumsToLocalDialog),
 	}
 	s.ExtendBaseWidget(&s)
 	return &s
 }
 
 func (s *RemoteState) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewVBox(s.usernameLabel, s.logoutButton, s.migrateButton))
+	return widget.NewSimpleRenderer(container.NewVBox(s.usernameLabel, s.logoutButton, s.uploadToAccountButton, s.backupToLocalButton))
 }
 
 func (s *RemoteState) logout() {
@@ -115,7 +135,7 @@ func newSettingPage() *SettingPage {
 	p.setState(newLocalState())
 	p.ExtendBaseWidget(&p)
 
-	model.NetworkClient().OnConnected().AttachFunc(func(info model.UserInfo) {
+	model.NetworkClient().OnConnected().AttachFunc(func(info model.UserProfile) {
 		p.setState(newRemoteState())
 		p.userstate.(*RemoteState).usernameLabel.SetText(info.Username)
 	})

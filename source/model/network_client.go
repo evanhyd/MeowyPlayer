@@ -2,6 +2,7 @@ package model
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,29 +14,45 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 )
 
 const (
 	kAlbumKeyParam = "albumKey"
 )
 
-type UserInfo struct {
+type UserProfile struct {
 	Username string
 }
 
-type networkClientConfig struct {
-	ServerURL string `json:"serverURL"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+type connectionConfig struct {
+	Endpoint       string `json:"endpoint"`
+	Username       string `json:"username"`
+	PasswordBase64 string `json:"password"`
 	// Token          []byte `json:"token"`
 }
 
+func (c *connectionConfig) getURL(resource string) string {
+	URL, err := url.JoinPath(c.Endpoint, resource)
+	if err != nil {
+		log.Panicln(err)
+	}
+	return URL
+}
+
+func (c *connectionConfig) setAuth(username string, password string) {
+	c.Username = username
+	c.PasswordBase64 = base64.StdEncoding.EncodeToString([]byte(password))
+}
+
+func (c *connectionConfig) getAuth() (string, string) {
+	password, _ := base64.StdEncoding.DecodeString(c.PasswordBase64)
+	return c.Username, string(password)
+}
+
 type networkClient struct {
-	sync.Mutex
 	configDir      string
-	config         networkClientConfig
-	onConnected    util.Subject[UserInfo]
+	config         connectionConfig
+	onConnected    util.Subject[UserProfile]
 	onDisconnected util.Subject[bool]
 }
 
@@ -49,8 +66,8 @@ func InitNetworkClient() error {
 	const kStorage = "storage"
 	networkClientInstance = networkClient{
 		configDir:      filepath.Join(kStorage, "config.json"),
-		config:         networkClientConfig{ServerURL: "http://132.145.98.4/"},
-		onConnected:    util.MakeSubject[UserInfo](),
+		config:         connectionConfig{Endpoint: "http://132.145.98.4/"},
+		onConnected:    util.MakeSubject[UserProfile](),
 		onDisconnected: util.MakeSubject[bool](),
 	}
 
@@ -70,7 +87,7 @@ func InitNetworkClient() error {
 	return json.Unmarshal(data, &networkClientInstance.config)
 }
 
-func (c *networkClient) OnConnected() util.Subject[UserInfo] {
+func (c *networkClient) OnConnected() util.Subject[UserProfile] {
 	return c.onConnected
 }
 
@@ -86,27 +103,13 @@ func (c *networkClient) save() error {
 	return os.WriteFile(c.configDir, data, 0600)
 }
 
-func (c *networkClient) setConfig(username string, password string) error {
-	c.config.Username = username
-	c.config.Password = password
-	return c.save()
-}
-
-func (c *networkClient) getURL(endpoint string) string {
-	url, err := url.JoinPath(c.config.ServerURL, endpoint)
-	if err != nil {
-		log.Panicln(err)
-	}
-	return url
-}
-
-func (c *networkClient) sendRequest(method string, endpoint string, contentType string, content io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, c.getURL(endpoint), content)
+func (c *networkClient) sendRequest(method string, resource string, contentType string, content io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, c.config.getURL(resource), content)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", contentType)
-	req.SetBasicAuth(c.config.Username, c.config.Password)
+	req.SetBasicAuth(c.config.getAuth())
 
 	//execute the request
 	rsp, err := http.DefaultClient.Do(req)
@@ -126,51 +129,51 @@ func (c *networkClient) sendRequest(method string, endpoint string, contentType 
 	return rsp, nil
 }
 
-func (c *networkClient) sendPostJson(endpoint string, object json.Marshaler) (*http.Response, error) {
+func (c *networkClient) sendPostJson(resource string, object json.Marshaler) (*http.Response, error) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(object); err != nil {
 		return nil, err
 	}
-	return c.sendRequest(http.MethodPost, endpoint, "application/json", &buf)
+	return c.sendRequest(http.MethodPost, resource, "application/json", &buf)
 }
 
-func (c *networkClient) sendPostForm(endpoint string, form url.Values) (*http.Response, error) {
-	return c.sendRequest(http.MethodPost, endpoint, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+func (c *networkClient) sendPostForm(resource string, form url.Values) (*http.Response, error) {
+	return c.sendRequest(http.MethodPost, resource, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 }
 
-func (c *networkClient) sendPostEmpty(endpoint string) (*http.Response, error) {
-	return c.sendRequest(http.MethodPost, endpoint, "", nil)
+func (c *networkClient) sendPostEmpty(resource string) (*http.Response, error) {
+	return c.sendRequest(http.MethodPost, resource, "", nil)
 }
 
-func (c *networkClient) Login(username string, password string) error {
-	c.Lock()
-	defer c.Unlock()
-	oldUsername, oldPassword := c.config.Username, c.config.Password
-	c.config.Username, c.config.Password = username, password
-
+func (c *networkClient) LoginManually(username string, password string) error {
+	// Try to login with new config. Revert if fails.
+	oldConfig := c.config
+	c.config.setAuth(username, password)
 	if _, err := c.sendPostEmpty("login"); err != nil {
-		//restore the old config if fails to login
-		c.config.Username, c.config.Password = oldUsername, oldPassword
+		c.config = oldConfig
 		return err
 	}
 
-	if err := c.setConfig(username, password); err != nil {
+	// Login successfully, save the login credential.
+	if err := c.save(); err != nil {
 		return err
 	}
-	c.onConnected.NotifyAll(UserInfo{Username: username})
+	c.onConnected.NotifyAll(UserProfile{Username: username})
 	return StorageClient().setStorage(newRemoteStorage())
 }
 
-func (c *networkClient) LoginWithConfig() {
-	if err := c.Login(c.config.Username, c.config.Password); err != nil {
+func (c *networkClient) LoginWithConfig() error {
+	if _, err := c.sendPostEmpty("login"); err != nil {
 		c.Logout()
+		return nil
 	}
+	c.onConnected.NotifyAll(UserProfile{Username: c.config.Username})
+	return StorageClient().setStorage(newRemoteStorage())
 }
 
 func (c *networkClient) Logout() error {
-	c.Lock()
-	defer c.Unlock()
-	if err := c.setConfig("", ""); err != nil {
+	c.config.setAuth("", "")
+	if err := c.save(); err != nil {
 		return err
 	}
 	c.onDisconnected.NotifyAll(true)
@@ -178,22 +181,17 @@ func (c *networkClient) Logout() error {
 }
 
 func (c *networkClient) Register(username string, password string) error {
-	c.Lock()
-	defer c.Unlock()
-
-	oldUsername, oldPassword := c.config.Username, c.config.Password
-	c.config.Username, c.config.Password = username, password
-	if _, err := c.sendPostEmpty("register"); err != nil {
-		//restore the old config if fails to login
-		c.config.Username, c.config.Password = oldUsername, oldPassword
-		return err
+	// Try register with new username and password. Revert if fails.
+	oldConfig := c.config
+	c.config.setAuth(username, password)
+	_, err := c.sendPostEmpty("register")
+	if err != nil {
+		c.config = oldConfig
 	}
-	return nil
+	return err
 }
 
-func (c *networkClient) MigrateLocalToRemote() error {
-	c.Lock()
-	defer c.Unlock()
+func (c *networkClient) UploadLocalToTheAccount() error {
 	albums, err := newLocalStorage().getAllAlbums()
 	if err != nil {
 		return err
@@ -201,6 +199,21 @@ func (c *networkClient) MigrateLocalToRemote() error {
 
 	for _, album := range albums {
 		if err := StorageClient().UploadAlbum(album); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *networkClient) BackupAlbumsToLocal() error {
+	albums, err := c.getAllAlbums()
+	if err != nil {
+		return err
+	}
+
+	localStorage := newLocalStorage()
+	for _, album := range albums {
+		if err := localStorage.uploadAlbum(album); err != nil {
 			return err
 		}
 	}

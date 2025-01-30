@@ -39,7 +39,9 @@ func RunApp() {
 	}
 
 	//run the client
-	model.NetworkClient().LoginWithConfig()
+	if err := model.NetworkClient().LoginWithConfig(); err != nil {
+		fyne.LogError("failed to login with config", err)
+	}
 	window.ShowAndRun()
 }
 
