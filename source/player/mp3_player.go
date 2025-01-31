@@ -3,6 +3,7 @@ package player
 import (
 	"fmt"
 	"io"
+	"math"
 	"meowyplayer/model"
 	"meowyplayer/scraper"
 	"meowyplayer/util"
@@ -20,21 +21,27 @@ const kSampleRate beep.SampleRate = 48000
 type MP3PlayerCommand = func()
 
 type Mp3Stream struct {
-	resource      beep.StreamSeekCloser
-	resamplerCtrl *beep.Resampler
-	volumeCtrl    *effects.Volume
-	playCtrl      *beep.Ctrl
+	resource   beep.StreamSeekCloser
+	volumeCtrl *effects.Volume
+	playCtrl   *beep.Ctrl
 }
 
-func newMp3Stream(rsc io.ReadSeekCloser, percent float64) (*Mp3Stream, error) {
+func newMp3Stream(rsc io.ReadSeekCloser) (*Mp3Stream, error) {
 	resource, format, err := mp3.Decode(rsc)
 	if err != nil {
 		return nil, err
 	}
-	resamplerCtrl := beep.Resample(10, format.SampleRate, kSampleRate, resource)
-	volumeCtrl := &effects.Volume{Streamer: resamplerCtrl, Base: 10, Volume: 2 * (percent - 0.8)}
+	resamplerCtrl := beep.Resample(16, format.SampleRate, kSampleRate, resource)
+	volumeCtrl := &effects.Volume{Streamer: resamplerCtrl, Base: 2}
 	playCtrl := &beep.Ctrl{Streamer: volumeCtrl}
-	return &Mp3Stream{resource, resamplerCtrl, volumeCtrl, playCtrl}, nil
+	return &Mp3Stream{resource, volumeCtrl, playCtrl}, nil
+}
+
+func (s *Mp3Stream) setVolume(percent float64) {
+	const kVolumeOffsetPercent = -0.7
+	fixedPercent := percent + kVolumeOffsetPercent
+	s.volumeCtrl.Volume = 10 * math.Copysign(fixedPercent*fixedPercent, fixedPercent)
+	s.volumeCtrl.Silent = (percent == 0.0)
 }
 
 func (s *Mp3Stream) Stream(sample [][2]float64) (int, bool) {
@@ -112,10 +119,9 @@ func (p *MP3Player) Play() {
 
 func (p *MP3Player) SetVolume(percent float64) {
 	p.commands <- func() {
-		p.volumePercent = percent
 		speaker.Lock()
-		p.stream.volumeCtrl.Volume = 2 * (percent - 0.8) //default to Base^0 == 1 scaling
-		p.stream.volumeCtrl.Silent = (percent == 0.0)
+		p.volumePercent = percent
+		p.stream.setVolume(percent)
 		speaker.Unlock()
 	}
 }
@@ -158,12 +164,14 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 	}
 
 	//create mp3 stream and controllers
-	p.stream, err = newMp3Stream(reader, p.volumePercent)
+	p.stream, err = newMp3Stream(reader)
 	if err != nil {
 		badMusicLogInfo := fmt.Sprintf("%s, %s", music.Title(), music.Key())
 		fyne.LogError("detected bad mp3 file: "+badMusicLogInfo, err)
 		return
 	}
+
+	p.stream.setVolume(p.volumePercent)
 	speaker.Play(beep.Seq(p.stream, beep.Callback(func() {
 		p.stream.Close()
 		p.Next()
