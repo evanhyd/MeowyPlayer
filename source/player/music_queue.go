@@ -14,18 +14,15 @@ const (
 	KRepeatMode
 )
 
-const kMaxHistorySize = 128
-
 /*
-musicQueue lists all the music based on user-specified order.
+musicQueue queue the music in user-specified order.
 
-historyQueue tracks the music that have been played. The last music in the history queue is the most recent one.
+historyQueue tracks the played music. The last element in the queue is the most recent music.
 
 randomQueue specifies the index of the music that will get played if the player is in random mode.
 
 If the historyIndex < len(historyQueue), then prev() and next() fetch the music from the historyQueue.
-
-Otherwise, prev() fetch the music from the historyQueue, but next() fetch the music based on the queueMode and append it to the historyQueue:
+Otherwise, prev() fetch the music from the historyQueue, but next() fetch the music by the queueMode and append it to the historyQueue:
 
 RandomMode: get music from the randomQueue
 
@@ -46,22 +43,17 @@ type MusicQueue struct {
 	mode QueueMode
 }
 
-func (q *MusicQueue) loadPlaylist(musicQueue []model.Music, index int) *model.Music {
+func (q *MusicQueue) loadPlaylist(musicQueue []model.Music, index int) model.Music {
 	q.musicQueue = musicQueue
 	q.lastPlayedIndex = index
 	q.appendToHistory(index)
 	q.shuffleQueue(index)
-	return &q.musicQueue[q.lastPlayedIndex]
+	return q.musicQueue[q.lastPlayedIndex]
 }
 
 func (q *MusicQueue) appendToHistory(index int) {
-	//append if different than the last music in queue
+	// Append if different than the last music in queue.
 	if len(q.historyQueue) == 0 || q.musicQueue[index] != q.historyQueue[len(q.historyQueue)-1] {
-
-		//limit the history size
-		if len(q.historyQueue) >= kMaxHistorySize {
-			q.historyQueue = q.historyQueue[1:]
-		}
 		q.historyQueue = append(q.historyQueue, q.musicQueue[index])
 	}
 	q.historyIndex = len(q.historyQueue) - 1
@@ -77,20 +69,20 @@ func (q *MusicQueue) setMode(mode QueueMode) {
 	q.mode = mode
 }
 
-func (q *MusicQueue) prev() *model.Music {
+func (q *MusicQueue) prev() model.Music {
 	q.historyIndex = max(0, q.historyIndex-1)
-	return &q.historyQueue[q.historyIndex]
+	return q.historyQueue[q.historyIndex]
 }
 
-func (q *MusicQueue) next() *model.Music {
+func (q *MusicQueue) next() model.Music {
 	q.historyIndex = min(len(q.historyQueue), q.historyIndex+1)
 
-	//browing the history queue
+	// Browing the history queue.
 	if q.historyIndex < len(q.historyQueue) {
-		return &q.historyQueue[q.historyIndex]
+		return q.historyQueue[q.historyIndex]
 	}
 
-	//read from play queue
+	// Read from the music queue.
 	switch q.mode {
 	case KRandomMode:
 		q.randomIndex = (q.randomIndex + 1) % len(q.randomQueue)
@@ -101,5 +93,5 @@ func (q *MusicQueue) next() *model.Music {
 		//nothing
 	}
 	q.appendToHistory(q.lastPlayedIndex)
-	return &q.musicQueue[q.lastPlayedIndex]
+	return q.musicQueue[q.lastPlayedIndex]
 }

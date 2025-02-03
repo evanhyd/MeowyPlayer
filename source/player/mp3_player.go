@@ -2,8 +2,6 @@ package player
 
 import (
 	"fmt"
-	"io"
-	"math"
 	"meowyplayer/model"
 	"meowyplayer/scraper"
 	"meowyplayer/util"
@@ -11,8 +9,6 @@ import (
 
 	"fyne.io/fyne/v2"
 	"github.com/gopxl/beep/v2"
-	"github.com/gopxl/beep/v2/effects"
-	"github.com/gopxl/beep/v2/mp3"
 	"github.com/gopxl/beep/v2/speaker"
 )
 
@@ -20,46 +16,10 @@ const kSampleRate beep.SampleRate = 48000
 
 type MP3PlayerCommand = func()
 
-type Mp3Stream struct {
-	resource   beep.StreamSeekCloser
-	volumeCtrl *effects.Volume
-	playCtrl   *beep.Ctrl
-}
-
-func newMp3Stream(rsc io.ReadSeekCloser) (*Mp3Stream, error) {
-	resource, format, err := mp3.Decode(rsc)
-	if err != nil {
-		return nil, err
-	}
-	resamplerCtrl := beep.Resample(16, format.SampleRate, kSampleRate, resource)
-	volumeCtrl := &effects.Volume{Streamer: resamplerCtrl, Base: 2}
-	playCtrl := &beep.Ctrl{Streamer: volumeCtrl}
-	return &Mp3Stream{resource, volumeCtrl, playCtrl}, nil
-}
-
-func (s *Mp3Stream) setVolume(percent float64) {
-	const kVolumeOffsetPercent = -0.7
-	fixedPercent := percent + kVolumeOffsetPercent
-	s.volumeCtrl.Volume = 10 * math.Copysign(fixedPercent*fixedPercent, fixedPercent)
-	s.volumeCtrl.Silent = (percent == 0.0)
-}
-
-func (s *Mp3Stream) Stream(sample [][2]float64) (int, bool) {
-	return s.playCtrl.Stream(sample)
-}
-
-func (s *Mp3Stream) Close() error {
-	return s.resource.Close()
-}
-
-func (s *Mp3Stream) Err() error {
-	return s.playCtrl.Err()
-}
-
 type MP3Player struct {
 	queue         MusicQueue
 	commands      chan MP3PlayerCommand
-	stream        *Mp3Stream
+	stream        *ControllableMp3Stream
 	volumePercent float64
 
 	onAlbumPlayed     util.Subject[model.AlbumKey]
@@ -73,7 +33,7 @@ func InitPlayer() error {
 	const kCommandBufferSize = 128
 	const kDefaultVolume = 0.5
 
-	//human perception time
+	// Set the buffer size delay to be lower than human perception time.
 	if err := speaker.Init(kSampleRate, kSampleRate.N(100*time.Millisecond)); err != nil {
 		return err
 	}
@@ -97,7 +57,7 @@ func (p *MP3Player) SetMode(mode QueueMode)                      { p.queue.setMo
 
 func (p *MP3Player) Prev() {
 	p.commands <- func() {
-		speaker.Clear() //remove the callback to avoid double close
+		speaker.Clear() // Remove the callback to avoid double close.
 		p.loadMusic(p.queue.prev())
 	}
 }
@@ -129,7 +89,7 @@ func (p *MP3Player) SetVolume(percent float64) {
 func (p *MP3Player) SetProgress(percent float64) {
 	p.commands <- func() {
 		speaker.Lock()
-		bytes := int(float64(p.stream.resource.Len()) * percent)
+		bytes := int(float64(p.stream.resource.Len()) * percent) // Align to 4 bytes.
 		bytes -= bytes % 4
 		p.stream.resource.Seek(bytes)
 		p.stream.playCtrl.Paused = false
@@ -137,37 +97,35 @@ func (p *MP3Player) SetProgress(percent float64) {
 	}
 }
 
-func (p *MP3Player) LoadAlbum(key model.AlbumKey, musicQueue []model.Music, index int) {
+func (p *MP3Player) LoadAlbum(key model.AlbumKey, musicQueue []model.Music, toPlayIndex int) {
 	speaker.Clear()
-	p.loadMusic(p.queue.loadPlaylist(musicQueue, index))
+	p.loadMusic(p.queue.loadPlaylist(musicQueue, toPlayIndex))
 	p.onAlbumPlayed.NotifyAll(key)
 }
 
-func (p *MP3Player) loadMusic(music *model.Music) {
+func (p *MP3Player) loadMusic(music model.Music) {
+	musicLogInfo := fmt.Sprintf("%s, %s", music.Title(), music.Key())
 	reader, err := model.StorageClient().GetMusic(music.Key())
 	if err != nil {
-		badMusicLogInfo := fmt.Sprintf("%s, %s", music.Title(), music.Key())
-		fyne.LogError("missing music in the storage: "+badMusicLogInfo, err)
+		fyne.LogError("missing music in the storage: "+musicLogInfo, err)
 
-		//sync music content to the storage
-		if err := model.StorageClient().SyncMusic(scraper.Result{Platform: music.Platform(), ID: music.ID()}); err != nil {
-			fyne.LogError("failed to sync music: "+badMusicLogInfo, err)
+		// Sync music content to the storage.
+		if err := model.StorageClient().SyncMusic(scraper.Result{Platform: music.Platform(), ID: music.ID(), Title: music.Title()}); err != nil {
+			fyne.LogError("failed to sync music: "+musicLogInfo, err)
 			return
 		}
 
-		//reload
+		// Reload
 		reader, err = model.StorageClient().GetMusic(music.Key())
 		if err != nil {
-			fyne.LogError("detected missing music after sync: "+badMusicLogInfo, err)
+			fyne.LogError("missing music after sync: "+musicLogInfo, err)
 			return
 		}
 	}
 
 	//create mp3 stream and controllers
-	p.stream, err = newMp3Stream(reader)
-	if err != nil {
-		badMusicLogInfo := fmt.Sprintf("%s, %s", music.Title(), music.Key())
-		fyne.LogError("detected bad mp3 file: "+badMusicLogInfo, err)
+	if p.stream, err = newMp3Stream(reader); err != nil {
+		fyne.LogError("detected bad mp3 file: "+musicLogInfo, err)
 		return
 	}
 
@@ -176,7 +134,7 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 		p.stream.Close()
 		p.Next()
 	})))
-	p.onMusicPlayed.NotifyAll(*music)
+	p.onMusicPlayed.NotifyAll(music)
 }
 
 func (p *MP3Player) getProgressPercent() float64 {
@@ -185,8 +143,7 @@ func (p *MP3Player) getProgressPercent() float64 {
 
 func (p *MP3Player) run() {
 	go func() {
-		const kMediaProgressUpdatePeriod = 1000 * time.Millisecond
-		updateTimer := time.NewTicker(kMediaProgressUpdatePeriod)
+		updateTimer := time.NewTicker(1000 * time.Millisecond)
 		for {
 			select {
 			case cmd := <-p.commands:

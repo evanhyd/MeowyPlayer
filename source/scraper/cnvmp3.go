@@ -15,27 +15,27 @@ import (
 
 var cnvmp3DownloadVideoURL string
 
-func init() {
-	rsp, err := http.Get(`https://cnvmp3.com/`)
-	if err != nil {
-		fyne.LogError("failed to obtain cvnmp3 download video url", err)
-	}
-	defer rsp.Body.Close()
-
-	content, err := io.ReadAll(rsp.Body)
-	if err != nil {
-		fyne.LogError("failed to decode cvnmp3 source", err)
-	}
-
-	exp := regexp.MustCompile(`function downloadVideo\(.+\) \{.+\n.+fetch\('(.+)', \{`)
-	cnvmp3DownloadVideoURL = exp.FindStringSubmatch(string(content))[1]
-}
-
 type cnvmp3Downloader struct {
 	downloadVideoURL string
 }
 
 func newCnvmp3Downloader() *cnvmp3Downloader {
+	// Lazy initialize download video url
+	if len(cnvmp3DownloadVideoURL) == 0 {
+		rsp, err := http.Get(`https://cnvmp3.com/`)
+		if err != nil {
+			fyne.LogError("failed to obtain cvnmp3 download video url", err)
+		}
+		defer rsp.Body.Close()
+
+		content, err := io.ReadAll(rsp.Body)
+		if err != nil {
+			fyne.LogError("failed to decode cvnmp3 source", err)
+		}
+
+		exp := regexp.MustCompile(`function downloadVideo\(.+\) \{.+\n.+fetch\('(.+)', \{`)
+		cnvmp3DownloadVideoURL = exp.FindStringSubmatch(string(content))[1]
+	}
 	return &cnvmp3Downloader{`https://cnvmp3.com/` + cnvmp3DownloadVideoURL}
 }
 
@@ -44,21 +44,19 @@ func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
 	if err := d.getVideoData(video); err != nil {
 		return nil, err
 	}
-	filelink, err := d.downloadVideo(video)
+	filelink, err := d.getVideoDownloadLink(video)
 	if err != nil {
 		return nil, err
 	}
-	paramCutOff := strings.Index(filelink, "?") + 1
-	filelink = filelink[:paramCutOff] + url.PathEscape(filelink[paramCutOff:])
 
 	// Download the music file
-	downloadRequest, err := http.NewRequest(http.MethodGet, filelink, nil)
+	req, err := http.NewRequest(http.MethodGet, filelink, nil)
 	if err != nil {
 		return nil, err
 	}
-	downloadRequest.Header.Set("host", "apiv17dlp.cnvmp3.me")
-	downloadRequest.Header.Set("referer", "https://cnvmp3.com/")
-	musicResp, err := http.DefaultClient.Do(downloadRequest)
+	req.Header.Set("host", "apiv17dlp.cnvmp3.me")
+	req.Header.Set("referer", "https://cnvmp3.com/")
+	musicResp, err := http.DefaultClient.Do(req)
 	return musicResp.Body, err
 }
 
@@ -67,7 +65,7 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 		URL string `json:"url"`
 	}
 
-	type GetVideoDataResposne struct {
+	type GetVideoDataResponse struct {
 		Success bool   `json:"success"`
 		Title   string `json:"title"`
 	}
@@ -88,7 +86,7 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 	defer resp.Body.Close()
 
 	// Parse the response.
-	response := GetVideoDataResposne{}
+	response := GetVideoDataResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return err
 	}
@@ -98,7 +96,7 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 	return nil
 }
 
-func (d *cnvmp3Downloader) downloadVideo(video *Result) (string, error) {
+func (d *cnvmp3Downloader) getVideoDownloadLink(video *Result) (string, error) {
 	type DownloadVideoRequest struct {
 		URL         string `json:"url"`
 		Quality     int64  `json:"quality"`
@@ -143,5 +141,8 @@ func (d *cnvmp3Downloader) downloadVideo(video *Result) (string, error) {
 	if !response.Success {
 		return "", fmt.Errorf("failed to get download video link")
 	}
+
+	paramCutOff := strings.Index(response.DownloadLink, "=") + 1
+	response.DownloadLink = response.DownloadLink[:paramCutOff] + url.QueryEscape(response.DownloadLink[paramCutOff:])
 	return response.DownloadLink, nil
 }
