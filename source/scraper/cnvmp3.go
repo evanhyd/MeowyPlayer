@@ -7,14 +7,36 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
+
+	"fyne.io/fyne/v2"
 )
 
+var cnvmp3DownloadVideoURL string
+
+func init() {
+	rsp, err := http.Get(`https://cnvmp3.com/`)
+	if err != nil {
+		fyne.LogError("failed to obtain cvnmp3 download video url", err)
+	}
+	defer rsp.Body.Close()
+
+	content, err := io.ReadAll(rsp.Body)
+	if err != nil {
+		fyne.LogError("failed to decode cvnmp3 source", err)
+	}
+
+	exp := regexp.MustCompile(`function downloadVideo\(.+\) \{.+\n.+fetch\('(.+)', \{`)
+	cnvmp3DownloadVideoURL = exp.FindStringSubmatch(string(content))[1]
+}
+
 type cnvmp3Downloader struct {
+	downloadVideoURL string
 }
 
 func newCnvmp3Downloader() *cnvmp3Downloader {
-	return &cnvmp3Downloader{}
+	return &cnvmp3Downloader{`https://cnvmp3.com/` + cnvmp3DownloadVideoURL}
 }
 
 func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
@@ -22,7 +44,7 @@ func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
 	if err := d.getVideoData(video); err != nil {
 		return nil, err
 	}
-	filelink, err := d.saveVideo(video)
+	filelink, err := d.downloadVideo(video)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +98,7 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 	return nil
 }
 
-func (d *cnvmp3Downloader) saveVideo(video *Result) (string, error) {
+func (d *cnvmp3Downloader) downloadVideo(video *Result) (string, error) {
 	type DownloadVideoRequest struct {
 		URL         string `json:"url"`
 		Quality     int64  `json:"quality"`
@@ -90,7 +112,6 @@ func (d *cnvmp3Downloader) saveVideo(video *Result) (string, error) {
 	}
 
 	// Prepare the request.
-	const endpoint = `https://cnvmp3.com/download_video_h4k5.php`
 	request := DownloadVideoRequest{
 		URL:         `https://www.youtube.com/watch?` + url.Values{"v": {video.ID}}.Encode(),
 		Quality:     0,
@@ -103,7 +124,7 @@ func (d *cnvmp3Downloader) saveVideo(video *Result) (string, error) {
 	}
 
 	// Send the request.
-	req, err := http.NewRequest(http.MethodPost, endpoint, bytes.NewBuffer(requestData))
+	req, err := http.NewRequest(http.MethodPost, d.downloadVideoURL, bytes.NewBuffer(requestData))
 	req.Header.Set("referer", `https://cnvmp3.com`)
 	if err != nil {
 		return "", err

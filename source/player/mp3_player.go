@@ -147,7 +147,7 @@ func (p *MP3Player) loadMusic(music *model.Music) {
 	reader, err := model.StorageClient().GetMusic(music.Key())
 	if err != nil {
 		badMusicLogInfo := fmt.Sprintf("%s, %s", music.Title(), music.Key())
-		fyne.LogError("synchronizing missing music: "+badMusicLogInfo, err)
+		fyne.LogError("missing music in the storage: "+badMusicLogInfo, err)
 
 		//sync music content to the storage
 		if err := model.StorageClient().SyncMusic(scraper.Result{Platform: music.Platform(), ID: music.ID()}); err != nil {
