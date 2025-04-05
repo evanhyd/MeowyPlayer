@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -38,14 +39,13 @@ func main() {
 
 	if platformFlag == "desktop" {
 		if releaseFlag {
-			run("fyne", "package", "--src", "source", "--exe", kExeName, "--release") //-o has missing icon bug
-			run("mv", filepath.Join("source", kExeName), ".")
+			run("fyne", "package", "--release", "--src", "source", "--exe", kExeName) //-o has missing icon bug
+			os.Rename(filepath.Join("source", kExeName), filepath.Join(".", kExeName))
 		} else {
 			runAt("source", "go", "build", "-o", filepath.Join("..", kExeName), "main.go")
 			run("./meowyplayer")
 		}
 	} else {
-		runAt("source", "fyne", "package", "--os", platformFlag, "--release")
-		run("mv", filepath.Join("source", kExeName), ".")
+		fmt.Println("currently does not support other platform")
 	}
 }
