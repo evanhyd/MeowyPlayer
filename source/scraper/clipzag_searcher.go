@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"meowyplayer/storage"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -11,15 +12,13 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"fyne.io/fyne/v2"
 )
 
-type clipzagScraper struct {
+type clipzagSearcher struct {
 	matchResultRegex *regexp.Regexp
 }
 
-func newClipzagScraper() *clipzagScraper {
+func newClipzagSearcher() *clipzagSearcher {
 	matchResultPattern := `<a class='title-color' href='watch\?v=(.+?)'>\s*` + // videoID
 		`<div class='video-thumbs'>\s*` +
 		`<img class='videosthumbs-style' data-thumb-m(?:='.*?')? data-thumb='//(.+?)' src='//.+?'><span class='duration'>(.+?)</span></div>\s*` + // thumbnail, length
@@ -30,10 +29,10 @@ func newClipzagScraper() *clipzagScraper {
 		`</div>\s*` +
 		`<div class='postdiscription'>(.+?)</div>` // description
 
-	return &clipzagScraper{regexp.MustCompile(matchResultPattern)}
+	return &clipzagSearcher{regexp.MustCompile(matchResultPattern)}
 }
 
-func (s *clipzagScraper) Search(title string) ([]Result, error) {
+func (s *clipzagSearcher) Search(title string) ([]Result, error) {
 	page, err := s.fetchSearchPage(title)
 	if err != nil {
 		return nil, err
@@ -41,7 +40,7 @@ func (s *clipzagScraper) Search(title string) ([]Result, error) {
 	return s.scrapeSearchPage(page)
 }
 
-func (s *clipzagScraper) fetchSearchPage(title string) (string, error) {
+func (s *clipzagSearcher) fetchSearchPage(title string) (string, error) {
 	endpoint := `https://clipzag.com/search?` + url.Values{"q": {title}, "order": {"relevance"}}.Encode()
 	resp, err := http.Get(endpoint)
 	if err != nil {
@@ -55,27 +54,25 @@ func (s *clipzagScraper) fetchSearchPage(title string) (string, error) {
 	return string(data), err
 }
 
-func (s *clipzagScraper) scrapeSearchPage(content string) ([]Result, error) {
-	//parse regex and prepare output buffers
+func (s *clipzagSearcher) scrapeSearchPage(content string) ([]Result, error) {
+	// Parse regex and prepare output buffers.
 	matches := s.matchResultRegex.FindAllStringSubmatch(content, -1)
 	results := make([]Result, len(matches))
-	errors := make(chan error, len(matches))
+	errors := make([]error, len(matches))
 
-	//parse into the results
+	// Parse the result concurrently..
 	wg := sync.WaitGroup{}
 	wg.Add(len(matches))
-	go func() {
-		for i := range matches {
-			go func(match []string, result *Result) {
-				defer wg.Done()
-				s.parseMatchResult(match, result, errors)
-			}(matches[i], &results[i])
-		}
-		wg.Wait()
-		close(errors)
-	}()
+	for i := range matches {
+		go func() {
+			defer wg.Done()
+			results[i], errors[i] = s.parseMatchResult(matches[i])
+		}()
+	}
+	wg.Wait()
 
-	for err := range errors {
+	// Any error is error.
+	for _, err := range errors {
 		if err != nil {
 			return nil, err
 		}
@@ -83,27 +80,31 @@ func (s *clipzagScraper) scrapeSearchPage(content string) ([]Result, error) {
 	return results, nil
 }
 
-func (s *clipzagScraper) parseMatchResult(match []string, result *Result, errors chan<- error) {
-	//download thumbnail
-	thumbnail, err := fyne.LoadResourceFromURLString(`https://` + match[2])
+func (s *clipzagSearcher) parseMatchResult(match []string) (Result, error) {
+	// Download the thumbnail.
+	resp, err := http.Get(`https://` + match[2])
 	if err != nil {
-		errors <- err
+		return Result{}, err
+	}
+	defer resp.Body.Close()
+	thumbnail, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return Result{}, err
 	}
 
-	//calculate video length
+	// Calculate the video length.
 	hourMinSec := strings.Split(match[3], ":")
 	totalSecond := int64(0)
 	for _, time := range hourMinSec {
 		t, err := strconv.ParseInt(time, 10, 64)
 		if err != nil {
-			errors <- err
-			return
+			return Result{}, err
 		}
 		totalSecond = totalSecond*60 + t
 	}
 
-	*result = Result{
-		Platform:     "YouTube",
+	return Result{
+		Platform:     storage.YouTubeSource,
 		ID:           match[1],
 		Thumbnail:    thumbnail,
 		Length:       time.Duration(totalSecond * int64(time.Second)),
@@ -112,5 +113,5 @@ func (s *clipzagScraper) parseMatchResult(match []string, result *Result, errors
 		ChannelTitle: html.UnescapeString(match[6]),
 		Stats:        html.UnescapeString(match[7]),
 		Description:  html.UnescapeString(match[8]),
-	}
+	}, nil
 }

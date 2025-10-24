@@ -21,7 +21,7 @@ const (
 type HomePage struct {
 	widget.BaseWidget
 	searchBar *cwidget.SearchBar[[]scraper.Result]
-	searcher  scraper.Searcher
+	searcher  scraper.MusicSearcher
 }
 
 func newHomePage() *HomePage {
@@ -35,7 +35,7 @@ func newHomePage() *HomePage {
 	}
 
 	//menu and toolbar
-	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon(), func() { p.searcher = scraper.NewYouTubeSearcher() }))
+	p.searchBar.AddDropDown(cwidget.NewMenuItem("YouTube", resource.YouTubeIcon(), func() { p.searcher = scraper.NewYouTubeScraper() }))
 	p.searchBar.AddToolbar(cwidget.NewDropDown())
 	p.ExtendBaseWidget(&p)
 	return &p

@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
-
-	"fyne.io/fyne/v2"
 )
 
 type cnvmp3Downloader struct {
@@ -22,16 +21,16 @@ type cnvmp3Downloader struct {
 func newCnvmp3Downloader() *cnvmp3Downloader {
 	rsp, err := http.Get(`https://cnvmp3.com/`)
 	if err != nil {
-		fyne.LogError("failed to obtain cvnmp3 download video url", err)
+		log.Println("failed to obtain cvnmp3 download video url", err)
 	}
 	defer rsp.Body.Close()
 
 	content, err := io.ReadAll(rsp.Body)
 	if err != nil {
-		fyne.LogError("failed to decode cvnmp3 source", err)
+		log.Println("failed to decode cvnmp3 source", err)
 	}
 
-	// Scrape referer
+	// Scrape referer.
 	referer := regexp.
 		MustCompile(`<link rel="canonical" href="(.+)">`).
 		FindStringSubmatch(string(content))[1]
@@ -49,17 +48,17 @@ func newCnvmp3Downloader() *cnvmp3Downloader {
 	return &cnvmp3Downloader{referer, downloadVideoToken, `https://cnvmp3.com/` + downloadVidelURL}
 }
 
-func (d *cnvmp3Downloader) Download(video *Result) (io.ReadCloser, error) {
+func (d *cnvmp3Downloader) Download(video Result) (io.ReadCloser, error) {
 	// Skip the database part, ignore the serverside caching.
-	if err := d.getVideoData(video); err != nil {
+	if err := d.getVideoData(&video); err != nil {
 		return nil, err
 	}
-	filelink, err := d.getVideoDownloadLink(video)
+	filelink, err := d.getVideoDownloadLink(&video)
 	if err != nil {
 		return nil, err
 	}
 
-	// Download the music file
+	// Download the music file.
 	req, err := http.NewRequest(http.MethodGet, filelink, nil)
 	if err != nil {
 		return nil, err

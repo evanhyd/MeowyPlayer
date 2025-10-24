@@ -86,7 +86,7 @@ func (c *ThumbnailCard) Notify(result scraper.Result) {
 	stats := &widget.TextSegment{Text: result.Stats}
 
 	//resize to reduce refresh time
-	originalThumbnail, typeStr, err := image.Decode(bytes.NewBuffer(result.Thumbnail.Content()))
+	originalThumbnail, typeStr, err := image.Decode(bytes.NewBuffer(result.Thumbnail))
 	if err != nil {
 		fyne.LogError(fmt.Sprintf("failed to decode image of type %v", typeStr), err)
 		return

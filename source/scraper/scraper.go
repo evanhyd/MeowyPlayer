@@ -1,15 +1,13 @@
 package scraper
 
 import (
-	"fmt"
 	"io"
+	"meowyplayer/storage"
 	"time"
-
-	"fyne.io/fyne/v2"
 )
 
 type Result struct {
-	Platform     string
+	Platform     storage.MusicSource
 	ID           string
 	ChannelID    string
 	ChannelTitle string
@@ -17,34 +15,22 @@ type Result struct {
 	Stats        string
 	Description  string
 	Length       time.Duration
-	Thumbnail    fyne.Resource
+	Thumbnail    []byte
 }
 
-type Searcher interface {
+type MusicSearcher interface {
 	Search(string) ([]Result, error)
 }
 
-type Downloader interface {
-	Download(*Result) (io.ReadCloser, error)
+type MusicDownloader interface {
+	Download(Result) (io.ReadCloser, error)
 }
 
-type MultiDownloader struct {
-	downloaders []Downloader
+type MusicScraper struct {
+	MusicSearcher
+	MusicDownloader
 }
 
-func newMultiDownloader(downloaders ...Downloader) *MultiDownloader {
-	return &MultiDownloader{downloaders: downloaders}
-}
-
-func (d *MultiDownloader) Download(result *Result) (io.ReadCloser, error) {
-	var errs []error
-	for _, downloader := range d.downloaders {
-		content, err := downloader.Download(result)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		return content, nil
-	}
-	return nil, fmt.Errorf("all downloader failed: %v", errs)
+func NewYouTubeScraper() MusicScraper {
+	return MusicScraper{newClipzagSearcher(), newCnvmp3Downloader()}
 }
