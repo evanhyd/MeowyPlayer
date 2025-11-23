@@ -1,12 +1,14 @@
 package player
 
-import "meowyplayer/storage"
+import (
+	"meowyplayer/storage"
+)
 
 type QueueMode = int64
 
 const (
-	Order QueueMode = iota
-	Random
+	SequentialQueueMode QueueMode = iota
+	RandomQueueMode
 )
 
 type MusicPlayer interface {
@@ -14,9 +16,11 @@ type MusicPlayer interface {
 	Suspend()
 	Previous()
 	Next()
-	SetQueueMode(QueueMode)
-	SetRepeat(bool)
-	SetProgress(float64)
-	SetVolume(float64)
-	SetPlaylist([]storage.Music)
+	SetQueueMode(mode QueueMode)
+	SetRepeat(isRepeating bool)
+	SetProgress(percent float64)
+	SetVolume(percent float64)
+
+	// Event Handler
+	OnSelectPlaylist(musicList []storage.Music, index int)
 }

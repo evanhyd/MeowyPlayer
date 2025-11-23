@@ -1,26 +1,33 @@
 package storage
 
+import "io"
+
 // StorageManager defines operations for managing playlists, music, and their relationships.
 // Assumes user/session context is already encapsulated in the implementation.
 type StorageManager interface {
-	// --- Playlist ---
-	CreatePlaylist(p Playlist) (Playlist, error)
-	UpdatePlaylist(p Playlist) error
+	// Playlist
+	CreatePlaylist(playlist Playlist) (Playlist, error)
+	UpdatePlaylist(playlist Playlist) error
 	DeletePlaylist(playlistID int64) error
 	GetPlaylist(playlistID int64) (Playlist, error)
-	ListPlaylists() ([]Playlist, error)
+	ListAllPlaylists() ([]Playlist, error)
 
-	// --- Music ---
-	CreateMusic(m Music) error
-	UpdateMusic(m Music) error
+	// Music
+	CreateMusic(music Music) error
+	UpdateMusic(music Music) error
 	DeleteMusic(musicID string, source MusicSource) error
 	GetMusic(musicID string, source MusicSource) (Music, error)
-	ListMusic() ([]Music, error)
+	ListAllMusic() ([]Music, error)
 
-	// --- Playlist - Music association ---
+	// Playlist - Music association
 	AddMusicToPlaylist(playlistID int64, musicID string, source MusicSource) error
 	RemoveMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error
 	ListMusicInPlaylist(playlistID int64) ([]Music, error)
+
+	// Filesystem manipulation. Does NOT affect the DB table.
+	CreateOrUpdateMusicFile(music Music, content io.Reader) error
+	RemoveMusicFile(music Music) error
+	GetMusicFile(music Music) (io.ReadCloser, error)
 
 	Close() error
 }

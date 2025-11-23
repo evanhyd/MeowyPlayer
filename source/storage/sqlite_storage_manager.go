@@ -2,35 +2,59 @@ package storage
 
 import (
 	"database/sql"
+	_ "embed"
+	"fmt"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
+	"sync"
 	"time"
 
 	_ "modernc.org/sqlite"
 )
 
+//go:embed schema.sql
+var schemaSQL string
+
 var _ StorageManager = &SQLiteStorageManager{}
 
 type SQLiteStorageManager struct {
-	db   *sql.DB
-	user User
+	dbPath        string
+	musicFileBase string
+	db            *sql.DB
+	user          User
+	filesystemMux sync.RWMutex
 }
 
 // NewSQLiteStorageManager initializes the manager for a specific user.
 // Logs fatal if anything goes wrong.
-func NewSQLiteStorageManager(user User) *SQLiteStorageManager {
-	db, err := sql.Open("sqlite", "local.db")
+func NewSQLiteStorageManager(dbPath string, musicFileBase string, user User) *SQLiteStorageManager {
+	manager := &SQLiteStorageManager{
+		dbPath:        dbPath,
+		musicFileBase: musicFileBase,
+		user:          user,
+	}
+
+	// Create database.
+	var err error
+	manager.db, err = sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatalf("failed to open SQLite database: %v", err)
 	}
-
-	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+	if _, err := manager.db.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		log.Fatalf("failed to enable foreign keys: %v", err)
 	}
-
-	return &SQLiteStorageManager{
-		db:   db,
-		user: user,
+	if _, err := manager.db.Exec(schemaSQL); err != nil {
+		log.Fatalf("failed to create schema: %v", err)
 	}
+
+	// Create music file directory.
+	if err := os.MkdirAll(musicFileBase, 0700); err != nil {
+		log.Fatalf("failed to create music file directory: %v", err)
+	}
+
+	return manager
 }
 
 // ---------------- Playlist Methods ----------------
@@ -75,7 +99,7 @@ func (s *SQLiteStorageManager) GetPlaylist(playlistID int64) (Playlist, error) {
 	return p, err
 }
 
-func (s *SQLiteStorageManager) ListPlaylists() ([]Playlist, error) {
+func (s *SQLiteStorageManager) ListAllPlaylists() ([]Playlist, error) {
 	rows, err := s.db.Query(
 		`SELECT playlist_id, title, cover_blob
 		 FROM playlists WHERE user_id = ?`,
@@ -134,7 +158,7 @@ func (s *SQLiteStorageManager) GetMusic(musicID string, source MusicSource) (Mus
 	return m, err
 }
 
-func (s *SQLiteStorageManager) ListMusic() ([]Music, error) {
+func (s *SQLiteStorageManager) ListAllMusic() ([]Music, error) {
 	rows, err := s.db.Query(`SELECT music_id, source, title, length_seconds FROM music`)
 	if err != nil {
 		return nil, err
@@ -242,6 +266,35 @@ func (s *SQLiteStorageManager) ListMusicInPlaylist(playlistID int64) ([]Music, e
 		musics = append(musics, m)
 	}
 	return musics, nil
+}
+
+func (s *SQLiteStorageManager) getMusicFilePath(music Music) string {
+	return filepath.Join(s.musicFileBase, fmt.Sprintf("%v_%v.mp3", music.Source, music.MusicID))
+}
+
+func (s *SQLiteStorageManager) CreateOrUpdateMusicFile(music Music, content io.Reader) error {
+	s.filesystemMux.Lock()
+	defer s.filesystemMux.Unlock()
+
+	file, err := os.OpenFile(s.getMusicFilePath(music), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = io.Copy(file, content)
+	return err
+}
+
+func (s *SQLiteStorageManager) RemoveMusicFile(music Music) error {
+	s.filesystemMux.Lock()
+	defer s.filesystemMux.Unlock()
+	return os.Remove(s.getMusicFilePath(music)) // TODO: What if the file is currently being read?
+}
+
+func (s *SQLiteStorageManager) GetMusicFile(music Music) (io.ReadCloser, error) {
+	s.filesystemMux.RLock()
+	defer s.filesystemMux.RUnlock()
+	return os.Open(s.getMusicFilePath(music))
 }
 
 func (s *SQLiteStorageManager) Close() error {

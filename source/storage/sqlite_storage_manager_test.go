@@ -1,47 +1,31 @@
 package storage
 
 import (
-	"database/sql"
 	_ "embed"
+	"io"
 	"log"
+	"os"
+	"strings"
 	"testing"
 
 	_ "modernc.org/sqlite"
 )
 
-//go:embed schema.sql
-var schemaSQL string
-
-// Helper: create a SQLiteStorageManager using in-memory DB
 func newTestManager(user User) *SQLiteStorageManager {
-	db, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		log.Fatalf("failed to open in-memory SQLite DB: %v", err)
-	}
-	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		log.Fatalf("failed to enable foreign keys: %v", err)
-	}
-
-	// Create schema in-memory
-	if _, err := db.Exec(schemaSQL); err != nil {
-		log.Fatalf("failed to create schema: %v", err)
-	}
+	storageManager := NewSQLiteStorageManager(":memory:", os.TempDir(), user)
 
 	// Register right away.
-	if _, err := db.Exec(`INSERT INTO users VALUES (?, ?, ?, ?)`,
+	if _, err := storageManager.db.Exec(`INSERT INTO users VALUES (?, ?, ?, ?)`,
 		user.UserID, user.Name, user.Salt, user.HashedPassword); err != nil {
 		log.Fatalf("failed to create new user: %v", err)
 	}
-
-	return &SQLiteStorageManager{
-		db:   db,
-		user: user,
-	}
+	return storageManager
 }
 
 func TestPlaylistCRUD(t *testing.T) {
 	user := User{UserID: 1, Name: "Alice"}
 	manager := newTestManager(user)
+	defer manager.Close()
 
 	p := Playlist{
 		Title:     "Favorites",
@@ -79,7 +63,7 @@ func TestPlaylistCRUD(t *testing.T) {
 	}
 
 	// List
-	list, err := manager.ListPlaylists()
+	list, err := manager.ListAllPlaylists()
 	if err != nil {
 		t.Fatalf("ListPlaylists failed: %v", err)
 	}
@@ -100,6 +84,7 @@ func TestPlaylistCRUD(t *testing.T) {
 func TestMusicCRUD(t *testing.T) {
 	user := User{UserID: 1, Name: "Alice"}
 	manager := newTestManager(user)
+	defer manager.Close()
 
 	m := Music{
 		MusicID:       "m1",
@@ -131,7 +116,7 @@ func TestMusicCRUD(t *testing.T) {
 	}
 
 	// List
-	list, err := manager.ListMusic()
+	list, err := manager.ListAllMusic()
 	if err != nil {
 		t.Fatalf("ListMusic failed: %v", err)
 	}
@@ -151,6 +136,7 @@ func TestMusicCRUD(t *testing.T) {
 
 func TestPlaylistMusic(t *testing.T) {
 	manager := newTestManager(User{UserID: 1, Name: "Alice"})
+	defer manager.Close()
 
 	// Prepare playlist
 	p := Playlist{
@@ -214,6 +200,7 @@ func TestPlaylistMusic(t *testing.T) {
 
 func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
 	manager := newTestManager(User{UserID: 1, Name: "Alice"})
+	defer manager.Close()
 
 	// Create a playlist
 	p, err := manager.CreatePlaylist(Playlist{Title: "Cascading Test", CoverBlob: []byte("cover blob")})
@@ -276,5 +263,44 @@ func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
 	}
 	if count != 0 {
 		t.Errorf("expected 0 playlist_music after playlist delete, got %d", count)
+	}
+}
+
+func TestReadWriteMusicFile(t *testing.T) {
+	manager := newTestManager(User{UserID: 1, Name: "Alice"})
+	defer manager.Close()
+
+	music := Music{Source: YouTubeSource, MusicID: "1234abcd"}
+	content := "hello"
+
+	_, err := manager.GetMusicFile(music)
+	if err == nil {
+		t.Errorf("expected error when get music file")
+	}
+
+	err = manager.CreateOrUpdateMusicFile(music, strings.NewReader(content))
+	if err != nil {
+		t.Fatalf("CreateOrUpdateMusicFile failed: %v", err)
+	}
+
+	file, err := manager.GetMusicFile(music)
+	if err != nil {
+		t.Fatalf("GetMusicFile failed: %v", err)
+	}
+
+	readContent, err := io.ReadAll(file)
+	if err != nil {
+		file.Close()
+		t.Fatalf("Read music file content failed: %v", err)
+	}
+	if string(readContent) != content {
+		file.Close()
+		t.Fatalf("Expected content = %v, got %v", content, string(readContent))
+	}
+	file.Close()
+
+	err = manager.RemoveMusicFile(music)
+	if err != nil {
+		t.Fatalf("RemoveMusicFile failed: %v", err)
 	}
 }

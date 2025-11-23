@@ -19,8 +19,7 @@ type BeepStream struct {
 	playCtrl   beep.Ctrl
 }
 
-func newBeepStream(content io.ReadSeekCloser) *BeepStream {
-	const targetSampleRate beep.SampleRate = 48000
+func newBeepStream(content io.ReadSeekCloser, targetSampleRate beep.SampleRate) *BeepStream {
 	stream, format, err := mp3.Decode(content)
 	if err != nil {
 		log.Fatalf("failed to create new beep stream: %v\n", err)
@@ -37,21 +36,18 @@ func newBeepStream(content io.ReadSeekCloser) *BeepStream {
 func (s *BeepStream) resume() {
 	speaker.Lock()
 	defer speaker.Unlock()
-
 	s.playCtrl.Paused = false
 }
 
 func (s *BeepStream) suspend() {
 	speaker.Lock()
 	defer speaker.Unlock()
-
 	s.playCtrl.Paused = true
 }
 
 func (s *BeepStream) setProgress(percent float64) {
 	speaker.Lock()
 	defer speaker.Unlock()
-
 	bytes := int(float64(s.stream.Len()) * percent) // Align to 4 bytes.
 	bytes -= bytes % 4
 	s.stream.Seek(bytes)
@@ -61,7 +57,6 @@ func (s *BeepStream) setProgress(percent float64) {
 func (s *BeepStream) setVolume(percent float64) {
 	speaker.Lock()
 	defer speaker.Unlock()
-
 	const volumeOffset = -0.7
 	fixedPercent := percent + volumeOffset
 	s.volumeCtrl.Volume = 10 * math.Copysign(fixedPercent*fixedPercent, fixedPercent)
