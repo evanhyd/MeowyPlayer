@@ -34,13 +34,15 @@
 
 ### MeowyPlayer ###
 # Resources
-storage/**
+music/**
 out/**
 *.txt
 *.log
+*.json
 *.pdf
 *.zip
 *.7z
+*.wav
 *.mp3
 *.mp4
 *.db
