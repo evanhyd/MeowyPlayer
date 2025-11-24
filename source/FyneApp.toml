@@ -1,8 +1,8 @@
 Website = "https://github.com/evanhyd"
 
 [Details]
-  Icon = "frontend/internal/assets/icons/icon.png"
-  Name = "meowyplayer"
-  ID = "com.meowyplayer.app"
-  Version = "3.0.0"
-  Build = 94
+Icon = "frontend/internal/assets/icons/icon.png"
+Name = "meowyplayer"
+ID = "com.meowyplayer.app"
+Version = "3.0.0"
+Build = 100

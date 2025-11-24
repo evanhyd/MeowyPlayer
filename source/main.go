@@ -3,6 +3,7 @@ package main
 import (
 	"meowyplayer/context"
 	"meowyplayer/events"
+	"meowyplayer/frontend"
 	"meowyplayer/players"
 	"meowyplayer/storages"
 )
@@ -19,4 +20,5 @@ func main() {
 	userContext.AddListener(events.PlaylistSetEvent, player.HandlePlaylistSetEvent)
 	userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFileBase, storages.User{UserID: 0}))
 
+	frontend.RunApp()
 }

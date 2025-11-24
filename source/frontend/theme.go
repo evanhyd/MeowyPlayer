@@ -11,7 +11,7 @@ type VanillaTheme struct {
 	builtin fyne.Theme
 }
 
-func NewVanillaTheme() fyne.Theme {
+func newVanillaTheme() fyne.Theme {
 	return &VanillaTheme{builtin: theme.DefaultTheme()}
 }
 

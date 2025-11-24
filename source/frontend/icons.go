@@ -8,37 +8,37 @@ import (
 	"fyne.io/fyne/v2"
 )
 
-//go:embed assets\icons\alphabetical.svg
+//go:embed internal\assets\icons\alphabetical.svg
 var resourceAlphabeticalSvgData []byte
 var resourceAlphabeticalSvg = &fyne.StaticResource{
-	StaticName:    "assets\\icons\\alphabetical.svg",
+	StaticName:    "internal\\assets\\icons\\alphabetical.svg",
 	StaticContent: resourceAlphabeticalSvgData,
 }
 
-//go:embed assets\icons\collection_tab.svg
+//go:embed internal\assets\icons\collection_tab.svg
 var resourceCollectiontabSvgData []byte
 var resourceCollectiontabSvg = &fyne.StaticResource{
-	StaticName:    "assets\\icons\\collection_tab.svg",
+	StaticName:    "internal\\assets\\icons\\collection_tab.svg",
 	StaticContent: resourceCollectiontabSvgData,
 }
 
-//go:embed assets\icons\icon.png
+//go:embed internal\assets\icons\icon.png
 var resourceIconPngData []byte
 var resourceIconPng = &fyne.StaticResource{
-	StaticName:    "assets\\icons\\icon.png",
+	StaticName:    "internal\\assets\\icons\\icon.png",
 	StaticContent: resourceIconPngData,
 }
 
-//go:embed assets\icons\random.svg
+//go:embed internal\assets\icons\random.svg
 var resourceRandomSvgData []byte
 var resourceRandomSvg = &fyne.StaticResource{
-	StaticName:    "assets\\icons\\random.svg",
+	StaticName:    "internal\\assets\\icons\\random.svg",
 	StaticContent: resourceRandomSvgData,
 }
 
-//go:embed assets\icons\youtube.svg
+//go:embed internal\assets\icons\youtube.svg
 var resourceYoutubeSvgData []byte
 var resourceYoutubeSvg = &fyne.StaticResource{
-	StaticName:    "assets\\icons\\youtube.svg",
+	StaticName:    "internal\\assets\\icons\\youtube.svg",
 	StaticContent: resourceYoutubeSvgData,
 }

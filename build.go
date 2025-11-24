@@ -5,34 +5,26 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
-func run(dir string, command string, args ...string) {
+func run(command string, args ...string) {
 	cmd := exec.Command(command, args...)
-	cmd.Dir = dir
-	log.Println(cmd.String())
-
-	output, err := cmd.CombinedOutput()
-	log.Println(string(output))
-	if err != nil {
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 }
 
 func main() {
-	var releaseFlag bool
-	flag.BoolVar(&releaseFlag, "release", false, "Compile the build in release mode.")
+	release := flag.Bool("release", false, "Build in release mode. This optimizes the app but drops lots of debugging symbols.")
 	flag.Parse()
 
-	const outputName = "meowyplayer.exe"
-
-	if releaseFlag {
-		run("", "fyne", "package", "--release", "--src", "source", "--exe", outputName) //-o has missing icon bug
-		os.Rename(filepath.Join("source", outputName), filepath.Join(".", outputName))
+	if *release {
+		run("fyne", "package", "--src", "source", "--exe", "..", "--release")
 	} else {
-		run("source", "go", "build", "-o", filepath.Join("..", outputName), "main.go")
-		run("", "./meowyplayer")
+		run("fyne", "package", "--src", "source", "--exe", "..")
+		run("./meowyplayer")
 	}
 }

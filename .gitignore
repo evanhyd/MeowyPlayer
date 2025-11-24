@@ -34,8 +34,9 @@
 
 ### MeowyPlayer ###
 # Resources
-music/**
-out/**
+music/
+out/
+view/
 *.txt
 *.log
 *.json
