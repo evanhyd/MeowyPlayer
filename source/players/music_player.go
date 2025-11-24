@@ -1,8 +1,4 @@
-package player
-
-import (
-	"meowyplayer/storage"
-)
+package players
 
 type QueueMode = int64
 
@@ -20,7 +16,4 @@ type MusicPlayer interface {
 	SetRepeat(isRepeating bool)
 	SetProgress(percent float64)
 	SetVolume(percent float64)
-
-	// Event Handler
-	OnSelectPlaylist(musicList []storage.Music, index int)
 }

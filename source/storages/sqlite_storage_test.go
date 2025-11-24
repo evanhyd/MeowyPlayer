@@ -1,4 +1,4 @@
-package storage
+package storages
 
 import (
 	_ "embed"
@@ -11,21 +11,21 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func newTestManager(user User) *SQLiteStorageManager {
-	storageManager := NewSQLiteStorageManager(":memory:", os.TempDir(), user)
+func newTestStorage(user User) *SQLiteStorage {
+	storage := NewSQLiteStorage(":memory:", os.TempDir(), user)
 
 	// Register right away.
-	if _, err := storageManager.db.Exec(`INSERT INTO users VALUES (?, ?, ?, ?)`,
+	if _, err := storage.db.Exec(`INSERT INTO users VALUES (?, ?, ?, ?)`,
 		user.UserID, user.Name, user.Salt, user.HashedPassword); err != nil {
 		log.Fatalf("failed to create new user: %v", err)
 	}
-	return storageManager
+	return storage
 }
 
 func TestPlaylistCRUD(t *testing.T) {
 	user := User{UserID: 1, Name: "Alice"}
-	manager := newTestManager(user)
-	defer manager.Close()
+	storage := newTestStorage(user)
+	defer storage.Close()
 
 	p := Playlist{
 		Title:     "Favorites",
@@ -33,7 +33,7 @@ func TestPlaylistCRUD(t *testing.T) {
 	}
 
 	// Create
-	p, err := manager.CreatePlaylist(p)
+	p, err := storage.CreatePlaylist(p)
 	if err != nil {
 		t.Fatalf("CreatePlaylist failed: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestPlaylistCRUD(t *testing.T) {
 	}
 
 	// Get
-	got, err := manager.GetPlaylist(p.PlaylistID)
+	got, err := storage.GetPlaylist(p.PlaylistID)
 	if err != nil {
 		t.Fatalf("GetPlaylist failed: %v", err)
 	}
@@ -53,17 +53,17 @@ func TestPlaylistCRUD(t *testing.T) {
 
 	// Update
 	p.Title = "Updated Favorites"
-	if err := manager.UpdatePlaylist(p); err != nil {
+	if err := storage.UpdatePlaylist(p); err != nil {
 		t.Fatalf("UpdatePlaylist failed: %v", err)
 	}
 
-	got, _ = manager.GetPlaylist(p.PlaylistID)
+	got, _ = storage.GetPlaylist(p.PlaylistID)
 	if got.Title != p.Title {
 		t.Errorf("expected updated title %q, got %q", p.Title, got.Title)
 	}
 
 	// List
-	list, err := manager.ListAllPlaylists()
+	list, err := storage.ListAllPlaylists()
 	if err != nil {
 		t.Fatalf("ListPlaylists failed: %v", err)
 	}
@@ -72,10 +72,10 @@ func TestPlaylistCRUD(t *testing.T) {
 	}
 
 	// Delete
-	if err := manager.DeletePlaylist(p.PlaylistID); err != nil {
+	if err := storage.DeletePlaylist(p.PlaylistID); err != nil {
 		t.Fatalf("DeletePlaylist failed: %v", err)
 	}
-	_, err = manager.GetPlaylist(p.PlaylistID)
+	_, err = storage.GetPlaylist(p.PlaylistID)
 	if err == nil {
 		t.Errorf("expected error after deleting playlist")
 	}
@@ -83,8 +83,8 @@ func TestPlaylistCRUD(t *testing.T) {
 
 func TestMusicCRUD(t *testing.T) {
 	user := User{UserID: 1, Name: "Alice"}
-	manager := newTestManager(user)
-	defer manager.Close()
+	storage := newTestStorage(user)
+	defer storage.Close()
 
 	m := Music{
 		MusicID:       "m1",
@@ -93,11 +93,11 @@ func TestMusicCRUD(t *testing.T) {
 		LengthSeconds: 300,
 	}
 
-	if err := manager.CreateMusic(m); err != nil {
+	if err := storage.CreateMusic(m); err != nil {
 		t.Fatalf("CreateMusic failed: %v", err)
 	}
 
-	got, err := manager.GetMusic(m.MusicID, m.Source)
+	got, err := storage.GetMusic(m.MusicID, m.Source)
 	if err != nil {
 		t.Fatalf("GetMusic failed: %v", err)
 	}
@@ -107,16 +107,16 @@ func TestMusicCRUD(t *testing.T) {
 
 	// Update
 	m.Title = "Song One Updated"
-	if err := manager.UpdateMusic(m); err != nil {
+	if err := storage.UpdateMusic(m); err != nil {
 		t.Fatalf("UpdateMusic failed: %v", err)
 	}
-	got, _ = manager.GetMusic(m.MusicID, m.Source)
+	got, _ = storage.GetMusic(m.MusicID, m.Source)
 	if got.Title != m.Title {
 		t.Errorf("expected updated title %q, got %q", m.Title, got.Title)
 	}
 
 	// List
-	list, err := manager.ListAllMusic()
+	list, err := storage.ListAllMusic()
 	if err != nil {
 		t.Fatalf("ListMusic failed: %v", err)
 	}
@@ -125,18 +125,18 @@ func TestMusicCRUD(t *testing.T) {
 	}
 
 	// Delete
-	if err := manager.DeleteMusic(m.MusicID, m.Source); err != nil {
+	if err := storage.DeleteMusic(m.MusicID, m.Source); err != nil {
 		t.Fatalf("DeleteMusic failed: %v", err)
 	}
-	_, err = manager.GetMusic(m.MusicID, m.Source)
+	_, err = storage.GetMusic(m.MusicID, m.Source)
 	if err == nil {
 		t.Errorf("expected error after deleting music")
 	}
 }
 
 func TestPlaylistMusic(t *testing.T) {
-	manager := newTestManager(User{UserID: 1, Name: "Alice"})
-	defer manager.Close()
+	storage := newTestStorage(User{UserID: 1, Name: "Alice"})
+	defer storage.Close()
 
 	// Prepare playlist
 	p := Playlist{
@@ -144,24 +144,24 @@ func TestPlaylistMusic(t *testing.T) {
 		CoverBlob: []byte("cover blob"),
 	}
 
-	p, err := manager.CreatePlaylist(p)
+	p, err := storage.CreatePlaylist(p)
 	if err != nil {
 		t.Fatalf("CreatePlaylist failed: %v", err)
 	}
 
 	// Prepare music
 	m := Music{MusicID: "m1", Source: YouTubeSource, Title: "Song One", LengthSeconds: 300}
-	if err := manager.CreateMusic(m); err != nil {
+	if err := storage.CreateMusic(m); err != nil {
 		t.Fatalf("CreateMusic failed: %v", err)
 	}
 
 	// Add music
-	if err := manager.AddMusicToPlaylist(p.PlaylistID, m.MusicID, m.Source); err != nil {
+	if err := storage.AddMusicToPlaylist(p.PlaylistID, m.MusicID, m.Source); err != nil {
 		t.Fatalf("AddMusicToPlaylist failed: %v", err)
 	}
 
 	// List music
-	list, err := manager.ListMusicInPlaylist(p.PlaylistID)
+	list, err := storage.ListMusicInPlaylist(p.PlaylistID)
 	if err != nil {
 		t.Fatalf("ListMusicInPlaylist failed: %v", err)
 	}
@@ -170,26 +170,26 @@ func TestPlaylistMusic(t *testing.T) {
 	}
 
 	// Remove music
-	if err := manager.RemoveMusicFromPlaylist(p.PlaylistID, m.MusicID, m.Source); err != nil {
+	if err := storage.RemoveMusicFromPlaylist(p.PlaylistID, m.MusicID, m.Source); err != nil {
 		t.Fatalf("RemoveMusicFromPlaylist failed: %v", err)
 	}
-	list, _ = manager.ListMusicInPlaylist(p.PlaylistID)
+	list, _ = storage.ListMusicInPlaylist(p.PlaylistID)
 	if len(list) != 0 {
 		t.Errorf("expected 0 music after removal, got %d", len(list))
 	}
 
 	// Edge case: remove from invalid playlist
-	if err := manager.RemoveMusicFromPlaylist(9999, m.MusicID, m.Source); err != nil {
+	if err := storage.RemoveMusicFromPlaylist(9999, m.MusicID, m.Source); err != nil {
 		t.Errorf("expected no error removing  music from invalid playlist, got %v", err)
 	}
 
 	// Edge case: add music to invalid playlist
-	if err := manager.AddMusicToPlaylist(9999, m.MusicID, m.Source); err == nil {
+	if err := storage.AddMusicToPlaylist(9999, m.MusicID, m.Source); err == nil {
 		t.Errorf("expected error adding music to invalid playlist")
 	}
 
 	// Edge case: list music in invalid playlist
-	music, err := manager.ListMusicInPlaylist(9999)
+	music, err := storage.ListMusicInPlaylist(9999)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -199,11 +199,11 @@ func TestPlaylistMusic(t *testing.T) {
 }
 
 func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
-	manager := newTestManager(User{UserID: 1, Name: "Alice"})
-	defer manager.Close()
+	storage := newTestStorage(User{UserID: 1, Name: "Alice"})
+	defer storage.Close()
 
 	// Create a playlist
-	p, err := manager.CreatePlaylist(Playlist{Title: "Cascading Test", CoverBlob: []byte("cover blob")})
+	p, err := storage.CreatePlaylist(Playlist{Title: "Cascading Test", CoverBlob: []byte("cover blob")})
 	if err != nil {
 		t.Fatalf("CreatePlaylist failed: %v", err)
 	}
@@ -211,23 +211,23 @@ func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
 	// Create two music tracks
 	m1 := Music{MusicID: "m1", Source: YouTubeSource, Title: "Song One", LengthSeconds: 120}
 	m2 := Music{MusicID: "m2", Source: YouTubeSource, Title: "Song Two", LengthSeconds: 180}
-	if err := manager.CreateMusic(m1); err != nil {
+	if err := storage.CreateMusic(m1); err != nil {
 		t.Fatalf("CreateMusic m1 failed: %v", err)
 	}
-	if err := manager.CreateMusic(m2); err != nil {
+	if err := storage.CreateMusic(m2); err != nil {
 		t.Fatalf("CreateMusic m2 failed: %v", err)
 	}
 
 	// Add both music to playlist
-	if err := manager.AddMusicToPlaylist(p.PlaylistID, m1.MusicID, m1.Source); err != nil {
+	if err := storage.AddMusicToPlaylist(p.PlaylistID, m1.MusicID, m1.Source); err != nil {
 		t.Fatalf("AddMusicToPlaylist m1 failed: %v", err)
 	}
-	if err := manager.AddMusicToPlaylist(p.PlaylistID, m2.MusicID, m2.Source); err != nil {
+	if err := storage.AddMusicToPlaylist(p.PlaylistID, m2.MusicID, m2.Source); err != nil {
 		t.Fatalf("AddMusicToPlaylist m2 failed: %v", err)
 	}
 
 	// Verify they exist
-	list, err := manager.ListMusicInPlaylist(p.PlaylistID)
+	list, err := storage.ListMusicInPlaylist(p.PlaylistID)
 	if err != nil {
 		t.Fatalf("ListMusicInPlaylist failed: %v", err)
 	}
@@ -236,19 +236,19 @@ func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
 	}
 
 	// Delete the playlist
-	if err := manager.DeletePlaylist(p.PlaylistID); err != nil {
+	if err := storage.DeletePlaylist(p.PlaylistID); err != nil {
 		t.Fatalf("DeletePlaylist failed: %v", err)
 	}
 
 	// Verify the playlist is gone
-	if _, err := manager.GetPlaylist(p.PlaylistID); err == nil {
+	if _, err := storage.GetPlaylist(p.PlaylistID); err == nil {
 		t.Errorf("expected GetPlaylist to fail after deletion")
 	}
 
 	// Check that playlist_music entries were also removed
-	rows, err := manager.db.Query(
+	rows, err := storage.db.Query(
 		`SELECT COUNT(*) FROM playlist_music WHERE user_id = ? AND playlist_id = ?`,
-		manager.user.UserID, p.PlaylistID,
+		storage.user.UserID, p.PlaylistID,
 	)
 	if err != nil {
 		t.Fatalf("query playlist_music count failed: %v", err)
@@ -267,23 +267,23 @@ func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
 }
 
 func TestReadWriteMusicFile(t *testing.T) {
-	manager := newTestManager(User{UserID: 1, Name: "Alice"})
-	defer manager.Close()
+	storage := newTestStorage(User{UserID: 1, Name: "Alice"})
+	defer storage.Close()
 
 	music := Music{Source: YouTubeSource, MusicID: "1234abcd"}
 	content := "hello"
 
-	_, err := manager.GetMusicFile(music)
+	_, err := storage.GetMusicFile(music)
 	if err == nil {
 		t.Errorf("expected error when get music file")
 	}
 
-	err = manager.CreateOrUpdateMusicFile(music, strings.NewReader(content))
+	err = storage.CreateOrUpdateMusicFile(music, strings.NewReader(content))
 	if err != nil {
 		t.Fatalf("CreateOrUpdateMusicFile failed: %v", err)
 	}
 
-	file, err := manager.GetMusicFile(music)
+	file, err := storage.GetMusicFile(music)
 	if err != nil {
 		t.Fatalf("GetMusicFile failed: %v", err)
 	}
@@ -299,7 +299,7 @@ func TestReadWriteMusicFile(t *testing.T) {
 	}
 	file.Close()
 
-	err = manager.RemoveMusicFile(music)
+	err = storage.RemoveMusicFile(music)
 	if err != nil {
 		t.Fatalf("RemoveMusicFile failed: %v", err)
 	}

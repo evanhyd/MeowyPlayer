@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS playlists (
 );
 
 -- Music table
-CREATE TABLE IF NOT EXISTS  music (
+CREATE TABLE IF NOT EXISTS music (
     music_id TEXT NOT NULL,
     source INTEGER NOT NULL,
     title TEXT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS  music (
 );
 
 -- Playlist_Music table
-CREATE TABLE IF NOT EXISTS  playlist_music (
+CREATE TABLE IF NOT EXISTS playlist_music (
     user_id INTEGER NOT NULL,
     playlist_id INTEGER NOT NULL,
     music_id TEXT NOT NULL,
@@ -47,3 +47,5 @@ CREATE TABLE IF NOT EXISTS  playlist_music (
     FOREIGN KEY(user_id, playlist_id) REFERENCES playlists(user_id, playlist_id) ON DELETE CASCADE,
     FOREIGN KEY(music_id, source) REFERENCES music(music_id, source) ON DELETE CASCADE
 );
+
+INSERT OR IGNORE INTO users VALUES (0, 'default', '', '');

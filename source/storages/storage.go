@@ -1,10 +1,10 @@
-package storage
+package storages
 
 import "io"
 
-// StorageManager defines operations for managing playlists, music, and their relationships.
+// Storage defines operations for managing playlists, music, and their relationships.
 // Assumes user/session context is already encapsulated in the implementation.
-type StorageManager interface {
+type Storage interface {
 	// Playlist
 	CreatePlaylist(playlist Playlist) (Playlist, error)
 	UpdatePlaylist(playlist Playlist) error

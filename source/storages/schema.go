@@ -1,4 +1,4 @@
-package storage
+package storages
 
 type MusicSource int64
 

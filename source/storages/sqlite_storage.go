@@ -1,4 +1,4 @@
-package storage
+package storages
 
 import (
 	"database/sql"
@@ -17,9 +17,9 @@ import (
 //go:embed schema.sql
 var schemaSQL string
 
-var _ StorageManager = &SQLiteStorageManager{}
+var _ Storage = &SQLiteStorage{}
 
-type SQLiteStorageManager struct {
+type SQLiteStorage struct {
 	dbPath        string
 	musicFileBase string
 	db            *sql.DB
@@ -27,10 +27,10 @@ type SQLiteStorageManager struct {
 	filesystemMux sync.RWMutex
 }
 
-// NewSQLiteStorageManager initializes the manager for a specific user.
+// NewSQLiteStorage initializes the storage with the provided user login info.
 // Logs fatal if anything goes wrong.
-func NewSQLiteStorageManager(dbPath string, musicFileBase string, user User) *SQLiteStorageManager {
-	manager := &SQLiteStorageManager{
+func NewSQLiteStorage(dbPath string, musicFileBase string, user User) *SQLiteStorage {
+	storage := &SQLiteStorage{
 		dbPath:        dbPath,
 		musicFileBase: musicFileBase,
 		user:          user,
@@ -38,14 +38,14 @@ func NewSQLiteStorageManager(dbPath string, musicFileBase string, user User) *SQ
 
 	// Create database.
 	var err error
-	manager.db, err = sql.Open("sqlite", dbPath)
+	storage.db, err = sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatalf("failed to open SQLite database: %v", err)
 	}
-	if _, err := manager.db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+	if _, err := storage.db.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		log.Fatalf("failed to enable foreign keys: %v", err)
 	}
-	if _, err := manager.db.Exec(schemaSQL); err != nil {
+	if _, err := storage.db.Exec(schemaSQL); err != nil {
 		log.Fatalf("failed to create schema: %v", err)
 	}
 
@@ -53,13 +53,12 @@ func NewSQLiteStorageManager(dbPath string, musicFileBase string, user User) *SQ
 	if err := os.MkdirAll(musicFileBase, 0700); err != nil {
 		log.Fatalf("failed to create music file directory: %v", err)
 	}
-
-	return manager
+	return storage
 }
 
 // ---------------- Playlist Methods ----------------
 
-func (s *SQLiteStorageManager) CreatePlaylist(p Playlist) (Playlist, error) {
+func (s *SQLiteStorage) CreatePlaylist(p Playlist) (Playlist, error) {
 	currentTime := time.Now().UnixNano()
 	p.PlaylistID = currentTime
 
@@ -71,7 +70,7 @@ func (s *SQLiteStorageManager) CreatePlaylist(p Playlist) (Playlist, error) {
 	return p, err
 }
 
-func (s *SQLiteStorageManager) UpdatePlaylist(p Playlist) error {
+func (s *SQLiteStorage) UpdatePlaylist(p Playlist) error {
 	_, err := s.db.Exec(
 		`UPDATE playlists SET title = ?, modified_date = ?, cover_blob = ?
 		 WHERE user_id = ? AND playlist_id = ?`,
@@ -80,7 +79,7 @@ func (s *SQLiteStorageManager) UpdatePlaylist(p Playlist) error {
 	return err
 }
 
-func (s *SQLiteStorageManager) DeletePlaylist(playlistID int64) error {
+func (s *SQLiteStorage) DeletePlaylist(playlistID int64) error {
 	_, err := s.db.Exec(
 		`DELETE FROM playlists WHERE user_id = ? AND playlist_id = ?`,
 		s.user.UserID, playlistID,
@@ -88,7 +87,7 @@ func (s *SQLiteStorageManager) DeletePlaylist(playlistID int64) error {
 	return err
 }
 
-func (s *SQLiteStorageManager) GetPlaylist(playlistID int64) (Playlist, error) {
+func (s *SQLiteStorage) GetPlaylist(playlistID int64) (Playlist, error) {
 	var p Playlist
 	row := s.db.QueryRow(
 		`SELECT playlist_id, title, cover_blob
@@ -99,7 +98,7 @@ func (s *SQLiteStorageManager) GetPlaylist(playlistID int64) (Playlist, error) {
 	return p, err
 }
 
-func (s *SQLiteStorageManager) ListAllPlaylists() ([]Playlist, error) {
+func (s *SQLiteStorage) ListAllPlaylists() ([]Playlist, error) {
 	rows, err := s.db.Query(
 		`SELECT playlist_id, title, cover_blob
 		 FROM playlists WHERE user_id = ?`,
@@ -123,7 +122,7 @@ func (s *SQLiteStorageManager) ListAllPlaylists() ([]Playlist, error) {
 
 // ---------------- Music Methods ----------------
 
-func (s *SQLiteStorageManager) CreateMusic(m Music) error {
+func (s *SQLiteStorage) CreateMusic(m Music) error {
 	_, err := s.db.Exec(
 		`INSERT INTO music (music_id, source, title, length_seconds)
 		 VALUES (?, ?, ?, ?)`,
@@ -132,7 +131,7 @@ func (s *SQLiteStorageManager) CreateMusic(m Music) error {
 	return err
 }
 
-func (s *SQLiteStorageManager) UpdateMusic(m Music) error {
+func (s *SQLiteStorage) UpdateMusic(m Music) error {
 	_, err := s.db.Exec(
 		`UPDATE music SET title = ?, length_seconds = ?
 		 WHERE music_id = ? AND source = ?`,
@@ -141,13 +140,13 @@ func (s *SQLiteStorageManager) UpdateMusic(m Music) error {
 	return err
 }
 
-func (s *SQLiteStorageManager) DeleteMusic(musicID string, source MusicSource) error {
+func (s *SQLiteStorage) DeleteMusic(musicID string, source MusicSource) error {
 	_, err := s.db.Exec(`DELETE FROM music WHERE music_id = ? AND source = ?`,
 		musicID, source)
 	return err
 }
 
-func (s *SQLiteStorageManager) GetMusic(musicID string, source MusicSource) (Music, error) {
+func (s *SQLiteStorage) GetMusic(musicID string, source MusicSource) (Music, error) {
 	var m Music
 	row := s.db.QueryRow(
 		`SELECT music_id, source, title, length_seconds
@@ -158,7 +157,7 @@ func (s *SQLiteStorageManager) GetMusic(musicID string, source MusicSource) (Mus
 	return m, err
 }
 
-func (s *SQLiteStorageManager) ListAllMusic() ([]Music, error) {
+func (s *SQLiteStorage) ListAllMusic() ([]Music, error) {
 	rows, err := s.db.Query(`SELECT music_id, source, title, length_seconds FROM music`)
 	if err != nil {
 		return nil, err
@@ -178,7 +177,7 @@ func (s *SQLiteStorageManager) ListAllMusic() ([]Music, error) {
 
 // ---------------- Playlist-Music Methods ----------------
 
-func (s *SQLiteStorageManager) AddMusicToPlaylist(playlistID int64, musicID string, source MusicSource) error {
+func (s *SQLiteStorage) AddMusicToPlaylist(playlistID int64, musicID string, source MusicSource) error {
 	currentTime := time.Now().UnixNano()
 
 	tx, err := s.db.Begin()
@@ -211,7 +210,7 @@ func (s *SQLiteStorageManager) AddMusicToPlaylist(playlistID int64, musicID stri
 	return tx.Commit()
 }
 
-func (s *SQLiteStorageManager) RemoveMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error {
+func (s *SQLiteStorage) RemoveMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error {
 	currentTime := time.Now().UnixNano()
 
 	tx, err := s.db.Begin()
@@ -244,7 +243,7 @@ func (s *SQLiteStorageManager) RemoveMusicFromPlaylist(playlistID int64, musicID
 	return tx.Commit()
 }
 
-func (s *SQLiteStorageManager) ListMusicInPlaylist(playlistID int64) ([]Music, error) {
+func (s *SQLiteStorage) ListMusicInPlaylist(playlistID int64) ([]Music, error) {
 	rows, err := s.db.Query(
 		`SELECT m.music_id, m.source, m.title, m.length_seconds
 		 FROM music m
@@ -268,11 +267,11 @@ func (s *SQLiteStorageManager) ListMusicInPlaylist(playlistID int64) ([]Music, e
 	return musics, nil
 }
 
-func (s *SQLiteStorageManager) getMusicFilePath(music Music) string {
+func (s *SQLiteStorage) getMusicFilePath(music Music) string {
 	return filepath.Join(s.musicFileBase, fmt.Sprintf("%v_%v.mp3", music.Source, music.MusicID))
 }
 
-func (s *SQLiteStorageManager) CreateOrUpdateMusicFile(music Music, content io.Reader) error {
+func (s *SQLiteStorage) CreateOrUpdateMusicFile(music Music, content io.Reader) error {
 	s.filesystemMux.Lock()
 	defer s.filesystemMux.Unlock()
 
@@ -285,18 +284,18 @@ func (s *SQLiteStorageManager) CreateOrUpdateMusicFile(music Music, content io.R
 	return err
 }
 
-func (s *SQLiteStorageManager) RemoveMusicFile(music Music) error {
+func (s *SQLiteStorage) RemoveMusicFile(music Music) error {
 	s.filesystemMux.Lock()
 	defer s.filesystemMux.Unlock()
 	return os.Remove(s.getMusicFilePath(music)) // TODO: What if the file is currently being read?
 }
 
-func (s *SQLiteStorageManager) GetMusicFile(music Music) (io.ReadCloser, error) {
+func (s *SQLiteStorage) GetMusicFile(music Music) (io.ReadCloser, error) {
 	s.filesystemMux.RLock()
 	defer s.filesystemMux.RUnlock()
 	return os.Open(s.getMusicFilePath(music))
 }
 
-func (s *SQLiteStorageManager) Close() error {
+func (s *SQLiteStorage) Close() error {
 	return s.db.Close()
 }

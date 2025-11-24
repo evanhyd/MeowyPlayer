@@ -1,4 +1,4 @@
-package player
+package players
 
 import (
 	"io"
@@ -19,7 +19,7 @@ type BeepStream struct {
 	playCtrl   beep.Ctrl
 }
 
-func newBeepStream(content io.ReadSeekCloser, targetSampleRate beep.SampleRate) *BeepStream {
+func newBeepStream(content io.ReadCloser, targetSampleRate beep.SampleRate) *BeepStream {
 	stream, format, err := mp3.Decode(content)
 	if err != nil {
 		log.Fatalf("failed to create new beep stream: %v\n", err)

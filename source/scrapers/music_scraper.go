@@ -1,13 +1,13 @@
-package scraper
+package scrapers
 
 import (
 	"io"
-	"meowyplayer/storage"
+	"meowyplayer/storages"
 	"time"
 )
 
 type Result struct {
-	Platform     storage.MusicSource
+	Platform     storages.MusicSource
 	ID           string
 	ChannelID    string
 	ChannelTitle string

@@ -1,10 +1,11 @@
-package player
+package players
 
 import (
-	"io"
 	"log"
 	"math/rand"
-	"meowyplayer/storage"
+	"meowyplayer/events"
+	"meowyplayer/loggers"
+	"meowyplayer/storages"
 	"slices"
 	"sync"
 	"time"
@@ -22,20 +23,20 @@ var _ MusicPlayer = &BeepPlayer{}
 type BeepPlayer struct {
 	sync.Mutex
 
-	historyStack  []storage.Music
-	playlistQueue []storage.Music
+	logger        loggers.Logger
+	historyStack  []storages.Music
+	playlistQueue []storages.Music
 	playlistIndex int
+	isPlaying     bool
+	isRepeating   bool
+	queueMode     QueueMode
 
-	isPlaying   bool
-	isRepeating bool
-	queueMode   QueueMode
-
-	contentGetter       func(storage.Music) io.ReadSeekCloser
+	storage             storages.Storage
 	stream              *BeepStream
 	finishedPlayingChan chan struct{}
 }
 
-func makeBeepPlayer(contentGetter func(storage.Music) io.ReadSeekCloser) *BeepPlayer {
+func MakeBeepPlayer() *BeepPlayer {
 	go sync.OnceFunc(func() {
 		// Set the buffer size delay to be lower than human perception time.
 		err := speaker.Init(targetSampleRate, targetSampleRate.N(100*time.Millisecond))
@@ -45,12 +46,11 @@ func makeBeepPlayer(contentGetter func(storage.Music) io.ReadSeekCloser) *BeepPl
 	})()
 
 	beepPlayer := &BeepPlayer{
-		playlistIndex: 0,
-		isPlaying:     false,
-		isRepeating:   false,
-		queueMode:     SequentialQueueMode,
-
-		contentGetter:       contentGetter,
+		logger:              loggers.MakeLogger(),
+		playlistIndex:       0,
+		isPlaying:           false,
+		isRepeating:         false,
+		queueMode:           SequentialQueueMode,
 		finishedPlayingChan: make(chan struct{}),
 	}
 	go beepPlayer.finishedPlayingRoutine()
@@ -146,7 +146,7 @@ func (p *BeepPlayer) SetVolume(volume float64) {
 	}
 }
 
-func (p *BeepPlayer) getCurrentMusic() storage.Music {
+func (p *BeepPlayer) getCurrentMusic() storages.Music {
 	// negative -> historyStack, positive -> playlistQueue
 	if p.playlistIndex >= 0 {
 		return p.playlistQueue[p.playlistIndex]
@@ -161,7 +161,15 @@ func (p *BeepPlayer) shufflePlaylist() {
 }
 
 func (p *BeepPlayer) playCurrentMusic() {
-	p.stream = newBeepStream(p.contentGetter(p.getCurrentMusic()), targetSampleRate)
+	// Get music through the storage.
+	content, err := p.storage.GetMusicFile(p.getCurrentMusic())
+	if err != nil {
+		p.logger.Log.Error("failed to get music file from the storage", "error", err)
+		return
+	}
+
+	// Create a stream and play.
+	p.stream = newBeepStream(content, targetSampleRate)
 	speaker.Clear()
 	speaker.Play(beep.Seq(p.stream, beep.Callback(func() {
 		p.finishedPlayingChan <- struct{}{}
@@ -181,14 +189,21 @@ func (p *BeepPlayer) finishedPlayingRoutine() {
 }
 
 // Event Handler
-func (p *BeepPlayer) OnSelectPlaylist(musicList []storage.Music, index int) {
+func (p *BeepPlayer) HandleStorageSetEvent(event events.EventType, eventData any) {
 	p.Lock()
 	defer p.Unlock()
+	p.storage = eventData.(events.StorageSetEventData).Storage
+}
+
+func (p *BeepPlayer) HandlePlaylistSetEvent(event events.EventType, eventData any) {
+	p.Lock()
+	defer p.Unlock()
+	data := eventData.(events.PlaylistSetEventData)
 	p.historyStack = p.historyStack[:0]
-	p.playlistQueue = musicList
+	p.playlistQueue = data.MusicList
 	if p.queueMode == RandomQueueMode {
 		p.shufflePlaylist()
 	}
-	p.playlistIndex = slices.Index(p.playlistQueue, musicList[index])
+	p.playlistIndex = slices.Index(p.playlistQueue, data.MusicList[data.Index])
 	p.playCurrentMusic()
 }

@@ -1,10 +1,10 @@
-package scraper
+package scrapers
 
 import (
 	"fmt"
 	"html"
 	"io"
-	"meowyplayer/storage"
+	"meowyplayer/storages"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -104,7 +104,7 @@ func (s *clipzagSearcher) parseMatchResult(match []string) (Result, error) {
 	}
 
 	return Result{
-		Platform:     storage.YouTubeSource,
+		Platform:     storages.YouTubeSource,
 		ID:           match[1],
 		Thumbnail:    thumbnail,
 		Length:       time.Duration(totalSecond * int64(time.Second)),
