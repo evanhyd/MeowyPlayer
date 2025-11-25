@@ -2,9 +2,9 @@ package players
 
 import (
 	"log"
+	"log/slog"
 	"math/rand"
 	"meowyplayer/events"
-	"meowyplayer/loggers"
 	"meowyplayer/storages"
 	"slices"
 	"sync"
@@ -23,7 +23,6 @@ var _ MusicPlayer = &BeepPlayer{}
 type BeepPlayer struct {
 	sync.Mutex
 
-	logger        loggers.Logger
 	historyStack  []storages.Music
 	playlistQueue []storages.Music
 	playlistIndex int
@@ -46,7 +45,6 @@ func MakeBeepPlayer() *BeepPlayer {
 	})()
 
 	beepPlayer := &BeepPlayer{
-		logger:              loggers.MakeLogger(),
 		playlistIndex:       0,
 		isPlaying:           false,
 		isRepeating:         false,
@@ -164,7 +162,7 @@ func (p *BeepPlayer) playCurrentMusic() {
 	// Get music through the storage.
 	content, err := p.storage.GetMusicFile(p.getCurrentMusic())
 	if err != nil {
-		p.logger.Log.Error("failed to get music file from the storage", "error", err)
+		slog.Error("failed to get music file from the storage", "error", err)
 		return
 	}
 

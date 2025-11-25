@@ -2,13 +2,12 @@ package frontend
 
 import (
 	"embed"
-	"image/color"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/lang"
+	"fyne.io/fyne/v2/theme"
 )
 
 //go:embed internal/assets/translations
@@ -22,16 +21,18 @@ func RunApp() {
 	mainApp.Settings().SetTheme(newVanillaTheme())
 
 	mainWindow := mainApp.NewWindow(lang.L("MeowyPlayer"))
-	// mainWindow.SetFullScreen(true)
-	mainWindow.SetContent(canvas.NewRectangle(color.White)) //TODO:
+	mainWindow.Resize(fyne.NewSize(809, 500))
+
+	appTab := container.NewAppTabs(container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage()))
+	appTab.SetTabLocation(container.TabLocationLeading)
+	mainWindow.SetContent(appTab)
 
 	// System tray.
-	mainWindow.SetCloseIntercept(mainWindow.Hide)
-	if desktop, ok := mainApp.(desktop.App); ok {
-		desktop.SetSystemTrayMenu(fyne.NewMenu("",
-			fyne.NewMenuItem("Show", mainWindow.Show),
-		))
-	}
-
+	// mainWindow.SetCloseIntercept(mainWindow.Hide)
+	// if desktop, ok := mainApp.(desktop.App); ok {
+	// 	desktop.SetSystemTrayMenu(fyne.NewMenu("",
+	// 		fyne.NewMenuItem("Show", mainWindow.Show),
+	// 	))
+	// }
 	mainWindow.ShowAndRun()
 }

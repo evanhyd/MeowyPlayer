@@ -4,6 +4,7 @@ import (
 	"meowyplayer/context"
 	"meowyplayer/events"
 	"meowyplayer/frontend"
+	"meowyplayer/loggers"
 	"meowyplayer/players"
 	"meowyplayer/storages"
 )
@@ -13,6 +14,9 @@ func main() {
 		dbPath        = "local.db"
 		musicFileBase = "music"
 	)
+
+	logger := loggers.InitializeGlobalLogger()
+	defer logger.Close()
 
 	player := players.MakeBeepPlayer()
 	userContext := context.MakeUserContext()

@@ -26,11 +26,15 @@ type MusicDownloader interface {
 	Download(Result) (io.ReadCloser, error)
 }
 
-type MusicScraper struct {
+type MusicScraper interface {
 	MusicSearcher
 	MusicDownloader
 }
 
 func NewYouTubeScraper() MusicScraper {
-	return MusicScraper{newClipzagSearcher(), newCnvmp3Downloader()}
+	type youtubeScraper struct {
+		MusicSearcher
+		MusicDownloader
+	}
+	return youtubeScraper{newClipzagSearcher(), newCnvmp3Downloader()}
 }

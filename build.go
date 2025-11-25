@@ -25,6 +25,5 @@ func main() {
 		run("fyne", "package", "--src", "source", "--exe", "..", "--release")
 	} else {
 		run("fyne", "package", "--src", "source", "--exe", "..")
-		run("./meowyplayer")
 	}
 }

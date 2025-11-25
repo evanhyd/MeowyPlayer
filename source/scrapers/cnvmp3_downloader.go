@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -21,13 +21,15 @@ type cnvmp3Downloader struct {
 func newCnvmp3Downloader() *cnvmp3Downloader {
 	rsp, err := http.Get(`https://cnvmp3.com/`)
 	if err != nil {
-		log.Println("failed to obtain cvnmp3 download video url", err)
+		slog.Error("failed to obtain cvnmp3 download video url", "error", err)
+		return &cnvmp3Downloader{}
 	}
 	defer rsp.Body.Close()
 
 	content, err := io.ReadAll(rsp.Body)
 	if err != nil {
-		log.Println("failed to decode cvnmp3 source", err)
+		slog.Error("failed to decode cvnmp3 source", "error", err)
+		return &cnvmp3Downloader{}
 	}
 
 	// Scrape referer.

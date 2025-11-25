@@ -1,22 +1,18 @@
 package context
 
 import (
+	"log/slog"
 	"meowyplayer/events"
-	"meowyplayer/loggers"
 	"meowyplayer/storages"
 )
 
 type UserContext struct {
 	storage    storages.Storage
 	dispatcher events.EventsDispatcher
-	logger     loggers.Logger
 }
 
 func MakeUserContext() UserContext {
-	return UserContext{
-		dispatcher: events.MakeEventsDispatcher(),
-		logger:     loggers.MakeLogger(),
-	}
+	return UserContext{dispatcher: events.MakeEventsDispatcher()}
 }
 
 func (u *UserContext) AddListener(event events.EventType, listener events.EventListener) {
@@ -26,19 +22,15 @@ func (u *UserContext) AddListener(event events.EventType, listener events.EventL
 func (u *UserContext) Close() {
 	if u.storage != nil {
 		if err := u.storage.Close(); err != nil {
-			u.logger.Log.Error("failed to close the storage", "error", err)
+			slog.Error("failed to close the storage", "error", err)
 		}
-	}
-
-	if err := u.logger.Close(); err != nil {
-		u.logger.Log.Error("failed to close the logger", "error", err)
 	}
 }
 
 func (u *UserContext) SetStorage(storage storages.Storage) {
 	if u.storage != nil {
 		if err := u.storage.Close(); err != nil {
-			u.logger.Log.Error("failed to close the storage", "error", err)
+			slog.Error("failed to close the storage", "error", err)
 		}
 	}
 	u.storage = storage
