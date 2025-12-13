@@ -59,7 +59,7 @@ func newExplorePage() *ExplorePage {
 func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {
 	searchRow := container.New(layouts.NewHSegmentLayout(2, 7, 2), layout.NewSpacer(), p.searchEntry, layout.NewSpacer())
 	return widget.NewSimpleRenderer(container.NewBorder(
-		searchRow, nil, nil, nil, p.content,
+		searchRow, nil, nil, nil, container.New(layouts.NewHSegmentLayout(1, 8, 1), layout.NewSpacer(), p.content, layout.NewSpacer()),
 	))
 }
 

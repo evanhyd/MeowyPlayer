@@ -21,7 +21,7 @@ var _ Storage = &SQLiteStorage{}
 
 type SQLiteStorage struct {
 	dbPath        string
-	musicFileBase string
+	musicFilePath string
 	db            *sql.DB
 	user          User
 	filesystemMux sync.RWMutex
@@ -29,10 +29,10 @@ type SQLiteStorage struct {
 
 // NewSQLiteStorage initializes the storage with the provided user login info.
 // Logs fatal if anything goes wrong.
-func NewSQLiteStorage(dbPath string, musicFileBase string, user User) *SQLiteStorage {
+func NewSQLiteStorage(dbPath string, musicFilePath string, user User) *SQLiteStorage {
 	storage := &SQLiteStorage{
 		dbPath:        dbPath,
-		musicFileBase: musicFileBase,
+		musicFilePath: musicFilePath,
 		user:          user,
 	}
 
@@ -50,7 +50,7 @@ func NewSQLiteStorage(dbPath string, musicFileBase string, user User) *SQLiteSto
 	}
 
 	// Create music file directory.
-	if err := os.MkdirAll(musicFileBase, 0700); err != nil {
+	if err := os.MkdirAll(musicFilePath, 0700); err != nil {
 		log.Fatalf("failed to create music file directory: %v", err)
 	}
 	return storage
@@ -268,7 +268,7 @@ func (s *SQLiteStorage) ListMusicInPlaylist(playlistID int64) ([]Music, error) {
 }
 
 func (s *SQLiteStorage) getMusicFilePath(music Music) string {
-	return filepath.Join(s.musicFileBase, fmt.Sprintf("%v_%v.mp3", music.Source, music.MusicID))
+	return filepath.Join(s.musicFilePath, fmt.Sprintf("%v_%v.mp3", music.Source, music.MusicID))
 }
 
 func (s *SQLiteStorage) CreateOrUpdateMusicFile(music Music, content io.Reader) error {

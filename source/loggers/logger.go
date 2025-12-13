@@ -1,7 +1,6 @@
 package loggers
 
 import (
-	"io"
 	"log"
 	"log/slog"
 	"os"
@@ -12,12 +11,12 @@ type Logger struct {
 	file   *os.File
 }
 
-func InitializeGlobalLogger() Logger {
-	file, err := os.OpenFile("log.txt", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+func InitializeGlobalLogger(logFilePath string) Logger {
+	file, err := os.OpenFile(logFilePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		log.Panic(err)
 	}
-	handler := slog.NewJSONHandler(io.MultiWriter(os.Stderr, file), &slog.HandlerOptions{AddSource: true})
+	handler := slog.NewJSONHandler(file, &slog.HandlerOptions{AddSource: true})
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 	return Logger{logger: logger, file: file}

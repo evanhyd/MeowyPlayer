@@ -1,6 +1,9 @@
 package layouts
 
-import "fyne.io/fyne/v2"
+import (
+	"fyne.io/fyne/v2"
+	"golang.org/x/exp/slog"
+)
 
 type HSegmentLayout struct {
 	widthRatio []float32
@@ -19,7 +22,7 @@ func NewHSegmentLayout(widthRatio ...float32) *HSegmentLayout {
 
 func (l *HSegmentLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.Size) {
 	if len(objects) != len(l.widthRatio) {
-		panic("object lengths doesn't match up with the widthRatio length")
+		slog.Error("object lengths doesn't match up with the widthRatio length")
 	}
 
 	pos := fyne.NewPos(0, 0)
