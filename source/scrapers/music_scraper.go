@@ -25,16 +25,3 @@ type MusicSearcher interface {
 type MusicDownloader interface {
 	Download(Result) (io.ReadCloser, error)
 }
-
-type MusicScraper interface {
-	MusicSearcher
-	MusicDownloader
-}
-
-func NewYouTubeScraper() MusicScraper {
-	type youtubeScraper struct {
-		MusicSearcher
-		MusicDownloader
-	}
-	return youtubeScraper{newClipzagSearcher(), newCnvmp3Downloader()}
-}

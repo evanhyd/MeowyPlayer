@@ -1,10 +1,10 @@
-package events
+package context
 
 type EventsDispatcher struct {
 	listeners map[EventType][]EventListener
 }
 
-func MakeEventsDispatcher() EventsDispatcher {
+func makeEventsDispatcher() EventsDispatcher {
 	return EventsDispatcher{listeners: make(map[EventType][]EventListener)}
 }
 

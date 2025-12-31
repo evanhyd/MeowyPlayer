@@ -18,7 +18,7 @@ type cnvmp3Downloader struct {
 	downloadVideoURL string
 }
 
-func newCnvmp3Downloader() *cnvmp3Downloader {
+func NewCnvmp3Downloader() *cnvmp3Downloader {
 	rsp, err := http.Get(`https://cnvmp3.com/`)
 	if err != nil {
 		slog.Error("failed to obtain cvnmp3 download video url", "error", err)

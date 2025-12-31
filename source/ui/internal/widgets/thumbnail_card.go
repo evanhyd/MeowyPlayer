@@ -55,7 +55,7 @@ func (c *ThumbnailCard) MouseOut() {
 }
 
 func (v *ThumbnailCard) MouseMoved(*desktop.MouseEvent) {
-	//satisfy MouseMovement interface
+	// Satisfy MouseMovement interface.
 }
 
 func scaleImage(data []byte, targetWidth int, targetHeight int) (image.Image, error) {

@@ -18,7 +18,7 @@ type clipzagSearcher struct {
 	matchResultRegex *regexp.Regexp
 }
 
-func newClipzagSearcher() *clipzagSearcher {
+func NewClipzagSearche() *clipzagSearcher {
 	matchResultPattern := `<a class='title-color' href='watch\?v=(.+?)'>\s*` + // videoID
 		`<div class='video-thumbs'>\s*` +
 		`<img class='videosthumbs-style' data-thumb-m(?:='.*?')? data-thumb='//(.+?)' src='//.+?'><span class='duration'>(.+?)</span></div>\s*` + // thumbnail, length

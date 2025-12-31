@@ -4,9 +4,7 @@ import (
 	"log"
 	"log/slog"
 	"math/rand"
-	"meowyplayer/events"
 	"meowyplayer/storages"
-	"slices"
 	"sync"
 	"time"
 
@@ -186,22 +184,24 @@ func (p *BeepPlayer) finishedPlayingRoutine() {
 	}
 }
 
+// TODO: move this logic to the music controller page.
+// storage and other things should be passed down in ui's event handler.
 // Event Handler
-func (p *BeepPlayer) HandleStorageSetEvent(event events.EventType, eventData any) {
-	p.Lock()
-	defer p.Unlock()
-	p.storage = eventData.(events.StorageSetEventData).Storage
-}
+// func (p *BeepPlayer) HandleStorageSetEvent(event events.EventType, eventData any) {
+// 	p.Lock()
+// 	defer p.Unlock()
+// 	p.storage = eventData.(events.StorageSetEventData).Storage
+// }
 
-func (p *BeepPlayer) HandlePlaylistSetEvent(event events.EventType, eventData any) {
-	p.Lock()
-	defer p.Unlock()
-	data := eventData.(events.PlaylistSetEventData)
-	p.historyStack = p.historyStack[:0]
-	p.playlistQueue = data.MusicList
-	if p.queueMode == RandomQueueMode {
-		p.shufflePlaylist()
-	}
-	p.playlistIndex = slices.Index(p.playlistQueue, data.MusicList[data.Index])
-	p.playCurrentMusic()
-}
+// func (p *BeepPlayer) HandlePlaylistSetEvent(event events.EventType, eventData any) {
+// 	p.Lock()
+// 	defer p.Unlock()
+// 	data := eventData.(events.PlaylistSetEventData)
+// 	p.historyStack = p.historyStack[:0]
+// 	p.playlistQueue = data.MusicList
+// 	if p.queueMode == RandomQueueMode {
+// 		p.shufflePlaylist()
+// 	}
+// 	p.playlistIndex = slices.Index(p.playlistQueue, data.MusicList[data.Index])
+// 	p.playCurrentMusic()
+// }

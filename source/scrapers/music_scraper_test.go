@@ -31,7 +31,7 @@ func testSearch(t *testing.T, s MusicSearcher, query string) []Result {
 
 // Table-driven tests for the searcher
 func TestClipzagSearcher(t *testing.T) {
-	searcher := newClipzagSearcher()
+	searcher := NewClipzagSearche()
 
 	tests := []string{
 		"chicken nugget",
@@ -53,20 +53,5 @@ func TestCnvmp3Downloader(t *testing.T) {
 		ID:    "auQxNYJ07Lc",
 		Title: "Renai Circulation",
 	}
-	testDownload(t, newCnvmp3Downloader(), video)
-}
-
-// End-to-end integration test for MusicScraper
-func TestYouTubeScraperIntegration(t *testing.T) {
-	s := NewYouTubeScraper()
-
-	results, err := s.Search("chicken nugget song")
-	if err != nil {
-		t.Fatalf("Search error: %v", err)
-	}
-	if len(results) == 0 {
-		t.Fatal("no results returned")
-	}
-
-	testDownload(t, s, results[0])
+	testDownload(t, NewCnvmp3Downloader(), video)
 }

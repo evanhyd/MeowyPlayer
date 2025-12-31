@@ -3,11 +3,9 @@ package main
 import (
 	"log/slog"
 	"meowyplayer/context"
-	"meowyplayer/events"
-	"meowyplayer/frontend"
 	"meowyplayer/loggers"
-	"meowyplayer/players"
 	"meowyplayer/storages"
+	"meowyplayer/ui"
 	"os"
 	"path/filepath"
 )
@@ -34,11 +32,13 @@ func main() {
 	dbPath := filepath.Join(baseDir, "local.db")
 	musicFilePath := filepath.Join(baseDir, "music")
 
-	player := players.MakeBeepPlayer()
 	userContext := context.MakeUserContext()
-	userContext.AddListener(events.StorageSetEvent, player.HandleStorageSetEvent)
-	userContext.AddListener(events.PlaylistSetEvent, player.HandlePlaylistSetEvent)
+
+	// player := players.MakeBeepPlayer()
+	// userContext.AddListener(context.StorageSetEvent, player.HandleStorageSetEvent)
+	// userContext.AddListener(context.PlaylistSetEvent, player.HandlePlaylistSetEvent)
+
 	userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath, storages.User{UserID: 0}))
 
-	frontend.RunApp()
+	ui.RunApp()
 }

@@ -9,6 +9,7 @@ type HSegmentLayout struct {
 	widthRatio []float32
 }
 
+// Each widthRatio represents the percentage of the horizontal space that the child canvas object occupies.
 func NewHSegmentLayout(widthRatio ...float32) *HSegmentLayout {
 	totalWidth := float32(0)
 	for _, width := range widthRatio {

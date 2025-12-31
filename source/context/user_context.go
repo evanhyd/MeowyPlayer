@@ -2,20 +2,19 @@ package context
 
 import (
 	"log/slog"
-	"meowyplayer/events"
 	"meowyplayer/storages"
 )
 
 type UserContext struct {
 	storage    storages.Storage
-	dispatcher events.EventsDispatcher
+	dispatcher EventsDispatcher
 }
 
 func MakeUserContext() UserContext {
-	return UserContext{dispatcher: events.MakeEventsDispatcher()}
+	return UserContext{dispatcher: makeEventsDispatcher()}
 }
 
-func (u *UserContext) AddListener(event events.EventType, listener events.EventListener) {
+func (u *UserContext) AddListener(event EventType, listener EventListener) {
 	u.dispatcher.AddListener(event, listener)
 }
 
@@ -34,7 +33,7 @@ func (u *UserContext) SetStorage(storage storages.Storage) {
 		}
 	}
 	u.storage = storage
-	u.dispatcher.Dispatch(events.StorageSetEvent, events.StorageSetEventData{u.storage})
+	u.dispatcher.Dispatch(StorageSetEvent, StorageSetEventData{Storage: u.storage})
 }
 
 func (u *UserContext) SetPlaylist(playlistID int64, index int) error {
@@ -43,6 +42,6 @@ func (u *UserContext) SetPlaylist(playlistID int64, index int) error {
 		return err
 	}
 
-	u.dispatcher.Dispatch(events.PlaylistSetEvent, events.PlaylistSetEventData{musicList, index})
+	u.dispatcher.Dispatch(PlaylistSetEvent, PlaylistSetEventData{MusicList: musicList, Index: index})
 	return nil
 }

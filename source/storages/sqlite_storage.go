@@ -287,7 +287,7 @@ func (s *SQLiteStorage) CreateOrUpdateMusicFile(music Music, content io.Reader) 
 func (s *SQLiteStorage) RemoveMusicFile(music Music) error {
 	s.filesystemMux.Lock()
 	defer s.filesystemMux.Unlock()
-	return os.Remove(s.getMusicFilePath(music)) // TODO: What if the file is currently being read?
+	return os.Remove(s.getMusicFilePath(music)) // TODO: What if the file is currently being read? Stop the music player before removal?
 }
 
 func (s *SQLiteStorage) GetMusicFile(music Music) (io.ReadCloser, error) {
