@@ -34,7 +34,7 @@ type BeepPlayer struct {
 }
 
 func MakeBeepPlayer() *BeepPlayer {
-	go sync.OnceFunc(func() {
+	sync.OnceFunc(func() {
 		// Set the buffer size delay to be lower than human perception time.
 		err := speaker.Init(targetSampleRate, targetSampleRate.N(100*time.Millisecond))
 		if err != nil {
@@ -98,7 +98,7 @@ func (p *BeepPlayer) Next() {
 
 	// Add to the play history.
 	if len(p.historyStack) >= 128 {
-		p.historyStack = p.historyStack[64:]
+		p.historyStack = p.historyStack[1:]
 	}
 	p.historyStack = append(p.historyStack, p.playlistQueue[p.playlistIndex])
 

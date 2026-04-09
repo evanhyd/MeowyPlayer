@@ -1,9 +1,7 @@
 package widgets
 
 import (
-	"bytes"
 	"fmt"
-	"image"
 	"meowyplayer/scrapers"
 	"time"
 
@@ -13,8 +11,9 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"golang.org/x/image/draw"
 )
+
+var _ desktop.Hoverable = &ThumbnailCard{}
 
 type ThumbnailCard struct {
 	widget.BaseWidget
@@ -54,29 +53,11 @@ func (c *ThumbnailCard) MouseOut() {
 	c.Refresh()
 }
 
-func (v *ThumbnailCard) MouseMoved(*desktop.MouseEvent) {
+func (c *ThumbnailCard) MouseMoved(*desktop.MouseEvent) {
 	// Satisfy MouseMovement interface.
 }
 
-func scaleImage(data []byte, targetWidth int, targetHeight int) (image.Image, error) {
-	originalThumbnail, _, err := image.Decode(bytes.NewBuffer(data))
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new RGBA image of the target size
-	scaledThumbnail := image.NewRGBA(image.Rect(0, 0, targetWidth, targetHeight))
-
-	// Use draw.CatmullRom for high-quality scaling
-	draw.CatmullRom.Scale(
-		scaledThumbnail, scaledThumbnail.Rect,
-		originalThumbnail, originalThumbnail.Bounds(),
-		draw.Over, nil,
-	)
-	return scaledThumbnail, nil
-}
-
-func (c *ThumbnailCard) SetResult(result scrapers.Result) {
+func (c *ThumbnailCard) Set(result scrapers.Result) {
 	// Update thumbnail.
 	scaledThumbnail, err := scaleImage(result.Thumbnail, 64, 64)
 	if err != nil {
@@ -90,12 +71,14 @@ func (c *ThumbnailCard) SetResult(result scrapers.Result) {
 	mins := totalSeconds / 60
 	secs := totalSeconds % 60
 
-	heading := &widget.TextSegment{
+	heading := widget.TextSegment{
 		Style: widget.RichTextStyle{TextStyle: fyne.TextStyle{Bold: true}},
 		Text:  fmt.Sprintf("[%02d:%02d] %s", mins, secs, result.Title),
 	}
-	meta := &widget.TextSegment{Text: fmt.Sprintf("%s • %s", result.ChannelTitle, result.Stats)}
+	meta := widget.TextSegment{
+		Text: fmt.Sprintf("%s • %s", result.ChannelTitle, result.Stats),
+	}
 	c.summary.Segments = c.summary.Segments[:0]
-	c.summary.Segments = append(c.summary.Segments, heading, meta)
+	c.summary.Segments = append(c.summary.Segments, &heading, &meta)
 	c.Refresh()
 }

@@ -17,11 +17,10 @@ import (
 
 type ExplorePage struct {
 	widget.BaseWidget
-	searchEntry   *widget.Entry
-	searchButton  *widget.Button
-	content       *widget.List
-	searchResults []scrapers.Result
-
+	searchEntry    *widget.Entry
+	searchButton   *widget.Button
+	content        *widget.List
+	searchResults  []scrapers.Result
 	searchEngine   scrapers.MusicSearcher
 	downloadEngine scrapers.MusicDownloader
 }
@@ -48,7 +47,7 @@ func newExplorePage() *ExplorePage {
 			return widgets.NewThumbnailCard()
 		},
 		func(index widget.ListItemID, object fyne.CanvasObject) {
-			object.(*widgets.ThumbnailCard).SetResult(p.searchResults[index])
+			object.(*widgets.ThumbnailCard).Set(p.searchResults[index])
 		},
 	)
 

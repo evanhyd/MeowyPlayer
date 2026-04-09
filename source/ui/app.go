@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 )
 
-//go:embed internal/assets/translations
+//go:embed internal/translations
 var translations embed.FS
 
 func RunApp() {
@@ -23,7 +23,10 @@ func RunApp() {
 	mainWindow := mainApp.NewWindow(lang.L("MeowyPlayer"))
 	mainWindow.Resize(fyne.NewSize(809, 500))
 
-	appTab := container.NewAppTabs(container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage()))
+	appTab := container.NewAppTabs(
+		container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage()),
+		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, newExplorePage()),
+	)
 	appTab.SetTabLocation(container.TabLocationLeading)
 	mainWindow.SetContent(appTab)
 
