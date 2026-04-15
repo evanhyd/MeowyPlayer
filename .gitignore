@@ -36,7 +36,6 @@
 # Resources
 *.txt
 *.log
-*.json
 *.pdf
 *.zip
 *.7z
@@ -44,3 +43,6 @@
 *.mp3
 *.mp4
 *.db
+
+## Legacy folders
+storage/
