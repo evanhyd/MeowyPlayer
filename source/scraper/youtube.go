@@ -1,7 +1,7 @@
 package scraper
 
 func NewYouTubeSearcher() Searcher {
-	return newClipzagScraper()
+	return newInvidiousSearcher()
 }
 
 func NewYouTubeDownloader() Downloader {

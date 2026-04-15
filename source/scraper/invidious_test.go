@@ -8,14 +8,14 @@ import (
 //go test -race -run NameOfThatTestFunc .
 
 func TestChickenNugget(t *testing.T) {
-	searchQuery(newClipzagScraper(), "chicken nugget", t)
+	searchQuery(newInvidiousSearcher(), "chicken nugget", t)
 }
 
 func TestMonogatari(t *testing.T) {
-	searchQuery(newClipzagScraper(), "renai circulation", t)
+	searchQuery(newInvidiousSearcher(), "renai circulation", t)
 }
 
-func searchQuery(scraper *clipzagScraper, title string, t *testing.T) {
+func searchQuery(scraper *invidiousSearcher, title string, t *testing.T) {
 	results, err := scraper.Search(title)
 	if err != nil {
 		t.Fatalf("%v\n", err)
