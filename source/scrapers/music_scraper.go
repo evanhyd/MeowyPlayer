@@ -1,6 +1,7 @@
 package scrapers
 
 import (
+	"context"
 	"io"
 	"meowyplayer/storages"
 	"time"
@@ -19,9 +20,9 @@ type Result struct {
 }
 
 type MusicSearcher interface {
-	Search(string) ([]Result, error)
+	Search(context.Context, string) ([]Result, error)
 }
 
 type MusicDownloader interface {
-	Download(Result) (io.ReadCloser, error)
+	Download(context.Context, Result) (io.ReadCloser, error)
 }

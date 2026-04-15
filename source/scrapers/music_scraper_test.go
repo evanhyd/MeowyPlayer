@@ -1,6 +1,7 @@
 package scrapers
 
 import (
+	"context"
 	"testing"
 )
 
@@ -8,7 +9,7 @@ import (
 func testDownload(t *testing.T, d MusicDownloader, video Result) {
 	t.Helper()
 
-	body, err := d.Download(video)
+	body, err := d.Download(context.Background(), video)
 	if err != nil {
 		t.Fatalf("Download failed: %v", err)
 	}
@@ -19,7 +20,7 @@ func testDownload(t *testing.T, d MusicDownloader, video Result) {
 func testSearch(t *testing.T, s MusicSearcher, query string) []Result {
 	t.Helper()
 
-	results, err := s.Search(query)
+	results, err := s.Search(context.Background(), query)
 	if err != nil {
 		t.Fatalf("Search(%q) failed: %v", query, err)
 	}

@@ -1,6 +1,7 @@
 package scrapers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,6 @@ import (
 	"meowyplayer/storages"
 )
 
-// invSearchItem strictly matches the Invidious JSON payload you provided
 type invSearchItem struct {
 	Type          string `json:"type"`
 	Title         string `json:"title"`
@@ -20,7 +20,7 @@ type invSearchItem struct {
 	Author        string `json:"author"`
 	AuthorID      string `json:"authorId"`
 	LengthSeconds int64  `json:"lengthSeconds"`
-	ViewCountText string `json:"viewCountText"` // Extracts exactly "185M views"
+	ViewCountText string `json:"viewCountText"`
 	Description   string `json:"description"`
 }
 
@@ -34,10 +34,14 @@ func NewInvidiousSearcher() *invidiousSearcher {
 	}
 }
 
-func (s *invidiousSearcher) Search(title string) ([]Result, error) {
+func (s *invidiousSearcher) Search(ctx context.Context, title string) ([]Result, error) {
 	endpoint := fmt.Sprintf("%s/api/v1/search?q=%s&type=video", s.apiBaseURL, url.QueryEscape(title))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
 
-	resp, err := http.Get(endpoint)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +74,7 @@ func (s *invidiousSearcher) Search(title string) ([]Result, error) {
 	for i, item := range videoItems {
 		go func(index int, vid invSearchItem) {
 			defer wg.Done()
-			results[index], errors[index] = s.parseItem(vid)
+			results[index], errors[index] = s.parseItem(ctx, vid)
 		}(i, item)
 	}
 	wg.Wait()
@@ -79,7 +83,10 @@ func (s *invidiousSearcher) Search(title string) ([]Result, error) {
 	var validResults []Result
 	for i, err := range errors {
 		if err != nil {
-			fmt.Printf("Skipping video %s due to error: %v\n", videoItems[i].VideoID, err)
+			// Only log errors if the user didn't intentionally cancel the search
+			if ctx.Err() == nil {
+				fmt.Printf("Skipping video %s due to error: %v\n", videoItems[i].VideoID, err)
+			}
 			continue
 		}
 		validResults = append(validResults, results[i])
@@ -88,12 +95,16 @@ func (s *invidiousSearcher) Search(title string) ([]Result, error) {
 	return validResults, nil
 }
 
-func (s *invidiousSearcher) parseItem(item invSearchItem) (Result, error) {
-	// Note: While the JSON provides thumbnail URLs routed through the proxy,
-	// hitting YouTube's image server directly is significantly faster.
+func (s *invidiousSearcher) parseItem(ctx context.Context, item invSearchItem) (Result, error) {
+	// Hitting YouTube's image server directly is significantly faster.
 	thumbURL := fmt.Sprintf("https://i.ytimg.com/vi/%s/mqdefault.jpg", item.VideoID)
 
-	resp, err := http.Get(thumbURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, thumbURL, nil)
+	if err != nil {
+		return Result{}, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return Result{}, err
 	}
@@ -116,7 +127,7 @@ func (s *invidiousSearcher) parseItem(item invSearchItem) (Result, error) {
 		Title:        item.Title,
 		ChannelID:    item.AuthorID,
 		ChannelTitle: item.Author,
-		Stats:        item.ViewCountText, // Mapped directly from JSON
+		Stats:        item.ViewCountText,
 		Description:  item.Description,
 	}, nil
 }

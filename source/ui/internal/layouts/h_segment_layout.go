@@ -29,7 +29,7 @@ func (l *HSegmentLayout) Layout(objects []fyne.CanvasObject, containerSize fyne.
 	pos := fyne.NewPos(0, 0)
 	for i, object := range objects {
 		width := containerSize.Width * l.widthRatio[i]
-		height := object.MinSize().Height
+		height := containerSize.Height
 		object.Resize(fyne.NewSize(width, height))
 		object.Move(pos)
 		pos = pos.AddXY(width, 0)

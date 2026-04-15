@@ -73,10 +73,10 @@ func (c *ThumbnailCard) Set(result scrapers.Result) {
 
 	heading := widget.TextSegment{
 		Style: widget.RichTextStyle{TextStyle: fyne.TextStyle{Bold: true}},
-		Text:  fmt.Sprintf("[%02d:%02d] %s", mins, secs, result.Title),
+		Text:  result.Title,
 	}
 	meta := widget.TextSegment{
-		Text: fmt.Sprintf("%s • %s", result.ChannelTitle, result.Stats),
+		Text: fmt.Sprintf("[%02d:%02d] %s • %s", mins, secs, result.ChannelTitle, result.Stats),
 	}
 	c.summary.Segments = c.summary.Segments[:0]
 	c.summary.Segments = append(c.summary.Segments, &heading, &meta)

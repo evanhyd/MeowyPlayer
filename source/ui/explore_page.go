@@ -66,7 +66,9 @@ func newExplorePage(userContext *context.UserContext) *ExplorePage {
 
 func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {
 	searchTools := container.New(layouts.NewHSegmentLayout(2, 7, 2), layout.NewSpacer(), p.searchEntry, layout.NewSpacer())
-	return widget.NewSimpleRenderer(container.NewBorder(searchTools, nil, nil, nil, p.content))
+	return widget.NewSimpleRenderer(container.NewBorder(
+		searchTools, nil, nil, nil,
+		container.New(layouts.NewHSegmentLayout(1, 7, 1), layout.NewSpacer(), p.content, layout.NewSpacer())))
 }
 
 func (p *ExplorePage) submitSearchQuery(query string) {
@@ -81,15 +83,10 @@ func (p *ExplorePage) submitSearchQuery(query string) {
 
 	// Handle empty queries.
 	if query == "" {
-		fyne.Do(func() {
-			p.searchResults = nil
-			p.content.Refresh()
-		})
 		return
 	}
 
-	// Check if should discard the result.
-	results, err := p.searchEngine.Search(query)
+	results, err := p.searchEngine.Search(ctx, query)
 	if ctx.Err() != nil {
 		return
 	}

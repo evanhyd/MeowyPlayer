@@ -2,6 +2,7 @@ package scrapers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -50,28 +51,31 @@ func NewCnvmp3Downloader() *cnvmp3Downloader {
 	return &cnvmp3Downloader{referer, downloadVideoToken, `https://cnvmp3.com/` + downloadVidelURL}
 }
 
-func (d *cnvmp3Downloader) Download(video Result) (io.ReadCloser, error) {
-	// Skip the database part, ignore the serverside caching.
-	if err := d.getVideoData(&video); err != nil {
+func (d *cnvmp3Downloader) Download(ctx context.Context, video Result) (io.ReadCloser, error) {
+	if err := d.getVideoData(ctx, &video); err != nil {
 		return nil, err
 	}
-	filelink, err := d.getVideoDownloadLink(&video)
+	filelink, err := d.getVideoDownloadLink(ctx, &video)
 	if err != nil {
 		return nil, err
 	}
 
-	// Download the music file.
-	req, err := http.NewRequest(http.MethodGet, filelink, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, filelink, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("host", "apiv17dlp.cnvmp3.me")
 	req.Header.Set("referer", d.referer)
+
 	musicResp, err := http.DefaultClient.Do(req)
-	return musicResp.Body, err
+	if err != nil {
+		return nil, err // Returns context.Canceled if the user aborted
+	}
+
+	return musicResp.Body, nil
 }
 
-func (d *cnvmp3Downloader) getVideoData(video *Result) error {
+func (d *cnvmp3Downloader) getVideoData(ctx context.Context, video *Result) error {
 	type GetVideoDataRequest struct {
 		Token string `json:"token"`
 		URL   string `json:"url"`
@@ -82,7 +86,6 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 		Title   string `json:"title"`
 	}
 
-	// Prepare the request.
 	const endpoint = `https://cnvmp3.com/get_video_data.php`
 	request := GetVideoDataRequest{Token: d.token, URL: `https://www.youtube.com/watch?` + url.Values{"v": {video.ID}}.Encode()}
 	requestData, err := json.Marshal(request)
@@ -90,14 +93,18 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 		return err
 	}
 
-	// Send the request.
-	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(requestData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewBuffer(requestData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	// Parse the response.
 	response := GetVideoDataResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return err
@@ -108,7 +115,7 @@ func (d *cnvmp3Downloader) getVideoData(video *Result) error {
 	return nil
 }
 
-func (d *cnvmp3Downloader) getVideoDownloadLink(video *Result) (string, error) {
+func (d *cnvmp3Downloader) getVideoDownloadLink(ctx context.Context, video *Result) (string, error) {
 	type DownloadVideoRequest struct {
 		URL         string `json:"url"`
 		Quality     int64  `json:"quality"`
@@ -121,7 +128,6 @@ func (d *cnvmp3Downloader) getVideoDownloadLink(video *Result) (string, error) {
 		DownloadLink string `json:"download_link"`
 	}
 
-	// Prepare the request.
 	request := DownloadVideoRequest{
 		URL:         `https://www.youtube.com/watch?` + url.Values{"v": {video.ID}}.Encode(),
 		Quality:     0,
@@ -133,19 +139,18 @@ func (d *cnvmp3Downloader) getVideoDownloadLink(video *Result) (string, error) {
 		return "", err
 	}
 
-	// Send the request.
-	req, err := http.NewRequest(http.MethodPost, d.downloadVideoURL, bytes.NewBuffer(requestData))
-	req.Header.Set("referer", d.referer)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.downloadVideoURL, bytes.NewBuffer(requestData))
 	if err != nil {
 		return "", err
 	}
+	req.Header.Set("referer", d.referer)
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	// Parse the response.
 	response := DownloadVideoResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", err
