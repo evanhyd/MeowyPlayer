@@ -148,7 +148,7 @@ func (p *MP3Player) run() {
 			select {
 			case cmd := <-p.commands:
 				if p.stream != nil {
-					cmd()
+					fyne.Do(cmd)
 				}
 			case <-updateTimer.C:
 				if p.stream != nil {

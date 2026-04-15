@@ -14,10 +14,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-const (
-	kSearchAttempts = 5
-)
-
 type HomePage struct {
 	widget.BaseWidget
 	searchBar *cwidget.SearchBar[[]scraper.Result]
@@ -30,7 +26,7 @@ func newHomePage() *HomePage {
 		searchBar: cwidget.NewSearchBar(
 			cwidget.NewCustomList(container.NewVBox(), cwidget.NewThumbnailCardConstructor(p.onInstantPlay, p.showDownloadMenu)),
 			nil,
-			p.searchTitle,
+			func(s string) { go p.searchTitle(s) },
 		),
 	}
 
@@ -46,26 +42,14 @@ func (p *HomePage) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (p *HomePage) searchTitle(title string) {
-	attempts := 0
-
-	progress := widget.NewProgressBar()
-	progress.TextFormatter = func() string {
-		return fmt.Sprintf("%v / %v %v", attempts, kSearchAttempts, resource.AttemptsText())
-	}
-	waitDialog := dialog.NewCustomWithoutButtons(resource.SearchingText(), progress, getWindow())
-	waitDialog.Show()
-	defer waitDialog.Hide()
-
-	for ; attempts < kSearchAttempts; attempts++ {
-		progress.SetValue(float64(attempts) / kSearchAttempts)
-		results, err := p.searcher.Search(title)
+	results, err := p.searcher.Search(title)
+	fyne.Do(func() {
 		if err != nil {
-			fyne.LogError("browser searchTitle failed", err)
+			fyne.LogError("search engine failed", err)
 		} else if len(results) > 0 {
 			p.searchBar.Update(results)
-			return
 		}
-	}
+	})
 }
 
 func (p *HomePage) onInstantPlay(result scraper.Result) {
@@ -101,10 +85,10 @@ func (p *HomePage) showDownloadMenu(result scraper.Result) {
 
 func (p *HomePage) onDownload(key model.AlbumKey, result scraper.Result) {
 	if err := model.StorageClient().SyncMusic(result); err != nil {
-		fyne.LogError("failed to sync music", err)
+		fyne.Do(func() { fyne.LogError("failed to sync music", err) })
 		return
 	}
 	if err := model.StorageClient().UploadMusicToAlbum(key, result); err != nil {
-		fyne.LogError("failed to upload music to album", err)
+		fyne.Do(func() { fyne.LogError("failed to upload music to album", err) })
 	}
 }
