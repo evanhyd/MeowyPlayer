@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	// Base directory.
+	// Base path.
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		slog.Error("failed to get user home directory", "error", err)
@@ -33,12 +33,11 @@ func main() {
 	musicFilePath := filepath.Join(baseDir, "music")
 
 	userContext := context.MakeUserContext()
+	userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath, storages.User{UserID: 0}))
 
 	// player := players.MakeBeepPlayer()
 	// userContext.AddListener(context.StorageSetEvent, player.HandleStorageSetEvent)
 	// userContext.AddListener(context.PlaylistSetEvent, player.HandlePlaylistSetEvent)
 
-	userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath, storages.User{UserID: 0}))
-
-	ui.RunApp()
+	ui.RunApp(&userContext)
 }

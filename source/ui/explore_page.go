@@ -1,7 +1,11 @@
 package ui
 
 import (
+	stdcontext "context"
 	"log/slog"
+	"sync"
+
+	"meowyplayer/context"
 	"meowyplayer/scrapers"
 	"meowyplayer/ui/internal/layouts"
 	"meowyplayer/ui/internal/widgets"
@@ -23,21 +27,26 @@ type ExplorePage struct {
 	searchResults  []scrapers.Result
 	searchEngine   scrapers.MusicSearcher
 	downloadEngine scrapers.MusicDownloader
+
+	userContext  *context.UserContext
+	cancelSearch stdcontext.CancelFunc
+	searchMutex  sync.Mutex
 }
 
-func newExplorePage() *ExplorePage {
+func newExplorePage(userContext *context.UserContext) *ExplorePage {
 	p := ExplorePage{
 		searchEntry:    widget.NewEntry(),
 		searchButton:   widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
-		searchEngine:   scrapers.NewClipzagSearche(),
+		searchEngine:   scrapers.NewInvidiousSearcher(),
 		downloadEngine: scrapers.NewCnvmp3Downloader(),
+		userContext:    userContext,
 	}
 
 	p.searchEntry.ActionItem = p.searchButton
 	p.searchEntry.SetPlaceHolder(lang.L("Search songs, videos, or artists"))
-	p.searchEntry.OnChanged = p.submitSearchQuery
+	p.searchEntry.OnChanged = func(title string) { go p.submitSearchQuery(title) }
 	p.searchButton.Importance = widget.LowImportance
-	p.searchButton.OnTapped = func() { p.submitSearchQuery(p.searchEntry.Text) }
+	p.searchButton.OnTapped = func() { go p.submitSearchQuery(p.searchEntry.Text) }
 
 	p.content = widget.NewList(
 		func() int {
@@ -61,15 +70,41 @@ func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (p *ExplorePage) submitSearchQuery(query string) {
-	go func() {
-		results, err := p.searchEngine.Search(query)
-		if err != nil {
-			slog.Error("scraper failed to search the query", "query", query, "error", err)
-			dialog.NewError(err, fyne.CurrentApp().Driver().AllWindows()[0]).Show()
-		}
+	// Set up search cancelling.
+	p.searchMutex.Lock()
+	if p.cancelSearch != nil {
+		p.cancelSearch()
+	}
+	ctx, cancel := stdcontext.WithCancel(stdcontext.Background())
+	p.cancelSearch = cancel
+	p.searchMutex.Unlock()
 
+	// Handle empty queries.
+	if query == "" {
+		fyne.Do(func() {
+			p.searchResults = nil
+			p.content.Refresh()
+		})
+		return
+	}
+
+	// Check if should discard the result.
+	results, err := p.searchEngine.Search(query)
+	if ctx.Err() != nil {
+		return
+	}
+
+	if err != nil {
+		slog.Error("scraper failed to search the query", "query", query, "error", err)
+		fyne.Do(func() {
+			dialog.NewError(err, fyne.CurrentApp().Driver().AllWindows()[0]).Show()
+		})
+		return
+	}
+
+	fyne.Do(func() {
 		p.searchResults = results
 		p.content.Refresh()
 		p.content.ScrollToTop()
-	}()
+	})
 }

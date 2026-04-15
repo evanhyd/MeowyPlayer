@@ -30,8 +30,8 @@ func testSearch(t *testing.T, s MusicSearcher, query string) []Result {
 }
 
 // Table-driven tests for the searcher
-func TestClipzagSearcher(t *testing.T) {
-	searcher := NewClipzagSearche()
+func TestInvidiousSearcher(t *testing.T) {
+	searcher := NewInvidiousSearcher()
 
 	tests := []string{
 		"chicken nugget",

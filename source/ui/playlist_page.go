@@ -1,11 +1,17 @@
 package ui
 
 import (
+	"log/slog"
+	"meowyplayer/context"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/layouts"
+	"meowyplayer/ui/internal/widgets"
+	"slices"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
@@ -18,12 +24,14 @@ type PlaylistPage struct {
 	searchButton  *widget.Button
 	content       *widget.GridWrap
 	searchResults []storages.Playlist
+	userContext   *context.UserContext
 }
 
-func newPlaylistPage() *PlaylistPage {
+func newPlaylistPage(context *context.UserContext) *PlaylistPage {
 	p := PlaylistPage{
 		searchEntry:  widget.NewEntry(),
 		searchButton: widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
+		userContext:  context,
 	}
 
 	p.searchEntry.ActionItem = p.searchButton
@@ -34,12 +42,13 @@ func newPlaylistPage() *PlaylistPage {
 
 	p.content = widget.NewGridWrap(
 		func() int {
-			return 0
+			return len(p.searchResults)
 		},
 		func() fyne.CanvasObject {
-			return nil
+			return widgets.NewPlaylistCard(func(playlistId int64) {})
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
+			object.(*widgets.PlaylistCard).Set(p.searchResults[index])
 		},
 	)
 
@@ -53,5 +62,22 @@ func (p *PlaylistPage) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (p *PlaylistPage) submitSearchQuery(title string) {
+	fyne.Do(func() {
+		playlists, err := p.userContext.Storage().ListAllPlaylists()
+		if err != nil {
+			slog.Error("failed to query playlists", "title", title, "error", err)
+			dialog.NewError(err, fyne.CurrentApp().Driver().AllWindows()[0]).Show()
+			return
+		}
 
+		// Filter by title.
+		title = strings.ToLower(title)
+		playlists = slices.DeleteFunc(playlists, func(p storages.Playlist) bool {
+			return !strings.Contains(strings.ToLower(p.Title), title)
+		})
+
+		p.searchResults = playlists
+		p.content.Refresh()
+		p.content.ScrollToTop()
+	})
 }

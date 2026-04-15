@@ -2,6 +2,7 @@ package ui
 
 import (
 	"embed"
+	"meowyplayer/context"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -13,7 +14,7 @@ import (
 //go:embed internal/translations
 var translations embed.FS
 
-func RunApp() {
+func RunApp(userContext *context.UserContext) {
 	lang.AddTranslationsFS(translations, ".")
 
 	mainApp := app.New()
@@ -24,8 +25,8 @@ func RunApp() {
 	mainWindow.Resize(fyne.NewSize(809, 500))
 
 	appTab := container.NewAppTabs(
-		container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage()),
-		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, newExplorePage()),
+		container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage(userContext)),
+		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, newPlaylistPage(userContext)),
 	)
 	appTab.SetTabLocation(container.TabLocationLeading)
 	mainWindow.SetContent(appTab)

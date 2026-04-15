@@ -26,6 +26,10 @@ func (u *UserContext) Close() {
 	}
 }
 
+func (u *UserContext) Storage() storages.Storage {
+	return u.storage
+}
+
 func (u *UserContext) SetStorage(storage storages.Storage) {
 	if u.storage != nil {
 		if err := u.storage.Close(); err != nil {
