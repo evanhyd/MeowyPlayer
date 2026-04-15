@@ -59,7 +59,7 @@ func (c *ThumbnailCard) MouseMoved(*desktop.MouseEvent) {
 
 func (c *ThumbnailCard) Set(result scrapers.Result) {
 	// Update thumbnail.
-	scaledThumbnail, err := scaleImage(result.Thumbnail, 64, 64)
+	scaledThumbnail, err := scaleImage(result.Thumbnail, int(c.thumbnail.MinSize().Width), int(c.thumbnail.MinSize().Height))
 	if err != nil {
 		fyne.LogError("Failed to decode or scale thumbnail", err)
 		return
