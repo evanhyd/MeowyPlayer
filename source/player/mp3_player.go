@@ -152,7 +152,7 @@ func (p *MP3Player) run() {
 				}
 			case <-updateTimer.C:
 				if p.stream != nil {
-					p.onProgressUpdated.NotifyAll(p.getProgressPercent())
+					fyne.Do(func() { p.onProgressUpdated.NotifyAll(p.getProgressPercent()) })
 				}
 			}
 		}
