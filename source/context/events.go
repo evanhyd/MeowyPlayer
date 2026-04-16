@@ -6,15 +6,25 @@ type EventType int64
 type EventListener = func(EventType, any)
 
 const (
-	StorageSetEvent EventType = iota
-	PlaylistSetEvent
+	OnSetStorageEvent EventType = iota
+	OnSetPlaylistEvent
+	OnCreatePlaylistEvent
+	OnAddMusicToPlaylistEvent
 )
 
-type StorageSetEventData struct {
+type OnSetStorageEventData struct {
 	Storage storages.Storage
 }
 
-type PlaylistSetEventData struct {
+type OnSetPlaylistEventData struct {
 	MusicList []storages.Music
 	Index     int
+}
+
+type OnCreatePlaylistEventData struct {
+	PlaylistID int64
+}
+
+type OnAddMusicToPlaylistEventData struct {
+	PlaylistID int64
 }

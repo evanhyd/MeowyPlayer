@@ -31,13 +31,9 @@ func main() {
 	// Local storage path.
 	dbPath := filepath.Join(baseDir, "local.db")
 	musicFilePath := filepath.Join(baseDir, "music")
-
 	userContext := context.MakeUserContext()
-	userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath, storages.User{UserID: 0}))
 
-	// player := players.MakeBeepPlayer()
-	// userContext.AddListener(context.StorageSetEvent, player.HandleStorageSetEvent)
-	// userContext.AddListener(context.PlaylistSetEvent, player.HandlePlaylistSetEvent)
-
-	ui.RunApp(&userContext)
+	ui.RunApp(&userContext, func() {
+		userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath, storages.User{UserID: 0}))
+	})
 }

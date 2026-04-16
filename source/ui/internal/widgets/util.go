@@ -3,12 +3,13 @@ package widgets
 import (
 	"bytes"
 	"image"
+	"io"
 
 	"golang.org/x/image/draw"
 )
 
-func scaleImage(data []byte, targetWidth int, targetHeight int) (image.Image, error) {
-	originalThumbnail, _, err := image.Decode(bytes.NewBuffer(data))
+func ScaleImageFromReader(reader io.Reader, targetWidth int, targetHeight int) (image.Image, error) {
+	originalThumbnail, _, err := image.Decode(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -23,4 +24,8 @@ func scaleImage(data []byte, targetWidth int, targetHeight int) (image.Image, er
 		draw.Over, nil,
 	)
 	return scaledThumbnail, nil
+}
+
+func ScaleImageFromBytes(data []byte, targetWidth int, targetHeight int) (image.Image, error) {
+	return ScaleImageFromReader(bytes.NewBuffer(data), targetWidth, targetHeight)
 }

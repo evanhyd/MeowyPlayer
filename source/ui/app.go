@@ -14,7 +14,7 @@ import (
 //go:embed internal/translations
 var translations embed.FS
 
-func RunApp(userContext *context.UserContext) {
+func RunApp(userContext *context.UserContext, postUICallback func()) {
 	lang.AddTranslationsFS(translations, ".")
 
 	mainApp := app.New()
@@ -38,5 +38,7 @@ func RunApp(userContext *context.UserContext) {
 	// 		fyne.NewMenuItem("Show", mainWindow.Show),
 	// 	))
 	// }
+
+	postUICallback()
 	mainWindow.ShowAndRun()
 }

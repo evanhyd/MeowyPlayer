@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"log/slog"
 	"meowyplayer/storages"
 
 	"fyne.io/fyne/v2"
@@ -16,7 +17,7 @@ var _ desktop.Hoverable = &PlaylistCard{}
 type PlaylistCard struct {
 	widget.BaseWidget
 	cover      *canvas.Image
-	title      *widget.RichText
+	title      *widget.Label
 	highlight  *canvas.Rectangle
 	playlistID int64
 }
@@ -24,17 +25,17 @@ type PlaylistCard struct {
 func NewPlaylistCard(onTapped func(playlistId int64)) *PlaylistCard {
 	c := PlaylistCard{
 		cover:     canvas.NewImageFromResource(nil),
-		title:     widget.NewRichTextWithText(""),
+		title:     widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		highlight: canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
 	}
+	c.cover.SetMinSize(fyne.NewSize(140, 140))
+	c.title.Wrapping = fyne.TextWrapWord
+	c.highlight.Hide()
 	c.ExtendBaseWidget(&c)
 	return &c
 }
 
 func (c *PlaylistCard) CreateRenderer() fyne.WidgetRenderer {
-	c.cover.SetMinSize(fyne.NewSize(64, 64))
-	c.title.Wrapping = fyne.TextWrapWord
-	c.highlight.Hide()
 	return widget.NewSimpleRenderer(container.NewBorder(nil, c.title, nil, nil, c.cover))
 }
 
@@ -53,12 +54,12 @@ func (c *PlaylistCard) MouseMoved(*desktop.MouseEvent) {
 }
 
 func (c *PlaylistCard) Set(playlist storages.Playlist) {
-	scaledCover, err := scaleImage(playlist.CoverBlob, 64, 64)
+	scaledCover, err := ScaleImageFromBytes(playlist.CoverBlob, 64, 64)
 	if err != nil {
-		fyne.LogError("Failed to decode or scale thumbnail", err)
+		slog.Error("failed to scale image", "error", err)
 		return
 	}
 	c.cover.Image = scaledCover
-	c.title = widget.NewRichTextWithText(playlist.Title)
+	c.title.SetText(playlist.Title)
 	c.playlistID = playlist.PlaylistID
 }

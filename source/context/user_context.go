@@ -3,6 +3,8 @@ package context
 import (
 	"log/slog"
 	"meowyplayer/storages"
+
+	"fyne.io/fyne/v2"
 )
 
 type UserContext struct {
@@ -37,7 +39,7 @@ func (u *UserContext) SetStorage(storage storages.Storage) {
 		}
 	}
 	u.storage = storage
-	u.dispatcher.Dispatch(StorageSetEvent, StorageSetEventData{Storage: u.storage})
+	u.dispatcher.Dispatch(OnSetStorageEvent, OnSetStorageEventData{Storage: u.storage})
 }
 
 func (u *UserContext) SetPlaylist(playlistID int64, index int) error {
@@ -46,6 +48,24 @@ func (u *UserContext) SetPlaylist(playlistID int64, index int) error {
 		return err
 	}
 
-	u.dispatcher.Dispatch(PlaylistSetEvent, PlaylistSetEventData{MusicList: musicList, Index: index})
+	u.dispatcher.Dispatch(OnSetPlaylistEvent, OnSetPlaylistEventData{MusicList: musicList, Index: index})
+	return nil
+}
+
+func (u *UserContext) CreatePlaylist(title string, cover fyne.Resource) error {
+	playlist, err := u.storage.CreatePlaylist(storages.Playlist{PlaylistID: 0, Title: title, CoverBlob: cover.Content()})
+	if err != nil {
+		return err
+	}
+	u.dispatcher.Dispatch(OnCreatePlaylistEvent, OnCreatePlaylistEventData{PlaylistID: playlist.PlaylistID})
+	return nil
+}
+
+func (u *UserContext) AddMusicToPlaylist(playlistID int64, musicID string, source storages.MusicSource) error {
+	err := u.storage.AddMusicToPlaylist(playlistID, musicID, source)
+	if err != nil {
+		return err
+	}
+	u.dispatcher.Dispatch(OnAddMusicToPlaylistEvent, OnAddMusicToPlaylistEventData{PlaylistID: playlistID})
 	return nil
 }

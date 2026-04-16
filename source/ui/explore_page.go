@@ -2,11 +2,14 @@ package ui
 
 import (
 	stdcontext "context"
+	"fmt"
 	"log/slog"
+	"net/url"
 	"sync"
 
 	"meowyplayer/context"
 	"meowyplayer/scrapers"
+	"meowyplayer/storages"
 	"meowyplayer/ui/internal/layouts"
 	"meowyplayer/ui/internal/widgets"
 
@@ -53,7 +56,7 @@ func newExplorePage(userContext *context.UserContext) *ExplorePage {
 			return len(p.searchResults)
 		},
 		func() fyne.CanvasObject {
-			return widgets.NewThumbnailCard()
+			return widgets.NewThumbnailCard(p.openInBrowserCallback, p.addToPlaylistCallback)
 		},
 		func(index widget.ListItemID, object fyne.CanvasObject) {
 			object.(*widgets.ThumbnailCard).Set(p.searchResults[index])
@@ -62,6 +65,87 @@ func newExplorePage(userContext *context.UserContext) *ExplorePage {
 
 	p.ExtendBaseWidget(&p)
 	return &p
+}
+
+func (p *ExplorePage) openInBrowserCallback(result scrapers.Result) {
+	switch result.Platform {
+	case storages.YouTubeSource:
+		url, err := url.Parse(fmt.Sprintf("https://www.youtube.com/watch?v=%v", result.ID))
+		if err != nil {
+			slog.Error("failed to parse url", "error", err, "id", result.ID)
+			return
+		}
+		err = fyne.CurrentApp().OpenURL(url)
+		if err != nil {
+			slog.Error("failed to open url in browser", "error", err, "ur", url)
+			return
+		}
+	default:
+		slog.Error("unsupported platform", "platform", result.Platform)
+		return
+	}
+}
+
+func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
+	playlists, err := p.userContext.Storage().ListAllPlaylists()
+	if err != nil {
+		slog.Error("failed to list the playlists", "error", err)
+		return
+	}
+
+	options := make([]string, 0, len(playlists))
+	for _, playlist := range playlists {
+		options = append(options, playlist.Title)
+	}
+	selects := widget.NewSelect(options, nil)
+	selects.PlaceHolder = lang.L("Select a playlist")
+
+	fyne.Do(func() {
+		dialog.ShowCustomConfirm(lang.L("Add to playlist"), lang.L("Add"), lang.L("Cancel"), selects,
+			func(confirm bool) {
+				if i := selects.SelectedIndex(); i != -1 && confirm {
+					go func() {
+						music := storages.Music{
+							MusicID:       result.ID,
+							Source:        result.Platform,
+							Title:         result.Title,
+							LengthSeconds: int64(result.Length.Seconds()),
+						}
+
+						// Download the music if not in the local storage.
+						musicFile, err := p.userContext.Storage().GetMusicFile(music)
+						if err != nil {
+							// Download the missing music files.
+							content, err := p.downloadEngine.Download(stdcontext.Background(), result)
+							if err != nil {
+								slog.Error("failed to download music", "error", err)
+								return
+							}
+							defer content.Close()
+							err = p.userContext.Storage().CreateOrUpdateMusicFile(music, content)
+							if err != nil {
+								slog.Error("failed to create music file", "error", err)
+								return
+							}
+						}
+						musicFile.Close()
+
+						// Add music relation to DB.
+						err = p.userContext.Storage().CreateMusic(music)
+						if err != nil {
+							slog.Error("failed to create the music", "error", err)
+							return
+						}
+
+						err = p.userContext.AddMusicToPlaylist(playlists[i].PlaylistID, music.MusicID, music.Source)
+						if err != nil {
+							slog.Error("failed to add music to the playlist", "error", err)
+							return
+						}
+					}()
+				}
+			}, fyne.CurrentApp().Driver().AllWindows()[0])
+	})
 }
 
 func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {
