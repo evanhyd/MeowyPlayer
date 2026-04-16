@@ -18,14 +18,16 @@ var _ desktop.Hoverable = &ThumbnailCard{}
 type ThumbnailCard struct {
 	widget.BaseWidget
 	thumbnail *canvas.Image
-	summary   *widget.RichText
+	heading   *widget.RichText
+	meta      *widget.RichText
 	highlight *canvas.Rectangle
 }
 
 func NewThumbnailCard() *ThumbnailCard {
 	c := ThumbnailCard{
 		thumbnail: canvas.NewImageFromResource(nil),
-		summary:   widget.NewRichTextWithText(""),
+		heading:   widget.NewRichTextWithText(""),
+		meta:      widget.NewRichTextWithText(""),
 		highlight: canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
 	}
 	c.ExtendBaseWidget(&c)
@@ -33,12 +35,15 @@ func NewThumbnailCard() *ThumbnailCard {
 }
 
 func (c *ThumbnailCard) CreateRenderer() fyne.WidgetRenderer {
-	c.thumbnail.SetMinSize(fyne.NewSize(64, 64))
-	c.summary.Wrapping = fyne.TextWrapWord
+	c.thumbnail.SetMinSize(fyne.NewSize(112, 63))
 	c.highlight.Hide()
+	c.heading.Truncation = fyne.TextTruncateEllipsis
+	c.heading.Wrapping = fyne.TextWrapBreak
+	c.meta.Truncation = fyne.TextTruncateEllipsis
+	c.meta.Wrapping = fyne.TextWrapBreak
 
 	return widget.NewSimpleRenderer(container.NewStack(
-		container.NewBorder(nil, nil, c.thumbnail, nil, c.summary),
+		container.NewBorder(nil, nil, c.thumbnail, nil, container.NewVBox(c.heading, c.meta)),
 		c.highlight,
 	))
 }
@@ -66,19 +71,19 @@ func (c *ThumbnailCard) Set(result scrapers.Result) {
 	}
 	c.thumbnail.Image = scaledThumbnail
 
+	// Update Heading.
+	c.heading.Segments[0] = &widget.TextSegment{
+		Style: widget.RichTextStyle{TextStyle: fyne.TextStyle{Bold: true}},
+		Text:  result.Title,
+	}
+
 	// Update summary.
 	totalSeconds := int(result.Length.Round(time.Second).Seconds())
 	mins := totalSeconds / 60
 	secs := totalSeconds % 60
-
-	heading := widget.TextSegment{
-		Style: widget.RichTextStyle{TextStyle: fyne.TextStyle{Bold: true}},
-		Text:  result.Title,
-	}
-	meta := widget.TextSegment{
+	c.meta.Segments[0] = &widget.TextSegment{
 		Text: fmt.Sprintf("[%02d:%02d] %s • %s", mins, secs, result.ChannelTitle, result.Stats),
 	}
-	c.summary.Segments = c.summary.Segments[:0]
-	c.summary.Segments = append(c.summary.Segments, &heading, &meta)
+
 	c.Refresh()
 }
