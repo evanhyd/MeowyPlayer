@@ -7,7 +7,8 @@ type EventListener = func(EventType, any)
 
 const (
 	OnSetStorageEvent EventType = iota
-	OnSetPlaylistEvent
+	OnViewPlaylistEvent
+	OnReturnBackFromPlaylistEvent
 	OnCreatePlaylistEvent
 	OnAddMusicToPlaylistEvent
 )
@@ -16,9 +17,11 @@ type OnSetStorageEventData struct {
 	Storage storages.Storage
 }
 
-type OnSetPlaylistEventData struct {
-	MusicList []storages.Music
-	Index     int
+type OnViewPlaylistEventData struct {
+	Playlist storages.Playlist
+}
+
+type OnReturnBackFromPlaylistEventData struct {
 }
 
 type OnCreatePlaylistEventData struct {

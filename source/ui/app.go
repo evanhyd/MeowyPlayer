@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
 )
@@ -23,22 +24,20 @@ func RunApp(userContext *context.UserContext, postUICallback func()) {
 
 	mainWindow := mainApp.NewWindow(lang.L("MeowyPlayer"))
 	mainWindow.Resize(fyne.NewSize(809, 500))
+	mainWindow.SetCloseIntercept(mainApp.Quit)
+	if desktop, ok := mainApp.(desktop.App); ok {
+		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", mainWindow.Show)))
+	}
 
 	appTab := container.NewAppTabs(
 		container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage(userContext)),
-		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, newPlaylistPage(userContext)),
+		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, container.NewStack(newPlaylistPage(userContext), newMusicPage(userContext))),
 	)
+
 	appTab.SetTabLocation(container.TabLocationLeading)
 	mainWindow.SetContent(appTab)
 
-	// System tray.
-	// mainWindow.SetCloseIntercept(mainWindow.Hide)
-	// if desktop, ok := mainApp.(desktop.App); ok {
-	// 	desktop.SetSystemTrayMenu(fyne.NewMenu("",
-	// 		fyne.NewMenuItem("Show", mainWindow.Show),
-	// 	))
-	// }
-
 	postUICallback()
+
 	mainWindow.ShowAndRun()
 }

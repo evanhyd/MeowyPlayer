@@ -40,14 +40,12 @@ func (u *UserContext) SetStorage(storage storages.Storage) {
 	u.dispatcher.Dispatch(OnSetStorageEvent, OnSetStorageEventData{Storage: u.storage})
 }
 
-func (u *UserContext) SetPlaylist(playlistID int64, index int) error {
-	musicList, err := u.storage.GetAllMusicFromPlaylist(playlistID)
-	if err != nil {
-		return err
-	}
+func (u *UserContext) ViewPlaylist(playlist storages.Playlist) {
+	u.dispatcher.Dispatch(OnViewPlaylistEvent, OnViewPlaylistEventData{Playlist: playlist})
+}
 
-	u.dispatcher.Dispatch(OnSetPlaylistEvent, OnSetPlaylistEventData{MusicList: musicList, Index: index})
-	return nil
+func (u *UserContext) ReturnBackFromPlaylist() {
+	u.dispatcher.Dispatch(OnReturnBackFromPlaylistEvent, OnReturnBackFromPlaylistEventData{})
 }
 
 func (u *UserContext) CreatePlaylist(title string, coverBlob []byte) error {

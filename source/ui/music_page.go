@@ -41,10 +41,9 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 	p.searchButton.Importance = widget.LowImportance
 	p.searchButton.OnTapped = func() { p.updateDisplayResults(p.searchEntry.Text) }
 	p.backButton.Importance = widget.LowImportance
+	p.backButton.OnTapped = p.userContext.ReturnBackFromPlaylist
 
 	// TODO: implement
-	// p.backButton.OnTapped = p.createPlaylist
-
 	// p.content = widget.NewGridWrap(
 	// 	func() int {
 	// 		return len(p.displayResults)
@@ -57,8 +56,17 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 	// 	},
 	// )
 
-	// p.userContext.AddListener(context.OnSetStorageEvent, p.fetchPlaylists)
-	// p.userContext.AddListener(context.OnCreatePlaylistEvent, p.fetchPlaylists)
+	p.userContext.AddListener(context.OnViewPlaylistEvent, func(context.EventType, any) {
+		p.Show()
+	})
+
+	p.userContext.AddListener(context.OnSetStorageEvent, func(context.EventType, any) {
+		p.Hide()
+	})
+
+	p.userContext.AddListener(context.OnReturnBackFromPlaylistEvent, func(context.EventType, any) {
+		p.Hide()
+	})
 
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -66,7 +74,7 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 
 func (p *MusicPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
-		container.New(layouts.NewCenterLayout(0.62, 1), container.NewBorder(nil, nil, nil, p.backButton, p.searchEntry)), nil, nil, nil, p.content))
+		container.New(layouts.NewCenterLayout(0.62, 1), container.NewBorder(nil, nil, nil, p.backButton, p.searchEntry)), nil, nil, nil, widget.NewButtonWithIcon("button", theme.BrokenImageIcon(), nil)))
 }
 
 func (p *MusicPage) fetchMusic(context.EventType, any) {
@@ -90,7 +98,7 @@ func (p *MusicPage) updateDisplayResults(title string) {
 	}
 
 	fyne.Do(func() {
-		p.content.Refresh()
 		p.content.ScrollToTop()
+		p.content.Refresh()
 	})
 }

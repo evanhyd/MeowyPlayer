@@ -48,15 +48,26 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 			return len(p.displayResults)
 		},
 		func() fyne.CanvasObject {
-			return widgets.NewPlaylistCard(func(playlist storages.Playlist) {})
+			return widgets.NewPlaylistCard(func(playlist storages.Playlist) {
+				p.Hide()
+				p.userContext.ViewPlaylist(playlist)
+			})
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
 			object.(*widgets.PlaylistCard).Set(p.displayResults[index])
 		},
 	)
 
-	p.userContext.AddListener(context.OnSetStorageEvent, p.fetchPlaylists)
-	p.userContext.AddListener(context.OnCreatePlaylistEvent, p.fetchPlaylists)
+	p.userContext.AddListener(context.OnSetStorageEvent, func(context.EventType, any) {
+		p.fetchPlaylists()
+		p.Show()
+	})
+	p.userContext.AddListener(context.OnCreatePlaylistEvent, func(context.EventType, any) {
+		p.fetchPlaylists()
+	})
+	p.userContext.AddListener(context.OnReturnBackFromPlaylistEvent, func(context.EventType, any) {
+		p.Show()
+	})
 
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -82,7 +93,7 @@ func (p *PlaylistPage) createPlaylist() {
 	)
 }
 
-func (p *PlaylistPage) fetchPlaylists(context.EventType, any) {
+func (p *PlaylistPage) fetchPlaylists() {
 	var err error
 	p.queryResults, err = p.userContext.Storage().GetAllPlaylists()
 	if err != nil {
@@ -103,7 +114,7 @@ func (p *PlaylistPage) updateDisplayResults(title string) {
 	}
 
 	fyne.Do(func() {
-		p.content.Refresh()
 		p.content.ScrollToTop()
+		p.content.Refresh()
 	})
 }

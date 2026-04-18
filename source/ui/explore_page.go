@@ -180,10 +180,10 @@ func (p *ExplorePage) submitSearchQuery(query string) {
 		})
 		return
 	}
+	p.searchResults = results
 
 	fyne.Do(func() {
-		p.searchResults = results
-		p.content.Refresh()
 		p.content.ScrollToTop()
+		p.Refresh()
 	})
 }

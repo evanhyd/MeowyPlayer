@@ -20,48 +20,51 @@ type PlaylistCard struct {
 	title     *widget.Label
 	highlight *canvas.Rectangle
 	playlist  storages.Playlist
+	onTapped  func(playlist storages.Playlist)
 }
 
 func NewPlaylistCard(onTapped func(playlist storages.Playlist)) *PlaylistCard {
-	c := PlaylistCard{
+	p := PlaylistCard{
 		cover:     canvas.NewImageFromResource(nil),
 		title:     widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		highlight: canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
+		onTapped:  onTapped,
 	}
-	c.cover.SetMinSize(PlaylistCardSize)
-	c.title.Wrapping = fyne.TextWrapWord
-	c.highlight.Hide()
-	c.ExtendBaseWidget(&c)
-	return &c
+	p.cover.SetMinSize(PlaylistCardSize)
+	p.title.Wrapping = fyne.TextWrapWord
+	p.highlight.Hide()
+	p.ExtendBaseWidget(&p)
+	return &p
 }
 
-func (c *PlaylistCard) CreateRenderer() fyne.WidgetRenderer {
+func (p *PlaylistCard) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewStack(
-		container.NewBorder(nil, c.title, nil, nil, c.cover),
-		c.highlight,
+		container.NewBorder(nil, p.title, nil, nil, p.cover),
+		p.highlight,
 	))
 }
 
-func (c *PlaylistCard) MouseIn(*desktop.MouseEvent) {
-	c.highlight.Show()
-	c.Refresh()
+func (p *PlaylistCard) MouseIn(*desktop.MouseEvent) {
+	p.highlight.Show()
+	p.Refresh()
 }
 
-func (c *PlaylistCard) MouseOut() {
-	c.highlight.Hide()
-	c.Refresh()
+func (p *PlaylistCard) MouseOut() {
+	p.highlight.Hide()
+	p.Refresh()
 }
 
-func (c *PlaylistCard) MouseMoved(*desktop.MouseEvent) {
+func (p *PlaylistCard) MouseMoved(*desktop.MouseEvent) {
 	// Satisfy desktop.Hoverable
 }
 
-func (b *PlaylistCard) Tapped(*fyne.PointEvent) {
-	// Disable the yellow highlight from widget.List.
+func (p *PlaylistCard) Tapped(*fyne.PointEvent) {
+	p.onTapped(p.playlist)
 }
 
-func (c *PlaylistCard) Set(playlist storages.Playlist) {
-	c.cover.Resource = fyne.NewStaticResource(strconv.FormatInt(playlist.PlaylistId, 16), playlist.CoverBlob)
-	c.title.SetText(playlist.Title)
-	c.playlist = playlist
+func (p *PlaylistCard) Set(playlist storages.Playlist) {
+	p.cover.Resource = fyne.NewStaticResource(strconv.FormatInt(playlist.PlaylistId, 16), playlist.CoverBlob)
+	p.title.SetText(playlist.Title)
+	p.playlist = playlist
+	p.Refresh()
 }
