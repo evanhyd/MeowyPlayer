@@ -10,7 +10,7 @@ const (
 
 // Users table
 type User struct {
-	UserID         int64
+	UserId         int64
 	Name           string
 	HashedPassword string
 	Salt           string
@@ -18,21 +18,23 @@ type User struct {
 
 // UserSessions table
 type UserSession struct {
-	UserID    int64
+	UserId    int64
 	Token     string
 	CreatedAt int64 // Unix nano
 }
 
 // Playlist table
 type Playlist struct {
-	PlaylistID int64
-	Title      string
-	CoverBlob  []byte
+	UserId       int64
+	PlaylistId   int64
+	Title        string
+	ModifiedDate int64 // Unix nano
+	CoverBlob    []byte
 }
 
 // Music table
 type Music struct {
-	MusicID       string
+	MusicId       string
 	Source        MusicSource
 	Title         string
 	LengthSeconds int64
@@ -40,7 +42,9 @@ type Music struct {
 
 // PlaylistMusic table
 type PlaylistMusic struct {
-	PlaylistID int64
-	MusicID    string
+	UserId     int64
+	PlaylistId int64
+	MusicId    string
 	Source     MusicSource
+	AddedAt    int64 // Unix nano
 }

@@ -36,7 +36,7 @@ func NewThumbnailCard(playInBrowserCallback func(scrapers.Result), addToPlaylist
 		playInBrowserButton: widget.NewButtonWithIcon("", theme.MediaPlayIcon(), nil),
 		addToPlaylistButton: widget.NewButtonWithIcon("", theme.ContentAddIcon(), nil),
 	}
-	c.thumbnail.SetMinSize(fyne.NewSize(112, 63))
+	c.thumbnail.SetMinSize(ThumbnailSize)
 	c.highlight.Hide()
 	c.heading.Truncation = fyne.TextTruncateEllipsis
 	c.heading.Wrapping = fyne.TextWrapBreak
@@ -72,9 +72,13 @@ func (c *ThumbnailCard) MouseMoved(*desktop.MouseEvent) {
 	// Satisfy MouseMovement interface.
 }
 
+func (b *ThumbnailCard) Tapped(*fyne.PointEvent) {
+	// Disable the yellow highlight from widget.List.
+}
+
 func (c *ThumbnailCard) Set(result scrapers.Result) {
 	// Update thumbnail.
-	scaledThumbnail, err := ScaleImageFromBytes(result.Thumbnail, int(c.thumbnail.MinSize().Width), int(c.thumbnail.MinSize().Height))
+	scaledThumbnail, err := ScaleImageFromBytes(result.Thumbnail, c.thumbnail.MinSize())
 	if err != nil {
 		slog.Error("failed to scale image", "error", err)
 		return

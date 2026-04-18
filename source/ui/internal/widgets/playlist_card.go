@@ -1,8 +1,8 @@
 package widgets
 
 import (
-	"log/slog"
 	"meowyplayer/storages"
+	"strconv"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -16,19 +16,19 @@ var _ desktop.Hoverable = &PlaylistCard{}
 
 type PlaylistCard struct {
 	widget.BaseWidget
-	cover      *canvas.Image
-	title      *widget.Label
-	highlight  *canvas.Rectangle
-	playlistID int64
+	cover     *canvas.Image
+	title     *widget.Label
+	highlight *canvas.Rectangle
+	playlist  storages.Playlist
 }
 
-func NewPlaylistCard(onTapped func(playlistId int64)) *PlaylistCard {
+func NewPlaylistCard(onTapped func(playlist storages.Playlist)) *PlaylistCard {
 	c := PlaylistCard{
 		cover:     canvas.NewImageFromResource(nil),
 		title:     widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
 		highlight: canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
 	}
-	c.cover.SetMinSize(fyne.NewSize(140, 140))
+	c.cover.SetMinSize(PlaylistCardSize)
 	c.title.Wrapping = fyne.TextWrapWord
 	c.highlight.Hide()
 	c.ExtendBaseWidget(&c)
@@ -36,7 +36,10 @@ func NewPlaylistCard(onTapped func(playlistId int64)) *PlaylistCard {
 }
 
 func (c *PlaylistCard) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewBorder(nil, c.title, nil, nil, c.cover))
+	return widget.NewSimpleRenderer(container.NewStack(
+		container.NewBorder(nil, c.title, nil, nil, c.cover),
+		c.highlight,
+	))
 }
 
 func (c *PlaylistCard) MouseIn(*desktop.MouseEvent) {
@@ -53,13 +56,12 @@ func (c *PlaylistCard) MouseMoved(*desktop.MouseEvent) {
 	// Satisfy desktop.Hoverable
 }
 
+func (b *PlaylistCard) Tapped(*fyne.PointEvent) {
+	// Disable the yellow highlight from widget.List.
+}
+
 func (c *PlaylistCard) Set(playlist storages.Playlist) {
-	scaledCover, err := ScaleImageFromBytes(playlist.CoverBlob, 64, 64)
-	if err != nil {
-		slog.Error("failed to scale image", "error", err)
-		return
-	}
-	c.cover.Image = scaledCover
+	c.cover.Resource = fyne.NewStaticResource(strconv.FormatInt(playlist.PlaylistId, 16), playlist.CoverBlob)
 	c.title.SetText(playlist.Title)
-	c.playlistID = playlist.PlaylistID
+	c.playlist = playlist
 }

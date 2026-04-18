@@ -6,14 +6,12 @@ import (
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/layouts"
 	"meowyplayer/ui/internal/widgets"
-	"slices"
 	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -24,7 +22,8 @@ type PlaylistPage struct {
 	searchButton         *widget.Button
 	content              *widget.GridWrap
 	createPlaylistButton *widget.Button
-	searchResults        []storages.Playlist
+	queryResults         []storages.Playlist
+	displayResults       []storages.Playlist
 	userContext          *context.UserContext
 }
 
@@ -38,37 +37,35 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 
 	p.searchEntry.ActionItem = p.searchButton
 	p.searchEntry.SetPlaceHolder(lang.L("Search songs, videos, or artists"))
-	p.searchEntry.OnChanged = func(s string) { go p.submitSearchQuery(s) }
+	p.searchEntry.OnChanged = p.updateDisplayResults
 	p.searchButton.Importance = widget.LowImportance
-	p.searchButton.OnTapped = func() { go p.submitSearchQuery(p.searchEntry.Text) }
+	p.searchButton.OnTapped = func() { p.updateDisplayResults(p.searchEntry.Text) }
 	p.createPlaylistButton.Importance = widget.LowImportance
 	p.createPlaylistButton.OnTapped = p.createPlaylist
 
 	p.content = widget.NewGridWrap(
 		func() int {
-			return len(p.searchResults)
+			return len(p.displayResults)
 		},
 		func() fyne.CanvasObject {
-			return widgets.NewPlaylistCard(func(playlistId int64) {})
+			return widgets.NewPlaylistCard(func(playlist storages.Playlist) {})
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
-			object.(*widgets.PlaylistCard).Set(p.searchResults[index])
+			object.(*widgets.PlaylistCard).Set(p.displayResults[index])
 		},
 	)
 
-	p.userContext.AddListener(context.OnSetStorageEvent, p.refreshPlaylist)
-	p.userContext.AddListener(context.OnCreatePlaylistEvent, p.refreshPlaylist)
+	p.userContext.AddListener(context.OnSetStorageEvent, p.fetchPlaylists)
+	p.userContext.AddListener(context.OnCreatePlaylistEvent, p.fetchPlaylists)
 
 	p.ExtendBaseWidget(&p)
 	return &p
 }
 
 func (p *PlaylistPage) CreateRenderer() fyne.WidgetRenderer {
-	searchTools := container.New(layouts.NewHSegmentLayout(2, 7, 2),
-		layout.NewSpacer(),
-		container.NewBorder(nil, nil, nil, p.createPlaylistButton, p.searchEntry),
-		layout.NewSpacer())
-	return widget.NewSimpleRenderer(container.NewBorder(searchTools, nil, nil, nil, p.content))
+	return widget.NewSimpleRenderer(container.NewBorder(
+		container.NewStack(container.New(layouts.NewCenterLayout(0.62, 1), p.searchEntry), container.NewBorder(nil, nil, nil, p.createPlaylistButton)),
+		nil, nil, nil, p.content))
 }
 
 func (p *PlaylistPage) createPlaylist() {
@@ -85,25 +82,27 @@ func (p *PlaylistPage) createPlaylist() {
 	)
 }
 
-func (p *PlaylistPage) refreshPlaylist(context.EventType, any) {
-	p.submitSearchQuery(p.searchEntry.Text)
-}
-
-func (p *PlaylistPage) submitSearchQuery(title string) {
-	playlists, err := p.userContext.Storage().ListAllPlaylists()
+func (p *PlaylistPage) fetchPlaylists(context.EventType, any) {
+	var err error
+	p.queryResults, err = p.userContext.Storage().GetAllPlaylists()
 	if err != nil {
-		slog.Error("failed to query playlists", "title", title, "error", err)
+		slog.Error("failed to query playlists", "error", err)
 		return
 	}
+	p.updateDisplayResults(p.searchEntry.Text)
+}
 
+func (p *PlaylistPage) updateDisplayResults(title string) {
 	// Filter by title.
 	title = strings.ToLower(title)
-	playlists = slices.DeleteFunc(playlists, func(p storages.Playlist) bool {
-		return !strings.Contains(strings.ToLower(p.Title), title)
-	})
+	p.displayResults = p.displayResults[:0]
+	for _, playlist := range p.queryResults {
+		if strings.Contains(strings.ToLower(playlist.Title), title) {
+			p.displayResults = append(p.displayResults, playlist)
+		}
+	}
 
 	fyne.Do(func() {
-		p.searchResults = playlists
 		p.content.Refresh()
 		p.content.ScrollToTop()
 	})

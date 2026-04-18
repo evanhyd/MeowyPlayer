@@ -6,10 +6,9 @@ import (
 	"image/color"
 	"image/png"
 	"log/slog"
-	"meowyplayer/ui/internal/widgets"
 	"os"
 
-	_ "image/jpeg"
+	"meowyplayer/ui/internal/widgets"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -33,8 +32,8 @@ func newPlaylistEditor() *PlaylistEditor {
 	var v PlaylistEditor
 
 	// Cover.
-	v.cover = canvas.NewImageFromResource(theme.DocumentCreateIcon())
-	v.cover.SetMinSize(fyne.NewSize(180, 180))
+	v.cover = canvas.NewImageFromResource(theme.UploadIcon())
+	v.cover.SetMinSize(widgets.PlaylistCardSize)
 
 	// File picker.
 	upload := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
@@ -44,7 +43,7 @@ func newPlaylistEditor() *PlaylistEditor {
 			v.setImage(reader.URI().Path())
 		}
 	}, fyne.CurrentApp().Driver().AllWindows()[0])
-	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", "jpeg"}))
+	upload.SetFilter(storage.NewExtensionFileFilter([]string{".png", ".jpg", ".jpeg"}))
 	upload.SetConfirmText(lang.L("Upload"))
 	upload.SetDismissText(lang.L("Cancel"))
 	v.uploadButton = widget.NewButtonWithIcon("", nil, upload.Show)
@@ -79,19 +78,26 @@ func (v *PlaylistEditor) CreateRenderer() fyne.WidgetRenderer {
 	))
 }
 
-func (v *PlaylistEditor) state() (string, fyne.Resource) {
-	return v.titleEntry.Text, v.cover.Resource
+func (v *PlaylistEditor) state() (string, []byte) {
+	// Image has higher priority.
+	if v.cover.Image == nil {
+		return v.titleEntry.Text, v.cover.Resource.Content()
+	}
+
+	buf := bytes.Buffer{}
+	if err := png.Encode(&buf, v.cover.Image); err != nil {
+		slog.Error("failed to encode image", "error", err)
+		return v.titleEntry.Text, theme.BrokenImageIcon().Content()
+	}
+
+	return v.titleEntry.Text, buf.Bytes()
 }
 
 func (v *PlaylistEditor) setColor(coverColor color.Color) {
 	img := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	img.Set(0, 0, coverColor)
-	data := bytes.Buffer{}
-	if err := png.Encode(&data, img); err != nil {
-		slog.Error("failed to set cover color", "error", err)
-		return
-	}
-	v.cover.Resource = fyne.NewStaticResource("", data.Bytes())
+	v.cover.Resource = nil
+	v.cover.Image = img
 	v.cover.Refresh()
 }
 
@@ -104,13 +110,13 @@ func (v *PlaylistEditor) setImage(path string) {
 	defer file.Close()
 
 	// Resize to reduce UI rendering time.
-	image, err := widgets.ScaleImageFromReader(file, 140, 140)
+	img, err := widgets.ScaleImageFromReader(file, widgets.PlaylistCardSize)
 	if err != nil {
 		slog.Error("failed to scale the image", "error", err)
+		return
 	}
 
-	buffer := bytes.Buffer{}
-	png.Encode(&buffer, image)
-	v.cover.Resource = &fyne.StaticResource{StaticContent: buffer.Bytes()}
+	v.cover.Resource = nil
+	v.cover.Image = img
 	v.cover.Refresh()
 }

@@ -22,9 +22,9 @@ type OnSetPlaylistEventData struct {
 }
 
 type OnCreatePlaylistEventData struct {
-	PlaylistID int64
+	Playlist storages.Playlist
 }
 
 type OnAddMusicToPlaylistEventData struct {
-	PlaylistID int64
+	Playlist storages.Playlist
 }

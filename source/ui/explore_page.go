@@ -17,7 +17,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -87,7 +86,7 @@ func (p *ExplorePage) openInBrowserCallback(result scrapers.Result) {
 }
 
 func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
-	playlists, err := p.userContext.Storage().ListAllPlaylists()
+	playlists, err := p.userContext.Storage().GetAllPlaylists()
 	if err != nil {
 		slog.Error("failed to list the playlists", "error", err)
 		return
@@ -106,7 +105,7 @@ func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
 				if i := selects.SelectedIndex(); i != -1 && confirm {
 					go func() {
 						music := storages.Music{
-							MusicID:       result.ID,
+							MusicId:       result.ID,
 							Source:        result.Platform,
 							Title:         result.Title,
 							LengthSeconds: int64(result.Length.Seconds()),
@@ -137,7 +136,7 @@ func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
 							return
 						}
 
-						err = p.userContext.AddMusicToPlaylist(playlists[i].PlaylistID, music.MusicID, music.Source)
+						err = p.userContext.AddMusicToPlaylist(playlists[i], music.MusicId, music.Source)
 						if err != nil {
 							slog.Error("failed to add music to the playlist", "error", err)
 							return
@@ -149,10 +148,9 @@ func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
 }
 
 func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {
-	searchTools := container.New(layouts.NewHSegmentLayout(2, 7, 2), layout.NewSpacer(), p.searchEntry, layout.NewSpacer())
 	return widget.NewSimpleRenderer(container.NewBorder(
-		searchTools, nil, nil, nil,
-		container.New(layouts.NewHSegmentLayout(1, 7, 1), layout.NewSpacer(), p.content, layout.NewSpacer())))
+		container.New(layouts.NewCenterLayout(0.62, 1), p.searchEntry), nil, nil, nil,
+		container.New(layouts.NewCenterLayout(0.8, 1), p.content)))
 }
 
 func (p *ExplorePage) submitSearchQuery(query string) {

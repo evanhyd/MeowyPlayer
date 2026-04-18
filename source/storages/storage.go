@@ -6,23 +6,23 @@ import "io"
 // Assumes user/session context is already encapsulated in the implementation.
 type Storage interface {
 	// Playlist
-	CreatePlaylist(playlist Playlist) (Playlist, error)
+	CreatePlaylist(title string, coverBlob []byte) (Playlist, error)
 	UpdatePlaylist(playlist Playlist) error
 	DeletePlaylist(playlistID int64) error
 	GetPlaylist(playlistID int64) (Playlist, error)
-	ListAllPlaylists() ([]Playlist, error)
+	GetAllPlaylists() ([]Playlist, error)
 
 	// Music
 	CreateMusic(music Music) error
 	UpdateMusic(music Music) error
 	DeleteMusic(musicID string, source MusicSource) error
 	GetMusic(musicID string, source MusicSource) (Music, error)
-	ListAllMusic() ([]Music, error)
+	GetAllMusic() ([]Music, error)
 
 	// Playlist - Music association
 	AddMusicToPlaylist(playlistID int64, musicID string, source MusicSource) error
 	RemoveMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error
-	ListMusicInPlaylist(playlistID int64) ([]Music, error)
+	GetAllMusicFromPlaylist(playlistID int64) ([]Music, error)
 
 	// Filesystem manipulation. Does NOT affect the DB table.
 	CreateOrUpdateMusicFile(music Music, content io.Reader) error
