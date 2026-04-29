@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"meowyplayer/context"
 	"meowyplayer/storages"
-	"meowyplayer/ui/internal/layouts"
-	"meowyplayer/ui/internal/widgets"
+	"meowyplayer/ui/internal/mcontainer"
+	"meowyplayer/ui/internal/mwidget"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -20,7 +20,7 @@ type PlaylistPage struct {
 	widget.BaseWidget
 	searchEntry          *widget.Entry
 	searchButton         *widget.Button
-	content              *widget.GridWrap
+	scrollList           *widget.GridWrap
 	createPlaylistButton *widget.Button
 	queryResults         []storages.Playlist
 	displayResults       []storages.Playlist
@@ -43,18 +43,18 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 	p.createPlaylistButton.Importance = widget.LowImportance
 	p.createPlaylistButton.OnTapped = p.createPlaylist
 
-	p.content = widget.NewGridWrap(
+	p.scrollList = widget.NewGridWrap(
 		func() int {
 			return len(p.displayResults)
 		},
 		func() fyne.CanvasObject {
-			return widgets.NewPlaylistCard(func(playlist storages.Playlist) {
+			return mwidget.NewPlaylistCard(func(playlist storages.Playlist) {
 				p.Hide()
 				p.userContext.ViewPlaylist(playlist)
 			})
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
-			object.(*widgets.PlaylistCard).Set(p.displayResults[index])
+			object.(*mwidget.PlaylistCard).Set(p.displayResults[index])
 		},
 	)
 
@@ -75,8 +75,8 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 
 func (p *PlaylistPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
-		container.NewStack(container.New(layouts.NewCenterLayout(0.62, 1), p.searchEntry), container.NewBorder(nil, nil, nil, p.createPlaylistButton)),
-		nil, nil, nil, p.content))
+		container.NewStack(mcontainer.NewCenter(0.62, 1, p.searchEntry), container.NewBorder(nil, nil, nil, p.createPlaylistButton)),
+		nil, nil, nil, p.scrollList))
 }
 
 func (p *PlaylistPage) createPlaylist() {
@@ -114,7 +114,7 @@ func (p *PlaylistPage) updateDisplayResults(title string) {
 	}
 
 	fyne.Do(func() {
-		p.content.ScrollToTop()
-		p.content.Refresh()
+		p.scrollList.ScrollToTop()
+		p.scrollList.Refresh()
 	})
 }

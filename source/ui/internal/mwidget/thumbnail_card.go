@@ -1,4 +1,4 @@
-package widgets
+package mwidget
 
 import (
 	"fmt"
@@ -18,10 +18,10 @@ var _ desktop.Hoverable = &ThumbnailCard{}
 
 type ThumbnailCard struct {
 	widget.BaseWidget
-	thumbnail           *canvas.Image
-	heading             *widget.Label
-	meta                *widget.Label
 	highlight           *canvas.Rectangle
+	thumbnail           *canvas.Image
+	title               *widget.Label
+	description         *widget.Label
 	playInBrowserButton *widget.Button
 	addToPlaylistButton *widget.Button
 	result              scrapers.Result
@@ -29,19 +29,21 @@ type ThumbnailCard struct {
 
 func NewThumbnailCard(playInBrowserCallback func(scrapers.Result), addToPlaylistCallback func(scrapers.Result)) *ThumbnailCard {
 	c := ThumbnailCard{
-		thumbnail:           canvas.NewImageFromResource(nil),
-		heading:             widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		meta:                widget.NewLabel(""),
 		highlight:           canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
+		thumbnail:           canvas.NewImageFromResource(nil),
+		title:               widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		description:         widget.NewLabel(""),
 		playInBrowserButton: widget.NewButtonWithIcon("", theme.MediaPlayIcon(), nil),
 		addToPlaylistButton: widget.NewButtonWithIcon("", theme.ContentAddIcon(), nil),
 	}
-	c.thumbnail.SetMinSize(ThumbnailSize)
+	c.highlight.CornerRadius = 8.0
 	c.highlight.Hide()
-	c.heading.Truncation = fyne.TextTruncateEllipsis
-	c.heading.Wrapping = fyne.TextWrapBreak
-	c.meta.Truncation = fyne.TextTruncateEllipsis
-	c.meta.Wrapping = fyne.TextWrapBreak
+	c.thumbnail.SetMinSize(ThumbnailSize)
+	c.thumbnail.CornerRadius = 8.0
+	c.title.Truncation = fyne.TextTruncateEllipsis
+	c.title.Wrapping = fyne.TextWrapBreak
+	c.description.Truncation = fyne.TextTruncateEllipsis
+	c.description.Wrapping = fyne.TextWrapBreak
 	c.playInBrowserButton.Importance = widget.LowImportance
 	c.playInBrowserButton.OnTapped = func() { go playInBrowserCallback(c.result) }
 	c.addToPlaylistButton.Importance = widget.LowImportance
@@ -53,7 +55,7 @@ func NewThumbnailCard(playInBrowserCallback func(scrapers.Result), addToPlaylist
 
 func (c *ThumbnailCard) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewStack(
-		container.NewBorder(nil, nil, c.thumbnail, container.NewVBox(c.playInBrowserButton, c.addToPlaylistButton), container.NewVBox(c.heading, c.meta)),
+		container.NewBorder(nil, nil, c.thumbnail, container.NewVBox(c.playInBrowserButton, c.addToPlaylistButton), container.NewVBox(c.title, c.description)),
 		c.highlight,
 	))
 }
@@ -85,11 +87,11 @@ func (c *ThumbnailCard) Set(result scrapers.Result) {
 	}
 
 	c.thumbnail.Image = scaledThumbnail
-	c.heading.SetText(result.Title)
+	c.title.SetText(result.Title)
 	totalSeconds := int(result.Length.Round(time.Second).Seconds())
 	mins := totalSeconds / 60
 	secs := totalSeconds % 60
-	c.meta.SetText(fmt.Sprintf("[%02d:%02d] %s • %s", mins, secs, result.ChannelTitle, result.Stats))
+	c.description.SetText(fmt.Sprintf("[%02d:%02d] %s • %s", mins, secs, result.ChannelTitle, result.Stats))
 	c.result = result
 	c.Refresh()
 }

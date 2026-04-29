@@ -33,11 +33,10 @@ func RunApp(userContext *context.UserContext, postUICallback func()) {
 		container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage(userContext)),
 		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, container.NewStack(newPlaylistPage(userContext), newMusicPage(userContext))),
 	)
-
 	appTab.SetTabLocation(container.TabLocationLeading)
-	mainWindow.SetContent(appTab)
+	appTab.SelectIndex(1)
 
 	postUICallback()
-
+	mainWindow.SetContent(appTab)
 	mainWindow.ShowAndRun()
 }

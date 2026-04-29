@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"os"
 
-	"meowyplayer/ui/internal/widgets"
+	"meowyplayer/ui/internal/mwidget"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -33,7 +33,7 @@ func newPlaylistEditor() *PlaylistEditor {
 
 	// Cover.
 	v.cover = canvas.NewImageFromResource(theme.UploadIcon())
-	v.cover.SetMinSize(widgets.PlaylistCardSize)
+	v.cover.SetMinSize(mwidget.PlaylistCardSize)
 
 	// File picker.
 	upload := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
@@ -110,7 +110,7 @@ func (v *PlaylistEditor) setImage(path string) {
 	defer file.Close()
 
 	// Resize to reduce UI rendering time.
-	img, err := widgets.ScaleImageFromReader(file, widgets.PlaylistCardSize)
+	img, err := mwidget.ScaleImageFromReader(file, mwidget.PlaylistCardSize)
 	if err != nil {
 		slog.Error("failed to scale the image", "error", err)
 		return

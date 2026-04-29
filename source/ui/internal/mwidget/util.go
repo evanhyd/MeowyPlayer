@@ -1,4 +1,4 @@
-package widgets
+package mwidget
 
 import (
 	"bytes"

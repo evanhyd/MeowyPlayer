@@ -1,4 +1,4 @@
-package widgets
+package mwidget
 
 import (
 	"meowyplayer/storages"
@@ -16,40 +16,41 @@ var _ desktop.Hoverable = &PlaylistCard{}
 
 type PlaylistCard struct {
 	widget.BaseWidget
+	highlight *canvas.Rectangle
 	cover     *canvas.Image
 	title     *widget.Label
-	highlight *canvas.Rectangle
 	playlist  storages.Playlist
 	onTapped  func(playlist storages.Playlist)
 }
 
 func NewPlaylistCard(onTapped func(playlist storages.Playlist)) *PlaylistCard {
 	p := PlaylistCard{
+		highlight: canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
 		cover:     canvas.NewImageFromResource(nil),
 		title:     widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		highlight: canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
 		onTapped:  onTapped,
 	}
-	p.cover.SetMinSize(PlaylistCardSize)
-	p.title.Wrapping = fyne.TextWrapWord
+	p.highlight.CornerRadius = 8.0
 	p.highlight.Hide()
+	p.cover.SetMinSize(PlaylistCardSize)
+	p.cover.CornerRadius = 8.0
+	p.title.Wrapping = fyne.TextWrapWord
 	p.ExtendBaseWidget(&p)
 	return &p
 }
 
-func (p *PlaylistCard) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewStack(
-		container.NewBorder(nil, p.title, nil, nil, p.cover),
-		p.highlight,
-	))
+func (c *PlaylistCard) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewBorder(nil, c.title, nil, nil, container.NewStack(c.highlight, c.cover)))
 }
 
 func (p *PlaylistCard) MouseIn(*desktop.MouseEvent) {
+	p.cover.Translucency = 0.3
 	p.highlight.Show()
 	p.Refresh()
 }
 
 func (p *PlaylistCard) MouseOut() {
+	p.cover.Translucency = 0.0
 	p.highlight.Hide()
 	p.Refresh()
 }

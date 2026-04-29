@@ -10,8 +10,8 @@ import (
 	"meowyplayer/context"
 	"meowyplayer/scrapers"
 	"meowyplayer/storages"
-	"meowyplayer/ui/internal/layouts"
-	"meowyplayer/ui/internal/widgets"
+	"meowyplayer/ui/internal/mcontainer"
+	"meowyplayer/ui/internal/mwidget"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -25,7 +25,7 @@ type ExplorePage struct {
 	widget.BaseWidget
 	searchEntry    *widget.Entry
 	searchButton   *widget.Button
-	content        *widget.List
+	scrollList     *widget.List
 	searchResults  []scrapers.Result
 	searchEngine   scrapers.MusicSearcher
 	downloadEngine scrapers.MusicDownloader
@@ -50,15 +50,15 @@ func newExplorePage(userContext *context.UserContext) *ExplorePage {
 	p.searchButton.Importance = widget.LowImportance
 	p.searchButton.OnTapped = func() { go p.submitSearchQuery(p.searchEntry.Text) }
 
-	p.content = widget.NewList(
+	p.scrollList = widget.NewList(
 		func() int {
 			return len(p.searchResults)
 		},
 		func() fyne.CanvasObject {
-			return widgets.NewThumbnailCard(p.openInBrowserCallback, p.addToPlaylistCallback)
+			return mwidget.NewThumbnailCard(p.openInBrowserCallback, p.addToPlaylistCallback)
 		},
 		func(index widget.ListItemID, object fyne.CanvasObject) {
-			object.(*widgets.ThumbnailCard).Set(p.searchResults[index])
+			object.(*mwidget.ThumbnailCard).Set(p.searchResults[index])
 		},
 	)
 
@@ -149,8 +149,8 @@ func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
 
 func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
-		container.New(layouts.NewCenterLayout(0.62, 1), p.searchEntry), nil, nil, nil,
-		container.New(layouts.NewCenterLayout(0.8, 1), p.content)))
+		mcontainer.NewCenter(0.62, 1, p.searchEntry), nil, nil, nil,
+		mcontainer.NewCenter(0.8, 1, p.scrollList)))
 }
 
 func (p *ExplorePage) submitSearchQuery(query string) {
@@ -183,7 +183,7 @@ func (p *ExplorePage) submitSearchQuery(query string) {
 	p.searchResults = results
 
 	fyne.Do(func() {
-		p.content.ScrollToTop()
+		p.scrollList.ScrollToTop()
 		p.Refresh()
 	})
 }
