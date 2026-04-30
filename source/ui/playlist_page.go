@@ -5,6 +5,7 @@ import (
 	"meowyplayer/context"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
+	"meowyplayer/ui/internal/mutil"
 	"meowyplayer/ui/internal/mwidget"
 	"strings"
 
@@ -41,17 +42,20 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 	p.searchButton.Importance = widget.LowImportance
 	p.searchButton.OnTapped = func() { p.updateDisplayResults(p.searchEntry.Text) }
 	p.createPlaylistButton.Importance = widget.LowImportance
-	p.createPlaylistButton.OnTapped = p.createPlaylist
+	p.createPlaylistButton.OnTapped = p.showCreatePlaylistDialog
 
 	p.scrollList = widget.NewGridWrap(
 		func() int {
 			return len(p.displayResults)
 		},
 		func() fyne.CanvasObject {
-			return mwidget.NewPlaylistCard(func(playlist storages.Playlist) {
-				p.Hide()
-				p.userContext.ViewPlaylist(playlist)
-			})
+			return mwidget.NewPlaylistCard(
+				func(playlist storages.Playlist) {
+					p.Hide()
+					p.userContext.EnterPlaylist(playlist)
+				},
+				p.showEditingMenu,
+			)
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
 			object.(*mwidget.PlaylistCard).Set(p.displayResults[index])
@@ -62,11 +66,17 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 		p.fetchPlaylists()
 		p.Show()
 	})
+	p.userContext.AddListener(context.OnReturnBackFromPlaylistEvent, func(context.EventType, any) {
+		p.Show()
+	})
 	p.userContext.AddListener(context.OnCreatePlaylistEvent, func(context.EventType, any) {
 		p.fetchPlaylists()
 	})
-	p.userContext.AddListener(context.OnReturnBackFromPlaylistEvent, func(context.EventType, any) {
-		p.Show()
+	p.userContext.AddListener(context.OnUpdatePlaylistEvent, func(context.EventType, any) {
+		p.fetchPlaylists()
+	})
+	p.userContext.AddListener(context.OnDeletePlaylistEvent, func(context.EventType, any) {
+		p.fetchPlaylists()
 	})
 
 	p.ExtendBaseWidget(&p)
@@ -75,11 +85,55 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 
 func (p *PlaylistPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
-		container.NewStack(mcontainer.NewCenter(0.62, 1, p.searchEntry), container.NewBorder(nil, nil, nil, p.createPlaylistButton)),
-		nil, nil, nil, p.scrollList))
+		mcontainer.NewCenter(0.62, 1, container.NewBorder(nil, nil, nil, p.createPlaylistButton, p.searchEntry)),
+		nil,
+		nil,
+		nil,
+		p.scrollList))
 }
 
-func (p *PlaylistPage) createPlaylist() {
+func (p *PlaylistPage) showEditingMenu(playlist storages.Playlist, event *fyne.PointEvent) {
+	editMenu := fyne.NewMenuItemWithIcon(lang.L("Edit"), theme.DocumentCreateIcon(), func() {
+		p.showEditPlaylistDialog(playlist)
+	})
+	deleteMenu := fyne.NewMenuItemWithIcon(lang.L("Delete"), theme.DeleteIcon(), func() {
+		p.showDeletePlaylistDialog(playlist)
+	})
+	widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), fyne.CurrentApp().Driver().AllWindows()[0].Canvas(), event.AbsolutePosition)
+}
+
+func (p *PlaylistPage) showEditPlaylistDialog(playlist storages.Playlist) {
+	editor := newPlaylistEditorWithState(playlist.Title, fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob))
+	dialog.ShowCustomConfirm(lang.L("Edit Album"), lang.L("save"), lang.L("cancel"), editor,
+		func(confirm bool) {
+			if confirm {
+				playlist.Title, playlist.CoverBlob = editor.state()
+				if err := p.userContext.UpdatePlaylist(playlist); err != nil {
+					slog.Error("failed to update the playlist", "error", err)
+					return
+				}
+			}
+		},
+		fyne.CurrentApp().Driver().AllWindows()[0],
+	)
+}
+
+func (p *PlaylistPage) showDeletePlaylistDialog(playlist storages.Playlist) {
+	dialog.ShowCustomConfirm(lang.L("Delete Playlist Confirmation"), lang.L("delete"), lang.L("cancel"),
+		widget.NewLabel(lang.L("Do you want to delete the playlist: ")+playlist.Title),
+		func(confirm bool) {
+			if confirm {
+				if err := p.userContext.DeletePlaylist(playlist); err != nil {
+					slog.Error("failed to delete the playlist", "error", err)
+					return
+				}
+			}
+		},
+		fyne.CurrentApp().Driver().AllWindows()[0],
+	)
+}
+
+func (p *PlaylistPage) showCreatePlaylistDialog() {
 	editor := newPlaylistEditor()
 	dialog.ShowCustomConfirm(lang.L("Create Playlist"), lang.L("Create"), lang.L("Cancel"), editor,
 		func(confirm bool) {

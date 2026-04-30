@@ -2,7 +2,7 @@ package mwidget
 
 import (
 	"meowyplayer/storages"
-	"strconv"
+	"meowyplayer/ui/internal/mutil"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -16,19 +16,25 @@ var _ desktop.Hoverable = &PlaylistCard{}
 
 type PlaylistCard struct {
 	widget.BaseWidget
-	highlight *canvas.Rectangle
-	cover     *canvas.Image
-	title     *widget.Label
-	playlist  storages.Playlist
-	onTapped  func(playlist storages.Playlist)
+	highlight         *canvas.Rectangle
+	cover             *canvas.Image
+	title             *widget.Label
+	playlist          storages.Playlist
+	onTapped          func(playlist storages.Playlist)
+	onTappedSecondary func(playlist storages.Playlist, pointEvent *fyne.PointEvent)
 }
 
-func NewPlaylistCard(onTapped func(playlist storages.Playlist)) *PlaylistCard {
+func NewPlaylistCard(
+	onTapped func(playlist storages.Playlist),
+	onTappedSecondary func(playlist storages.Playlist, pointEvent *fyne.PointEvent),
+) *PlaylistCard {
+
 	p := PlaylistCard{
-		highlight: canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
-		cover:     canvas.NewImageFromResource(nil),
-		title:     widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		onTapped:  onTapped,
+		highlight:         canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
+		cover:             canvas.NewImageFromResource(nil),
+		title:             widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+		onTapped:          onTapped,
+		onTappedSecondary: onTappedSecondary,
 	}
 	p.highlight.CornerRadius = 8.0
 	p.highlight.Hide()
@@ -63,8 +69,12 @@ func (p *PlaylistCard) Tapped(*fyne.PointEvent) {
 	p.onTapped(p.playlist)
 }
 
+func (p *PlaylistCard) TappedSecondary(pointEvent *fyne.PointEvent) {
+	p.onTappedSecondary(p.playlist, pointEvent)
+}
+
 func (p *PlaylistCard) Set(playlist storages.Playlist) {
-	p.cover.Resource = fyne.NewStaticResource(strconv.FormatInt(playlist.PlaylistId, 16), playlist.CoverBlob)
+	p.cover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob)
 	p.title.SetText(playlist.Title)
 	p.playlist = playlist
 	p.Refresh()

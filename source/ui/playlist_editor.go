@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 
+	"meowyplayer/ui/internal/mutil"
 	"meowyplayer/ui/internal/mwidget"
 
 	"fyne.io/fyne/v2"
@@ -110,7 +111,7 @@ func (v *PlaylistEditor) setImage(path string) {
 	defer file.Close()
 
 	// Resize to reduce UI rendering time.
-	img, err := mwidget.ScaleImageFromReader(file, mwidget.PlaylistCardSize)
+	img, err := mutil.ScaleImageFromReader(file, mwidget.PlaylistCardSize)
 	if err != nil {
 		slog.Error("failed to scale the image", "error", err)
 		return

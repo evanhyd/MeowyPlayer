@@ -11,17 +11,19 @@ const (
 	OnReturnBackFromPlaylistEvent
 	OnCreatePlaylistEvent
 	OnAddMusicToPlaylistEvent
+	OnUpdatePlaylistEvent
+	OnDeletePlaylistEvent
 )
 
 type OnSetStorageEventData struct {
 	Storage storages.Storage
 }
 
-type OnViewPlaylistEventData struct {
+type OnEnterPlaylist struct {
 	Playlist storages.Playlist
 }
 
-type OnReturnBackFromPlaylistEventData struct {
+type OnExitPlaylist struct {
 }
 
 type OnCreatePlaylistEventData struct {
@@ -30,4 +32,11 @@ type OnCreatePlaylistEventData struct {
 
 type OnAddMusicToPlaylistEventData struct {
 	Playlist storages.Playlist
+}
+
+type OnUpdatePlaylistEventData struct {
+	Playlist storages.Playlist
+}
+
+type OnDeletePlaylistEventData struct {
 }

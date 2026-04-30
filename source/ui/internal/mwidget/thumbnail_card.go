@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"meowyplayer/scrapers"
+	"meowyplayer/ui/internal/mutil"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -80,7 +81,7 @@ func (b *ThumbnailCard) Tapped(*fyne.PointEvent) {
 
 func (c *ThumbnailCard) Set(result scrapers.Result) {
 	// Update thumbnail.
-	scaledThumbnail, err := ScaleImageFromBytes(result.Thumbnail, c.thumbnail.MinSize())
+	scaledThumbnail, err := mutil.ScaleImageFromBytes(result.Thumbnail, c.thumbnail.MinSize())
 	if err != nil {
 		slog.Error("failed to scale image", "error", err)
 		return

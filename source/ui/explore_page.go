@@ -55,7 +55,7 @@ func newExplorePage(userContext *context.UserContext) *ExplorePage {
 			return len(p.searchResults)
 		},
 		func() fyne.CanvasObject {
-			return mwidget.NewThumbnailCard(p.openInBrowserCallback, p.addToPlaylistCallback)
+			return mwidget.NewThumbnailCard(p.openInBrowser, p.showAddToPlaylistsDialog)
 		},
 		func(index widget.ListItemID, object fyne.CanvasObject) {
 			object.(*mwidget.ThumbnailCard).Set(p.searchResults[index])
@@ -66,7 +66,7 @@ func newExplorePage(userContext *context.UserContext) *ExplorePage {
 	return &p
 }
 
-func (p *ExplorePage) openInBrowserCallback(result scrapers.Result) {
+func (p *ExplorePage) openInBrowser(result scrapers.Result) {
 	switch result.Platform {
 	case storages.YouTubeSource:
 		url, err := url.Parse(fmt.Sprintf("https://www.youtube.com/watch?v=%v", result.ID))
@@ -85,7 +85,7 @@ func (p *ExplorePage) openInBrowserCallback(result scrapers.Result) {
 	}
 }
 
-func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
+func (p *ExplorePage) showAddToPlaylistsDialog(result scrapers.Result) {
 	playlists, err := p.userContext.Storage().GetAllPlaylists()
 	if err != nil {
 		slog.Error("failed to list the playlists", "error", err)
@@ -129,16 +129,10 @@ func (p *ExplorePage) addToPlaylistCallback(result scrapers.Result) {
 						}
 						musicFile.Close()
 
-						// Add music relation to DB.
-						err = p.userContext.Storage().CreateMusic(music)
+						// Add music relation to the storage.
+						err = p.userContext.AddMusic(playlists[i], music)
 						if err != nil {
-							slog.Error("failed to create the music", "error", err)
-							return
-						}
-
-						err = p.userContext.AddMusicToPlaylist(playlists[i], music.MusicId, music.Source)
-						if err != nil {
-							slog.Error("failed to add music to the playlist", "error", err)
+							slog.Error("failed to add music to playlist", "error", err)
 							return
 						}
 					}()

@@ -40,12 +40,16 @@ func (u *UserContext) SetStorage(storage storages.Storage) {
 	u.dispatcher.Dispatch(OnSetStorageEvent, OnSetStorageEventData{Storage: u.storage})
 }
 
-func (u *UserContext) ViewPlaylist(playlist storages.Playlist) {
-	u.dispatcher.Dispatch(OnViewPlaylistEvent, OnViewPlaylistEventData{Playlist: playlist})
+/*
+Helpers to update the storage and the UI.
+*/
+
+func (u *UserContext) EnterPlaylist(playlist storages.Playlist) {
+	u.dispatcher.Dispatch(OnViewPlaylistEvent, OnEnterPlaylist{Playlist: playlist})
 }
 
-func (u *UserContext) ReturnBackFromPlaylist() {
-	u.dispatcher.Dispatch(OnReturnBackFromPlaylistEvent, OnReturnBackFromPlaylistEventData{})
+func (u *UserContext) ExitPlaylist() {
+	u.dispatcher.Dispatch(OnReturnBackFromPlaylistEvent, OnExitPlaylist{})
 }
 
 func (u *UserContext) CreatePlaylist(title string, coverBlob []byte) error {
@@ -57,11 +61,32 @@ func (u *UserContext) CreatePlaylist(title string, coverBlob []byte) error {
 	return nil
 }
 
-func (u *UserContext) AddMusicToPlaylist(playlist storages.Playlist, musicID string, source storages.MusicSource) error {
-	err := u.storage.AddMusicToPlaylist(playlist.PlaylistId, musicID, source)
+func (u *UserContext) AddMusic(playlist storages.Playlist, music storages.Music) error {
+	err := u.storage.CreateMusic(music)
 	if err != nil {
 		return err
 	}
+	err = u.storage.AddMusicToPlaylist(playlist.PlaylistId, music.MusicId, music.Source)
+	if err != nil {
+		return err
+	}
+
 	u.dispatcher.Dispatch(OnAddMusicToPlaylistEvent, OnAddMusicToPlaylistEventData{Playlist: playlist})
+	return nil
+}
+
+func (u *UserContext) UpdatePlaylist(playlist storages.Playlist) error {
+	if err := u.storage.UpdatePlaylist(playlist); err != nil {
+		return err
+	}
+	u.dispatcher.Dispatch(OnUpdatePlaylistEvent, OnUpdatePlaylistEventData{Playlist: playlist})
+	return nil
+}
+
+func (u *UserContext) DeletePlaylist(playlist storages.Playlist) error {
+	if err := u.storage.DeletePlaylist(playlist.PlaylistId); err != nil {
+		return err
+	}
+	u.dispatcher.Dispatch(OnDeletePlaylistEvent, OnDeletePlaylistEventData{})
 	return nil
 }

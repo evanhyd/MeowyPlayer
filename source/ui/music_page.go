@@ -6,8 +6,8 @@ import (
 	"meowyplayer/context"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
+	"meowyplayer/ui/internal/mutil"
 	"meowyplayer/ui/internal/mwidget"
-	"strconv"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -59,7 +59,7 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 	p.searchButton.Importance = widget.LowImportance
 	p.searchButton.OnTapped = func() { p.updateDisplayResults(p.searchEntry.Text) }
 	p.backButton.Importance = widget.LowImportance
-	p.backButton.OnTapped = p.userContext.ReturnBackFromPlaylist
+	p.backButton.OnTapped = p.userContext.ExitPlaylist
 	p.playlistCover.CornerRadius = 8.0
 
 	p.scrollList = widget.NewList(
@@ -77,7 +77,7 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 	)
 
 	p.userContext.AddListener(context.OnViewPlaylistEvent, func(_ context.EventType, data any) {
-		p.fetchMusic(data.(context.OnViewPlaylistEventData).Playlist)
+		p.fetchMusic(data.(context.OnEnterPlaylist).Playlist)
 		p.Show()
 	})
 
@@ -116,14 +116,14 @@ func (p *MusicPage) fetchMusic(playlist storages.Playlist) {
 	p.playlist = playlist
 
 	var err error
-	p.background.Image, err = mwidget.ScaleImageFromBytes(playlist.CoverBlob, fyne.NewSize(8, 8))
+	p.background.Image, err = mutil.ScaleImageFromBytes(playlist.CoverBlob, fyne.NewSize(8, 8))
 	if err != nil {
 		slog.Error("failed to blur images", "error", err)
 		return
 	}
 	p.background.Translucency = 0.8
 	p.background.Refresh()
-	p.playlistCover.Resource = fyne.NewStaticResource(strconv.FormatInt(playlist.PlaylistId, 16), p.playlist.CoverBlob)
+	p.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), p.playlist.CoverBlob)
 	p.playlistCover.Refresh()
 	p.playlistTitle.SetText(playlist.Title)
 	p.playlistDescription.SetText("Description")

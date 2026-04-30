@@ -1,4 +1,4 @@
-package mwidget
+package mutil
 
 import (
 	"bytes"
