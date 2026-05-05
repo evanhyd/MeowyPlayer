@@ -19,28 +19,28 @@ import (
 
 type PlaylistPage struct {
 	widget.BaseWidget
+	userContext          *context.UserContext
+	queryResults         []storages.Playlist
+	displayResults       []storages.Playlist
 	searchEntry          *widget.Entry
 	searchButton         *widget.Button
 	scrollList           *widget.GridWrap
 	createPlaylistButton *widget.Button
-	queryResults         []storages.Playlist
-	displayResults       []storages.Playlist
-	userContext          *context.UserContext
 }
 
 func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 	p := PlaylistPage{
+		userContext:          userContext,
 		searchEntry:          widget.NewEntry(),
 		searchButton:         widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
 		createPlaylistButton: widget.NewButtonWithIcon(lang.L("Create Playlist"), theme.FolderNewIcon(), nil),
-		userContext:          userContext,
 	}
 
 	p.searchEntry.ActionItem = p.searchButton
 	p.searchEntry.SetPlaceHolder(lang.L("Search songs, videos, or artists"))
-	p.searchEntry.OnChanged = p.updateDisplayResults
+	p.searchEntry.OnChanged = p.filterResults
 	p.searchButton.Importance = widget.LowImportance
-	p.searchButton.OnTapped = func() { p.updateDisplayResults(p.searchEntry.Text) }
+	p.searchButton.OnTapped = func() { p.filterResults(p.searchEntry.Text) }
 	p.createPlaylistButton.Importance = widget.LowImportance
 	p.createPlaylistButton.OnTapped = p.showCreatePlaylistDialog
 
@@ -149,21 +149,21 @@ func (p *PlaylistPage) showCreatePlaylistDialog() {
 
 func (p *PlaylistPage) fetchPlaylists() {
 	var err error
-	p.queryResults, err = p.userContext.Storage().GetAllPlaylists()
+	p.queryResults, err = p.userContext.Storage().GetAllSortedPlaylists()
 	if err != nil {
 		slog.Error("failed to query playlists", "error", err)
 		return
 	}
-	p.updateDisplayResults(p.searchEntry.Text)
+	p.filterResults(p.searchEntry.Text)
 }
 
-func (p *PlaylistPage) updateDisplayResults(title string) {
+func (p *PlaylistPage) filterResults(title string) {
 	// Filter by title.
 	title = strings.ToLower(title)
 	p.displayResults = p.displayResults[:0]
-	for _, playlist := range p.queryResults {
-		if strings.Contains(strings.ToLower(playlist.Title), title) {
-			p.displayResults = append(p.displayResults, playlist)
+	for i := range p.queryResults {
+		if strings.Contains(strings.ToLower(p.queryResults[i].Title), title) {
+			p.displayResults = append(p.displayResults, p.queryResults[i])
 		}
 	}
 

@@ -10,7 +10,7 @@ type Storage interface {
 	UpdatePlaylist(playlist Playlist) error
 	DeletePlaylist(playlistID int64) error
 	GetPlaylist(playlistID int64) (Playlist, error)
-	GetAllPlaylists() ([]Playlist, error)
+	GetAllSortedPlaylists() ([]Playlist, error) // By date
 
 	// Music
 	CreateMusic(music Music) error
@@ -22,7 +22,7 @@ type Storage interface {
 	// Playlist - Music association
 	AddMusicToPlaylist(playlistID int64, musicID string, source MusicSource) error
 	RemoveMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error
-	GetAllMusicFromPlaylist(playlistID int64) ([]Music, error)
+	GetAllSortedMusicFromPlaylist(playlistID int64) ([]Music, error) // By date
 
 	// Filesystem manipulation. Does NOT affect the DB table.
 	CreateOrUpdateMusicFile(music Music, content io.Reader) error

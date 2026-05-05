@@ -37,6 +37,6 @@ func RunApp(userContext *context.UserContext, postUICallback func()) {
 	appTab.SelectIndex(1)
 
 	postUICallback()
-	mainWindow.SetContent(container.NewBorder(nil, newMusicController(), nil, nil, appTab))
+	mainWindow.SetContent(container.NewBorder(nil, newMusicController(userContext), nil, nil, appTab))
 	mainWindow.ShowAndRun()
 }

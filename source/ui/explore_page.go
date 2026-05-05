@@ -23,25 +23,25 @@ import (
 
 type ExplorePage struct {
 	widget.BaseWidget
-	searchEntry    *widget.Entry
-	searchButton   *widget.Button
-	scrollList     *widget.List
-	searchResults  []scrapers.Result
+	userContext    *context.UserContext
 	searchEngine   scrapers.MusicSearcher
+	searchResults  []scrapers.Result
+	cancelSearch   stdcontext.CancelFunc
+	searchMutex    sync.Mutex
 	downloadEngine scrapers.MusicDownloader
 
-	userContext  *context.UserContext
-	cancelSearch stdcontext.CancelFunc
-	searchMutex  sync.Mutex
+	searchEntry  *widget.Entry
+	searchButton *widget.Button
+	scrollList   *widget.List
 }
 
 func newExplorePage(userContext *context.UserContext) *ExplorePage {
 	p := ExplorePage{
-		searchEntry:    widget.NewEntry(),
-		searchButton:   widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
+		userContext:    userContext,
 		searchEngine:   scrapers.NewInvidiousSearcher(),
 		downloadEngine: scrapers.NewCnvmp3Downloader(),
-		userContext:    userContext,
+		searchEntry:    widget.NewEntry(),
+		searchButton:   widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
 	}
 
 	p.searchEntry.ActionItem = p.searchButton
@@ -86,15 +86,15 @@ func (p *ExplorePage) openInBrowser(result scrapers.Result) {
 }
 
 func (p *ExplorePage) showAddToPlaylistsDialog(result scrapers.Result) {
-	playlists, err := p.userContext.Storage().GetAllPlaylists()
+	playlists, err := p.userContext.Storage().GetAllSortedPlaylists()
 	if err != nil {
 		slog.Error("failed to list the playlists", "error", err)
 		return
 	}
 
 	options := make([]string, 0, len(playlists))
-	for _, playlist := range playlists {
-		options = append(options, playlist.Title)
+	for i := range playlists {
+		options = append(options, playlists[i].Title)
 	}
 	selects := widget.NewSelect(options, nil)
 	selects.PlaceHolder = lang.L("Select a playlist")

@@ -34,16 +34,16 @@ func testSearch(t *testing.T, s MusicSearcher, query string) []Result {
 func TestInvidiousSearcher(t *testing.T) {
 	searcher := NewInvidiousSearcher()
 
-	tests := []string{
+	titles := []string{
 		"chicken nugget",
 		"renai circulation",
 		"lofi hip hop",
 	}
 
-	for _, q := range tests {
-		t.Run(q, func(t *testing.T) {
-			results := testSearch(t, searcher, q)
-			t.Logf("Fetched %d results for %q", len(results), q)
+	for i := range titles {
+		t.Run(titles[i], func(t *testing.T) {
+			results := testSearch(t, searcher, titles[i])
+			t.Logf("Fetched %d results for %q", len(results), titles[i])
 		})
 	}
 }

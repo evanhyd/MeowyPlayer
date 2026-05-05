@@ -89,10 +89,8 @@ func (c *ThumbnailCard) Set(result scrapers.Result) {
 
 	c.thumbnail.Image = scaledThumbnail
 	c.title.SetText(result.Title)
-	totalSeconds := int(result.Length.Round(time.Second).Seconds())
-	mins := totalSeconds / 60
-	secs := totalSeconds % 60
-	c.description.SetText(fmt.Sprintf("[%02d:%02d] %s • %s", mins, secs, result.ChannelTitle, result.Stats))
+	seconds := int64(result.Length.Round(time.Second).Seconds())
+	c.description.SetText(fmt.Sprintf("[%s] %s • %s", mutil.SecondsToTime(seconds), result.ChannelTitle, result.Stats))
 	c.result = result
 	c.Refresh()
 }

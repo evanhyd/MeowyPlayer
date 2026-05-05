@@ -14,7 +14,8 @@ type Logger struct {
 func InitializeGlobalLogger(logFilePath string) Logger {
 	file, err := os.OpenFile(logFilePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
-		log.Panic(err)
+		file = os.Stdout
+		log.Println(err)
 	}
 	handler := slog.NewJSONHandler(file, &slog.HandlerOptions{AddSource: true})
 	logger := slog.New(handler)

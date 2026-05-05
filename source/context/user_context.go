@@ -90,3 +90,8 @@ func (u *UserContext) DeletePlaylist(playlist storages.Playlist) error {
 	u.dispatcher.Dispatch(OnDeletePlaylistEvent, OnDeletePlaylistEventData{})
 	return nil
 }
+
+func (u *UserContext) PlayPlaylist(playlist storages.Playlist, selectedMusic storages.Music) error {
+	u.dispatcher.Dispatch(OnPlayPlaylistEvent, OnPlayPlaylistEventData{Playlist: playlist, SelectedMusic: selectedMusic})
+	return nil
+}

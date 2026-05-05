@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -40,18 +40,22 @@ func NewSQLiteStorage(dbPath string, musicFilePath string, user User) *SQLiteSto
 	var err error
 	storage.db, err = sql.Open("sqlite", dbPath)
 	if err != nil {
-		log.Fatalf("failed to open SQLite database: %v", err)
+		slog.Error("failed to open SQLite database", "error", err)
+		return nil
 	}
 	if _, err := storage.db.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		log.Fatalf("failed to enable foreign keys: %v", err)
+		slog.Error("failed to enable foreign keys", "error", err)
+		return nil
 	}
 	if _, err := storage.db.Exec(schemaSQL); err != nil {
-		log.Fatalf("failed to create schema: %v", err)
+		slog.Error("failed to create schema", "error", err)
+		return nil
 	}
 
 	// Create music file directory.
 	if err := os.MkdirAll(musicFilePath, 0700); err != nil {
-		log.Fatalf("failed to create music file directory: %v", err)
+		slog.Error("failed to create music file directory", "error", err)
+		return nil
 	}
 	return storage
 }
@@ -108,10 +112,11 @@ func (s *SQLiteStorage) GetPlaylist(playlistID int64) (Playlist, error) {
 	return p, err
 }
 
-func (s *SQLiteStorage) GetAllPlaylists() ([]Playlist, error) {
+func (s *SQLiteStorage) GetAllSortedPlaylists() ([]Playlist, error) {
 	rows, err := s.db.Query(
 		`SELECT playlist_id, title, modified_date, cover_blob
-		FROM playlists WHERE user_id = ?`,
+		FROM playlists WHERE user_id = ?
+		ORDER BY modified_date DESC`,
 		s.user.UserId,
 	)
 	if err != nil {
@@ -254,12 +259,13 @@ func (s *SQLiteStorage) RemoveMusicFromPlaylist(playlistID int64, musicID string
 	return tx.Commit()
 }
 
-func (s *SQLiteStorage) GetAllMusicFromPlaylist(playlistID int64) ([]Music, error) {
+func (s *SQLiteStorage) GetAllSortedMusicFromPlaylist(playlistID int64) ([]Music, error) {
 	rows, err := s.db.Query(
 		`SELECT m.music_id, m.source, m.title, m.length_seconds
 		FROM music m
 		JOIN playlist_music pm ON m.music_id = pm.music_id AND m.source = pm.source
-		WHERE pm.user_id = ? AND pm.playlist_id = ?`,
+		WHERE pm.user_id = ? AND pm.playlist_id = ?
+		ORDER BY pm.added_at ASC`,
 		s.user.UserId, playlistID,
 	)
 	if err != nil {

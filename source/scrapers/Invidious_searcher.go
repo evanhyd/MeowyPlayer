@@ -58,9 +58,9 @@ func (s *invidiousSearcher) Search(ctx context.Context, title string) ([]Result,
 
 	// Filter out any accidental channels or playlists that might slip into the search
 	var videoItems []invSearchItem
-	for _, item := range items {
-		if item.Type == "video" {
-			videoItems = append(videoItems, item)
+	for i := range items {
+		if items[i].Type == "video" {
+			videoItems = append(videoItems, items[i])
 		}
 	}
 

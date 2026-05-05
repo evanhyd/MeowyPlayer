@@ -1,8 +1,8 @@
 package mwidget
 
 import (
-	"fmt"
 	"meowyplayer/storages"
+	"meowyplayer/ui/internal/mutil"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -65,9 +65,7 @@ func (c *MusicCard) Tapped(*fyne.PointEvent) {
 
 func (c *MusicCard) Set(music storages.Music) {
 	c.title.SetText(music.Title)
-	mins := music.LengthSeconds / 60
-	secs := music.LengthSeconds % 60
-	c.description.SetText(fmt.Sprintf("%02d:%02d", mins, secs))
+	c.description.SetText(mutil.SecondsToTime(music.LengthSeconds))
 	c.music = music
 	c.Refresh()
 }

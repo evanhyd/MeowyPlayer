@@ -58,7 +58,7 @@ func TestPlaylistCRUD(t *testing.T) {
 	}
 
 	// GetAll
-	list, err := storage.GetAllPlaylists()
+	list, err := storage.GetAllSortedPlaylists()
 	if err != nil {
 		t.Fatalf("GetAllPlaylists failed: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestPlaylistMusic(t *testing.T) {
 	}
 
 	// List music -> GetAll
-	list, err := storage.GetAllMusicFromPlaylist(p.PlaylistId)
+	list, err := storage.GetAllSortedMusicFromPlaylist(p.PlaylistId)
 	if err != nil {
 		t.Fatalf("GetAllMusicFromPlaylist failed: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestPlaylistMusic(t *testing.T) {
 	if err := storage.RemoveMusicFromPlaylist(p.PlaylistId, m.MusicId, m.Source); err != nil {
 		t.Fatalf("RemoveMusicFromPlaylist failed: %v", err)
 	}
-	list, _ = storage.GetAllMusicFromPlaylist(p.PlaylistId)
+	list, _ = storage.GetAllSortedMusicFromPlaylist(p.PlaylistId)
 	if len(list) != 0 {
 		t.Errorf("expected 0 music after removal, got %d", len(list))
 	}
@@ -179,7 +179,7 @@ func TestPlaylistMusic(t *testing.T) {
 	}
 
 	// Edge case: list music in invalid playlist -> GetAll
-	music, err := storage.GetAllMusicFromPlaylist(9999)
+	music, err := storage.GetAllSortedMusicFromPlaylist(9999)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}
@@ -217,7 +217,7 @@ func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
 	}
 
 	// Verify they exist -> GetAll
-	list, err := storage.GetAllMusicFromPlaylist(p.PlaylistId)
+	list, err := storage.GetAllSortedMusicFromPlaylist(p.PlaylistId)
 	if err != nil {
 		t.Fatalf("GetAllMusicFromPlaylist failed: %v", err)
 	}

@@ -12,8 +12,8 @@ func (e *EventsDispatcher) AddListener(event EventType, listener EventListener) 
 	e.listeners[event] = append(e.listeners[event], listener)
 }
 
-func (e *EventsDispatcher) Dispatch(event EventType, value any) {
+func (e *EventsDispatcher) Dispatch(event EventType, eventData any) {
 	for _, listener := range e.listeners[event] {
-		listener(event, value)
+		listener(event, eventData)
 	}
 }
