@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"image/color"
 	"log/slog"
 	"meowyplayer/context"
@@ -9,10 +10,12 @@ import (
 	"meowyplayer/ui/internal/mutil"
 	"meowyplayer/ui/internal/mwidget"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
@@ -47,30 +50,40 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 		backButton:          widget.NewButtonWithIcon(lang.L("Back"), theme.NavigateBackIcon(), nil),
 		playlistCover:       canvas.NewImageFromResource(nil),
 		playlistTitle:       widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		playlistDescription: widget.NewLabel(""),
+		playlistDescription: widget.NewLabelWithStyle("", fyne.TextAlignCenter, fyne.TextStyle{}),
 	}
 
 	p.background.ScaleMode = canvas.ImageScaleFastest
+
 	p.searchEntry.ActionItem = p.searchButton
 	p.searchEntry.SetPlaceHolder(lang.L("Search songs, videos, or artists"))
 	p.searchEntry.OnChanged = p.filterResults
+
 	p.searchButton.Importance = widget.LowImportance
 	p.searchButton.OnTapped = func() { p.filterResults(p.searchEntry.Text) }
+
 	p.backButton.Importance = widget.LowImportance
 	p.backButton.OnTapped = p.userContext.ExitPlaylist
+
 	p.playlistCover.CornerRadius = 8.0
 	p.playlistCover.SetMinSize(mwidget.PlaylistCardSize)
 	p.playlistCover.FillMode = canvas.ImageFillContain
 	p.playlistCover.ScaleMode = canvas.ImageScaleFastest
+
+	p.playlistTitle.Truncation = fyne.TextTruncateEllipsis
+	p.playlistDescription.Truncation = fyne.TextTruncateEllipsis
 
 	p.scrollList = widget.NewList(
 		func() int {
 			return len(p.displayResults)
 		},
 		func() fyne.CanvasObject {
-			return mwidget.NewMusicCard(func(music storages.Music) {
-				p.userContext.PlayPlaylist(p.playlist, music)
-			})
+			return mwidget.NewMusicCard(
+				func(music storages.Music) {
+					p.userContext.PlayPlaylist(p.playlist, music)
+				},
+				p.showEditingMenu,
+			)
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
 			object.(*mwidget.MusicCard).Set(p.displayResults[index])
@@ -97,6 +110,10 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 		}
 	})
 
+	p.userContext.AddListener(context.OnDeleteMusicEvent, func(_ context.EventType, data any) {
+		p.fetchMusic(p.playlist)
+	})
+
 	p.ExtendBaseWidget(&p)
 	return &p
 }
@@ -120,6 +137,52 @@ func (p *MusicPage) CreateRenderer() fyne.WidgetRenderer {
 	))
 }
 
+func (p *MusicPage) showEditingMenu(music storages.Music, event *fyne.PointEvent) {
+	editMenu := fyne.NewMenuItemWithIcon(lang.L("Details"), theme.DocumentCreateIcon(), func() {
+		p.showDetailDialog(music)
+	})
+	deleteMenu := fyne.NewMenuItemWithIcon(lang.L("Delete"), theme.DeleteIcon(), func() {
+		p.showDeleteMusicDialog(music)
+	})
+	widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), fyne.CurrentApp().Driver().AllWindows()[0].Canvas(), event.AbsolutePosition)
+}
+
+func (p *MusicPage) showDetailDialog(music storages.Music) {
+	dialog.ShowInformation(lang.L("Music Detail"),
+		fmt.Sprintf("%v: %v\nID: %v\n%v: %v\n%v: %v",
+			lang.L("Title"), music.Title,
+			music.MusicId,
+			lang.L("Platform"), func() string {
+				switch music.Source {
+				case storages.UnknownSource:
+					return "Unknown"
+				case storages.YouTubeSource:
+					return "YouTube"
+				case storages.SpotifySource:
+					return "Spotify"
+				default:
+					return "Error"
+				}
+			}(),
+			lang.L("Duration"), mutil.SecondsToTime(music.LengthSeconds),
+		), fyne.CurrentApp().Driver().AllWindows()[0])
+}
+
+func (p *MusicPage) showDeleteMusicDialog(music storages.Music) {
+	dialog.ShowCustomConfirm(lang.L("Delete Music Confirmation"), lang.L("delete"), lang.L("cancel"),
+		widget.NewLabel(lang.L("Do you want to delete ")+music.Title+" from the playlist"),
+		func(confirm bool) {
+			if confirm {
+				if err := p.userContext.DeleteMusicFromPlaylist(p.playlist, music); err != nil {
+					slog.Error("failed to delete the music from the playlist", "error", err)
+					return
+				}
+			}
+		},
+		fyne.CurrentApp().Driver().AllWindows()[0],
+	)
+}
+
 func (p *MusicPage) fetchMusic(playlist storages.Playlist) {
 	p.playlist = playlist
 
@@ -134,13 +197,24 @@ func (p *MusicPage) fetchMusic(playlist storages.Playlist) {
 	p.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob)
 	p.playlistCover.Refresh()
 	p.playlistTitle.SetText(playlist.Title)
-	p.playlistDescription.SetText("Description")
 
 	p.queryResults, err = p.userContext.Storage().GetAllSortedMusicFromPlaylist(p.playlist.PlaylistId)
 	if err != nil {
 		slog.Error("failed to query music in playlist", "error", err)
 		return
 	}
+
+	var totalSeconds int64
+	for i := range p.queryResults {
+		totalSeconds += p.queryResults[i].LengthSeconds
+	}
+
+	p.playlistDescription.SetText(
+		fmt.Sprintf("%v %v - %v %v\n%v: %v",
+			len(p.queryResults), lang.L("songs"), mutil.SecondsToTime(totalSeconds), lang.L("minutes"),
+			lang.L("Modified"), time.Unix(0, playlist.ModifiedDate).Format(time.DateTime),
+		))
+
 	p.filterResults(p.searchEntry.Text)
 }
 

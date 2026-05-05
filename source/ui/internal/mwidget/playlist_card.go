@@ -21,12 +21,12 @@ type PlaylistCard struct {
 	title             *widget.Label
 	playlist          storages.Playlist
 	onTapped          func(playlist storages.Playlist)
-	onTappedSecondary func(playlist storages.Playlist, pointEvent *fyne.PointEvent)
+	onTappedSecondary func(playlist storages.Playlist, event *fyne.PointEvent)
 }
 
 func NewPlaylistCard(
 	onTapped func(playlist storages.Playlist),
-	onTappedSecondary func(playlist storages.Playlist, pointEvent *fyne.PointEvent),
+	onTappedSecondary func(playlist storages.Playlist, event *fyne.PointEvent),
 ) *PlaylistCard {
 
 	p := PlaylistCard{
@@ -69,8 +69,8 @@ func (p *PlaylistCard) Tapped(*fyne.PointEvent) {
 	p.onTapped(p.playlist)
 }
 
-func (p *PlaylistCard) TappedSecondary(pointEvent *fyne.PointEvent) {
-	p.onTappedSecondary(p.playlist, pointEvent)
+func (p *PlaylistCard) TappedSecondary(event *fyne.PointEvent) {
+	p.onTappedSecondary(p.playlist, event)
 }
 
 func (p *PlaylistCard) Set(playlist storages.Playlist) {

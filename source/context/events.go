@@ -14,6 +14,7 @@ const (
 	OnUpdatePlaylistEvent
 	OnDeletePlaylistEvent
 	OnPlayPlaylistEvent
+	OnDeleteMusicEvent
 )
 
 type OnSetStorageEventData struct {
@@ -45,4 +46,8 @@ type OnDeletePlaylistEventData struct {
 type OnPlayPlaylistEventData struct {
 	Playlist      storages.Playlist
 	SelectedMusic storages.Music
+}
+
+type OnDeleteMusicEventData struct {
+	Playlist storages.Playlist
 }

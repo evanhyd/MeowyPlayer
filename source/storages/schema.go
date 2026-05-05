@@ -1,5 +1,7 @@
 package storages
 
+import "strings"
+
 type MusicSource int64
 
 const (
@@ -47,4 +49,18 @@ type PlaylistMusic struct {
 	MusicId    string
 	Source     MusicSource
 	AddedAt    int64 // Unix nano
+}
+
+func ComparePlaylist(l Playlist, r Playlist) int {
+	if l.UserId != r.UserId {
+		return int(l.UserId) - int(r.UserId)
+	}
+	return int(l.PlaylistId) - int(r.PlaylistId)
+}
+
+func CompareMusic(l Music, r Music) int {
+	if l.MusicId != r.MusicId {
+		return strings.Compare(l.MusicId, r.MusicId)
+	}
+	return int(l.Source) - int(r.Source)
 }

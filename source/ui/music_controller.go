@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"meowyplayer/context"
 	"meowyplayer/players"
 	"meowyplayer/storages"
@@ -45,7 +46,7 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 		musicPlayer:   players.MakeBeepPlayer(userContext),
 		playlistCover: canvas.NewImageFromResource(resourceIconPng),
 		title: widget.NewRichText(&widget.TextSegment{
-			Style: widget.RichTextStyle{SizeName: theme.SizeNameHeadingText, TextStyle: fyne.TextStyle{Bold: true}},
+			Style: widget.RichTextStyle{SizeName: theme.SizeNameSubHeadingText, TextStyle: fyne.TextStyle{Bold: true}},
 		}),
 		durationLabel:  widget.NewLabel("00:00"),
 		modeDropDown:   mwidget.NewDropDown(),
@@ -93,9 +94,11 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 		for range ticker.C {
 			progress := c.musicPlayer.GetProgress()
 			music := c.musicPlayer.GetMusic()
-			remainDuration := music.LengthSeconds - int64(float64(music.LengthSeconds)*progress)
+			playedDuration := int64(float64(music.LengthSeconds) * progress)
 			fyne.DoAndWait(func() {
-				c.durationLabel.SetText(mutil.SecondsToTime(remainDuration))
+				c.title.Segments[0].(*widget.TextSegment).Text = music.Title
+				c.title.Refresh()
+				c.durationLabel.SetText(fmt.Sprintf("%s / %s", mutil.SecondsToTime(playedDuration), mutil.SecondsToTime(music.LengthSeconds)))
 				c.progressSlider.SetValue(progress)
 			})
 		}

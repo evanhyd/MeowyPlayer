@@ -16,19 +16,24 @@ var _ desktop.Hoverable = &MusicCard{}
 
 type MusicCard struct {
 	widget.BaseWidget
-	highlight   *canvas.Rectangle
-	title       *widget.Label
-	description *widget.Label
-	music       storages.Music
-	onTapped    func(playlist storages.Music)
+	highlight         *canvas.Rectangle
+	title             *widget.Label
+	description       *widget.Label
+	music             storages.Music
+	onTapped          func(playlist storages.Music)
+	onTappedSecondary func(playlist storages.Music, event *fyne.PointEvent)
 }
 
-func NewMusicCard(onTapped func(music storages.Music)) *MusicCard {
+func NewMusicCard(
+	onTapped func(music storages.Music),
+	onTappedSecondary func(music storages.Music, event *fyne.PointEvent),
+) *MusicCard {
 	c := MusicCard{
-		highlight:   canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
-		title:       widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		description: widget.NewLabel(""),
-		onTapped:    onTapped,
+		highlight:         canvas.NewRectangle(theme.Color(theme.ColorNameHover)),
+		title:             widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		description:       widget.NewLabel(""),
+		onTapped:          onTapped,
+		onTappedSecondary: onTappedSecondary,
 	}
 	c.highlight.Hide()
 	c.highlight.CornerRadius = 8.0
@@ -61,6 +66,10 @@ func (c *MusicCard) MouseMoved(*desktop.MouseEvent) {
 
 func (c *MusicCard) Tapped(*fyne.PointEvent) {
 	c.onTapped(c.music)
+}
+
+func (c *MusicCard) TappedSecondary(event *fyne.PointEvent) {
+	c.onTappedSecondary(c.music, event)
 }
 
 func (c *MusicCard) Set(music storages.Music) {
