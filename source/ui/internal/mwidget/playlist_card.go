@@ -40,7 +40,8 @@ func NewPlaylistCard(
 	p.highlight.Hide()
 	p.cover.SetMinSize(PlaylistCardSize)
 	p.cover.CornerRadius = 8.0
-	p.title.Wrapping = fyne.TextWrapWord
+	p.cover.FillMode = canvas.ImageFillCover
+	p.title.Truncation = fyne.TextTruncateEllipsis
 	p.ExtendBaseWidget(&p)
 	return &p
 }
