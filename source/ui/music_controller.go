@@ -1,9 +1,12 @@
 package ui
 
 import (
+	stdcontext "context"
 	"fmt"
+	"log/slog"
 	"meowyplayer/context"
 	"meowyplayer/players"
+	"meowyplayer/scrapers"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
 	"meowyplayer/ui/internal/mutil"
@@ -13,6 +16,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -34,7 +38,7 @@ type MusicController struct {
 	durationLabel  *widget.Label
 	modeDropDown   *mwidget.DropDown
 	skipPrevButton *widget.Button
-	playButton     *mwidget.MultiButton
+	playButton     *widget.Button
 	skipNextButton *widget.Button
 	volumeSlider   *widget.Slider
 }
@@ -43,7 +47,7 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 	var c MusicController
 	c = MusicController{
 		userContext:   userContext,
-		musicPlayer:   players.MakeBeepPlayer(userContext),
+		musicPlayer:   players.MakeBeepPlayer(userContext, c.downloadMusic),
 		playlistCover: canvas.NewImageFromResource(resourceIconPng),
 		title: widget.NewRichText(&widget.TextSegment{
 			Style: widget.RichTextStyle{SizeName: theme.SizeNameSubHeadingText, TextStyle: fyne.TextStyle{Bold: true}},
@@ -51,7 +55,7 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 		durationLabel:  widget.NewLabel("00:00"),
 		modeDropDown:   mwidget.NewDropDown(),
 		skipPrevButton: widget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), nil),
-		playButton:     mwidget.NewMultiButton(),
+		playButton:     widget.NewButtonWithIcon("", theme.MediaRecordIcon(), nil),
 		skipNextButton: widget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), nil),
 		volumeSlider:   widget.NewSlider(0.0, 1.0),
 	}
@@ -71,9 +75,13 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 	c.skipPrevButton.OnTapped = c.musicPlayer.Previous
 
 	c.playButton.Importance = widget.LowImportance
-	c.playButton.Add(theme.MediaPlayIcon(), c.musicPlayer.Pause)
-	c.playButton.Add(theme.MediaPauseIcon(), c.musicPlayer.Resume)
-	c.playButton.Select(0)
+	c.playButton.OnTapped = func() {
+		if c.musicPlayer.IsPlaying() {
+			c.musicPlayer.Pause()
+		} else {
+			c.musicPlayer.Resume()
+		}
+	}
 
 	c.skipNextButton.Importance = widget.LowImportance
 	c.skipNextButton.OnTapped = c.musicPlayer.Next
@@ -84,8 +92,8 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 	// Some music player initialization.
 	c.volumeSlider.SetValue(0.7)
 
-	c.userContext.AddListener(context.OnPlayPlaylistEvent, func(_ context.EventType, data any) {
-		c.fetchMusic(data.(context.OnPlayPlaylistEventData).Playlist, data.(context.OnPlayPlaylistEventData).SelectedMusic)
+	c.userContext.AddListener(context.OnPlayMusicEvent, func(data any) {
+		c.fetchMusic(data.(context.OnPlayMusicEventData).Playlist, data.(context.OnPlayMusicEventData).Music)
 	})
 
 	// UI update thread
@@ -128,4 +136,30 @@ func (c *MusicController) fetchMusic(playlist storages.Playlist, selectedMusic s
 	go c.musicPlayer.SetPlaylist(playlist, selectedMusic)
 	c.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob)
 	c.playlistCover.Refresh()
+}
+
+func (c *MusicController) downloadMusic(music storages.Music) {
+	progressBar := dialog.NewCustomWithoutButtons(lang.L("Downloading"), widget.NewProgressBarInfinite(), fyne.CurrentApp().Driver().AllWindows()[0])
+	fyne.DoAndWait(progressBar.Show)
+
+	// Download the missing music files.
+	downloader := scrapers.NewCnvmp3Downloader()
+	content, err := downloader.Download(stdcontext.Background(), scrapers.Result{
+		Platform: music.Source,
+		ID:       music.MusicId,
+		Title:    music.Title,
+	})
+	if err != nil {
+		slog.Error("failed to download music", "error", err)
+		return
+	}
+	defer content.Close()
+
+	err = c.userContext.PutMusicFile(music, content)
+	if err != nil {
+		slog.Error("failed to put music file", "error", err)
+		return
+	}
+
+	fyne.DoAndWait(progressBar.Dismiss)
 }

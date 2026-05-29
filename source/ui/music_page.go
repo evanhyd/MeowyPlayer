@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log/slog"
 	"meowyplayer/context"
+	"meowyplayer/scrapers"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
 	"meowyplayer/ui/internal/mutil"
@@ -28,6 +29,7 @@ type MusicPage struct {
 	playlist       storages.Playlist
 	queryResults   []storages.Music
 	displayResults []storages.Music
+	downloader     scrapers.MusicDownloader
 
 	background          *canvas.Image
 	fadeOverlay         *canvas.LinearGradient
@@ -63,7 +65,7 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 	p.searchButton.OnTapped = func() { p.filterResults(p.searchEntry.Text) }
 
 	p.backButton.Importance = widget.LowImportance
-	p.backButton.OnTapped = p.userContext.ExitPlaylist
+	p.backButton.OnTapped = p.userContext.ViewPlaylistPage
 
 	p.playlistCover.CornerRadius = 8.0
 	p.playlistCover.SetMinSize(mwidget.PlaylistCardSize)
@@ -80,7 +82,7 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 		func() fyne.CanvasObject {
 			return mwidget.NewMusicCard(
 				func(music storages.Music) {
-					p.userContext.PlayPlaylist(p.playlist, music)
+					p.userContext.PlayMusic(p.playlist, music)
 				},
 				p.showEditingMenu,
 			)
@@ -89,28 +91,28 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 			object.(*mwidget.MusicCard).Set(p.displayResults[index])
 		},
 	)
+	p.scrollList.HideSeparators = true
 
-	p.userContext.AddListener(context.OnViewPlaylistEvent, func(_ context.EventType, data any) {
-		p.fetchMusic(data.(context.OnEnterPlaylist).Playlist)
+	p.userContext.AddListener(context.OnSetStorageEvent, func(any) {
+		p.Hide()
+	})
+
+	p.userContext.AddListener(context.OnViewMusicPageEvent, func(data any) {
+		p.fetchMusic(data.(context.OnViewMusicPageEventData).Playlist)
 		p.Show()
 	})
 
-	p.userContext.AddListener(context.OnSetStorageEvent, func(context.EventType, any) {
+	p.userContext.AddListener(context.OnViewPlaylistPageEvent, func(any) {
 		p.Hide()
 	})
 
-	p.userContext.AddListener(context.OnReturnBackFromPlaylistEvent, func(context.EventType, any) {
-		p.Hide()
-	})
-
-	p.userContext.AddListener(context.OnAddMusicToPlaylistEvent, func(_ context.EventType, data any) {
-		if data.(context.OnAddMusicToPlaylistEventData).Playlist.PlaylistId == p.playlist.PlaylistId &&
-			data.(context.OnAddMusicToPlaylistEventData).Playlist.UserId == p.playlist.UserId {
+	p.userContext.AddListener(context.OnPutMusicInPlaylistEvent, func(data any) {
+		if data.(context.OnPutMusicInPlaylistEventData).PlaylistId == p.playlist.PlaylistId {
 			p.fetchMusic(p.playlist)
 		}
 	})
 
-	p.userContext.AddListener(context.OnDeleteMusicEvent, func(_ context.EventType, data any) {
+	p.userContext.AddListener(context.OnDeleteMusicFromPlaylistEvent, func(data any) {
 		p.fetchMusic(p.playlist)
 	})
 
@@ -173,7 +175,7 @@ func (p *MusicPage) showDeleteMusicDialog(music storages.Music) {
 		widget.NewLabel(lang.L("Do you want to delete ")+music.Title+" from the playlist"),
 		func(confirm bool) {
 			if confirm {
-				if err := p.userContext.DeleteMusicFromPlaylist(p.playlist, music); err != nil {
+				if err := p.userContext.DeleteMusicFromPlaylist(p.playlist.PlaylistId, music.MusicId, music.Source); err != nil {
 					slog.Error("failed to delete the music from the playlist", "error", err)
 					return
 				}
@@ -198,7 +200,7 @@ func (p *MusicPage) fetchMusic(playlist storages.Playlist) {
 	p.playlistCover.Refresh()
 	p.playlistTitle.SetText(playlist.Title)
 
-	p.queryResults, err = p.userContext.Storage().GetAllSortedMusicFromPlaylist(p.playlist.PlaylistId)
+	p.queryResults, err = p.userContext.GetMusicFromPlaylist(p.playlist.PlaylistId)
 	if err != nil {
 		slog.Error("failed to query music in playlist", "error", err)
 		return

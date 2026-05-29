@@ -1,296 +1,271 @@
 package storages
 
 import (
-	_ "embed"
+	"bytes"
 	"io"
-	"log"
-	"os"
-	"strings"
+	"path/filepath"
 	"testing"
-
-	_ "modernc.org/sqlite"
+	"time"
 )
 
-func newTestStorage(user User) *SQLiteStorage {
-	storage := NewSQLiteStorage(":memory:", os.TempDir(), user)
+func setupTestStorage(t *testing.T) *SQLiteStorage {
+	tempDir := t.TempDir()
+	dbPath := filepath.Join(tempDir, "test.db")
+	musicDir := filepath.Join(tempDir, "music")
 
-	// Register right away.
-	if _, err := storage.db.Exec(`INSERT INTO users VALUES (?, ?, ?, ?)`,
-		user.UserId, user.Name, user.Salt, user.HashedPassword); err != nil {
-		log.Fatalf("failed to create new user: %v", err)
+	storage := NewSQLiteStorage(dbPath, musicDir)
+	if storage == nil {
+		t.Fatalf("Failed to initialize SQLiteStorage")
 	}
+
+	t.Cleanup(func() {
+		storage.Close()
+	})
+
 	return storage
 }
 
-func TestPlaylistCRUD(t *testing.T) {
-	user := User{UserId: 1, Name: "Alice"}
-	storage := newTestStorage(user)
-	defer storage.Close()
-
-	// Create
-	p, err := storage.CreatePlaylist("Favorites", []byte("cover blob"))
+func createTestUser(t *testing.T, s *SQLiteStorage) int64 {
+	userID := int64(1)
+	_, err := s.db.Exec(`INSERT INTO users (user_id, name, hashed_password, salt) VALUES (?, 'Test User', '', '')`, userID)
 	if err != nil {
-		t.Fatalf("CreatePlaylist failed: %v", err)
+		t.Fatalf("Failed to insert dummy test user: %v", err)
 	}
-
-	if p.PlaylistId == 0 {
-		t.Fatalf("expected PlaylistID to be non zero")
-	}
-
-	// Get
-	got, err := storage.GetPlaylist(p.PlaylistId)
-	if err != nil {
-		t.Fatalf("GetPlaylist failed: %v", err)
-	}
-	if got.Title != p.Title {
-		t.Errorf("expected title %q, got %q", p.Title, got.Title)
-	}
-
-	// Update
-	p.Title = "Updated Favorites"
-	if err := storage.UpdatePlaylist(p); err != nil {
-		t.Fatalf("UpdatePlaylist failed: %v", err)
-	}
-
-	got, _ = storage.GetPlaylist(p.PlaylistId)
-	if got.Title != p.Title {
-		t.Errorf("expected updated title %q, got %q", p.Title, got.Title)
-	}
-
-	// GetAll
-	list, err := storage.GetAllSortedPlaylists()
-	if err != nil {
-		t.Fatalf("GetAllPlaylists failed: %v", err)
-	}
-	if len(list) != 1 {
-		t.Errorf("expected 1 playlist, got %d", len(list))
-	}
-
-	// Delete
-	if err := storage.DeletePlaylist(p.PlaylistId); err != nil {
-		t.Fatalf("DeletePlaylist failed: %v", err)
-	}
-	_, err = storage.GetPlaylist(p.PlaylistId)
-	if err == nil {
-		t.Errorf("expected error after deleting playlist")
-	}
+	return userID
 }
 
-func TestMusicCRUD(t *testing.T) {
-	user := User{UserId: 1, Name: "Alice"}
-	storage := newTestStorage(user)
-	defer storage.Close()
+func getTestUserSession(userID int64) UserSession {
+	return UserSession{UserId: userID}
+}
+
+func TestMusicStorer_Idempotency(t *testing.T) {
+	s := setupTestStorage(t)
+	userID := createTestUser(t, s)
+	session := getTestUserSession(userID)
 
 	m := Music{
 		MusicId:       "m1",
 		Source:        YouTubeSource,
-		Title:         "Song One",
-		LengthSeconds: 300,
+		Title:         "Original Title",
+		LengthSeconds: 120,
 	}
 
-	if err := storage.CreateMusic(m); err != nil {
-		t.Fatalf("CreateMusic failed: %v", err)
+	// 1. Initial Put
+	if err := s.PutMusic(session, m); err != nil {
+		t.Fatalf("Failed initial PutMusic: %v", err)
 	}
 
-	got, err := storage.GetMusic(m.MusicId, m.Source)
+	// 2. Idempotent Put (Update)
+	m.Title = "Updated Title"
+	if err := s.PutMusic(session, m); err != nil {
+		t.Fatalf("Failed idempotent PutMusic: %v", err)
+	}
+
+	// 3. Verify state
+	fetched, err := s.GetMusic(session, m.MusicId, m.Source)
 	if err != nil {
-		t.Fatalf("GetMusic failed: %v", err)
+		t.Fatalf("Failed GetMusic: %v", err)
 	}
-	if got.Title != m.Title {
-		t.Errorf("expected title %q, got %q", m.Title, got.Title)
-	}
-
-	// Update
-	m.Title = "Song One Updated"
-	if err := storage.UpdateMusic(m); err != nil {
-		t.Fatalf("UpdateMusic failed: %v", err)
-	}
-	got, _ = storage.GetMusic(m.MusicId, m.Source)
-	if got.Title != m.Title {
-		t.Errorf("expected updated title %q, got %q", m.Title, got.Title)
+	if fetched.Title != "Updated Title" {
+		t.Errorf("Expected title 'Updated Title', got '%s'", fetched.Title)
 	}
 
-	// GetAll
-	list, err := storage.GetAllMusic()
-	if err != nil {
-		t.Fatalf("GetAllMusic failed: %v", err)
-	}
-	if len(list) != 1 {
-		t.Errorf("expected 1 music, got %d", len(list))
+	// 4. Initial Delete
+	if err := s.DeleteMusic(session, m.MusicId, m.Source); err != nil {
+		t.Fatalf("Failed initial DeleteMusic: %v", err)
 	}
 
-	// Delete
-	if err := storage.DeleteMusic(m.MusicId, m.Source); err != nil {
-		t.Fatalf("DeleteMusic failed: %v", err)
-	}
-	_, err = storage.GetMusic(m.MusicId, m.Source)
-	if err == nil {
-		t.Errorf("expected error after deleting music")
+	// 5. Idempotent Delete (Should not return error)
+	if err := s.DeleteMusic(session, m.MusicId, m.Source); err != nil {
+		t.Fatalf("Failed idempotent DeleteMusic: %v", err)
 	}
 }
 
-func TestPlaylistMusic(t *testing.T) {
-	storage := newTestStorage(User{UserId: 1, Name: "Alice"})
-	defer storage.Close()
+func TestPlaylistStorer_Idempotency(t *testing.T) {
+	s := setupTestStorage(t)
+	userID := createTestUser(t, s)
+	session := getTestUserSession(userID)
 
-	// Prepare playlist
-	p, err := storage.CreatePlaylist("Favorites", []byte("cover blob"))
+	p := Playlist{
+		Title:     "My First Playlist",
+		CoverBlob: []byte("fake-image-data"),
+	}
+
+	// 1. Initial Put (ID generation)
+	createdP, err := s.PutPlaylist(session, p)
 	if err != nil {
-		t.Fatalf("CreatePlaylist failed: %v", err)
+		t.Fatalf("Failed initial PutPlaylist: %v", err)
+	}
+	if createdP.PlaylistId == 0 {
+		t.Fatal("Expected PlaylistId to be generated, got 0")
 	}
 
-	// Prepare music
-	m := Music{MusicId: "m1", Source: YouTubeSource, Title: "Song One", LengthSeconds: 300}
-	if err := storage.CreateMusic(m); err != nil {
-		t.Fatalf("CreateMusic failed: %v", err)
-	}
-
-	// Add music
-	if err := storage.AddMusicToPlaylist(p.PlaylistId, m.MusicId, m.Source); err != nil {
-		t.Fatalf("AddMusicToPlaylist failed: %v", err)
-	}
-
-	// List music -> GetAll
-	list, err := storage.GetAllSortedMusicFromPlaylist(p.PlaylistId)
+	// 2. Idempotent Put (Update)
+	createdP.Title = "My Updated Playlist"
+	updatedP, err := s.PutPlaylist(session, createdP)
 	if err != nil {
-		t.Fatalf("GetAllMusicFromPlaylist failed: %v", err)
+		t.Fatalf("Failed idempotent PutPlaylist: %v", err)
 	}
-	if len(list) != 1 || list[0].MusicId != m.MusicId {
-		t.Errorf("expected 1 music with ID %q, got %v", m.MusicId, list)
-	}
-
-	// Remove music
-	if err := storage.RemoveMusicFromPlaylist(p.PlaylistId, m.MusicId, m.Source); err != nil {
-		t.Fatalf("RemoveMusicFromPlaylist failed: %v", err)
-	}
-	list, _ = storage.GetAllSortedMusicFromPlaylist(p.PlaylistId)
-	if len(list) != 0 {
-		t.Errorf("expected 0 music after removal, got %d", len(list))
+	if updatedP.PlaylistId != createdP.PlaylistId {
+		t.Fatalf("Playlist ID changed during update")
 	}
 
-	// Edge case: remove from invalid playlist
-	if err := storage.RemoveMusicFromPlaylist(9999, m.MusicId, m.Source); err != nil {
-		t.Errorf("expected no error removing  music from invalid playlist, got %v", err)
-	}
-
-	// Edge case: add music to invalid playlist
-	if err := storage.AddMusicToPlaylist(9999, m.MusicId, m.Source); err == nil {
-		t.Errorf("expected error adding music to invalid playlist")
-	}
-
-	// Edge case: list music in invalid playlist -> GetAll
-	music, err := storage.GetAllSortedMusicFromPlaylist(9999)
+	// 3. Verify State
+	fetched, err := s.GetPlaylist(session, updatedP.PlaylistId)
 	if err != nil {
-		t.Errorf("expected no error, got %v", err)
+		t.Fatalf("Failed GetPlaylist: %v", err)
 	}
-	if len(music) != 0 {
-		t.Errorf("expected empty listing music, got %v", len(music))
+	if fetched.Title != "My Updated Playlist" {
+		t.Errorf("Expected title 'My Updated Playlist', got '%s'", fetched.Title)
+	}
+
+	// 4. Initial Delete
+	if err := s.DeletePlaylist(session, fetched.PlaylistId); err != nil {
+		t.Fatalf("Failed initial DeletePlaylist: %v", err)
+	}
+
+	// 5. Idempotent Delete
+	if err := s.DeletePlaylist(session, fetched.PlaylistId); err != nil {
+		t.Fatalf("Failed idempotent DeletePlaylist: %v", err)
 	}
 }
 
-func TestDeletePlaylistCascadesPlaylistMusic(t *testing.T) {
-	storage := newTestStorage(User{UserId: 1, Name: "Alice"})
-	defer storage.Close()
+func TestPlaylistLinker_Idempotency(t *testing.T) {
+	s := setupTestStorage(t)
+	userID := createTestUser(t, s)
+	session := getTestUserSession(userID)
 
-	// Create a playlist
-	p, err := storage.CreatePlaylist("Cascading Test", []byte("cover blob"))
+	// Setup: Create a playlist and a music track first
+	p, err := s.PutPlaylist(session, Playlist{Title: "Link Test", CoverBlob: []byte("")})
 	if err != nil {
-		t.Fatalf("CreatePlaylist failed: %v", err)
+		t.Fatalf("failed to put a playlist: %v", err)
+	}
+	s.PutMusic(session, Music{MusicId: "m1", Source: SpotifySource, Title: "Track 1"})
+
+	// 1. Initial Link
+	if err := s.PutMusicInPlaylist(session, p.PlaylistId, "m1", SpotifySource); err != nil {
+		t.Fatalf("Failed initial PutMusicInPlaylist: %v", err)
 	}
 
-	// Create two music tracks
-	m1 := Music{MusicId: "m1", Source: YouTubeSource, Title: "Song One", LengthSeconds: 120}
-	m2 := Music{MusicId: "m2", Source: YouTubeSource, Title: "Song Two", LengthSeconds: 180}
-	if err := storage.CreateMusic(m1); err != nil {
-		t.Fatalf("CreateMusic m1 failed: %v", err)
-	}
-	if err := storage.CreateMusic(m2); err != nil {
-		t.Fatalf("CreateMusic m2 failed: %v", err)
+	// 2. Idempotent Link (Should not violate unique constraint)
+	if err := s.PutMusicInPlaylist(session, p.PlaylistId, "m1", SpotifySource); err != nil {
+		t.Fatalf("Failed idempotent PutMusicInPlaylist: %v", err)
 	}
 
-	// Add both music to playlist
-	if err := storage.AddMusicToPlaylist(p.PlaylistId, m1.MusicId, m1.Source); err != nil {
-		t.Fatalf("AddMusicToPlaylist m1 failed: %v", err)
-	}
-	if err := storage.AddMusicToPlaylist(p.PlaylistId, m2.MusicId, m2.Source); err != nil {
-		t.Fatalf("AddMusicToPlaylist m2 failed: %v", err)
-	}
-
-	// Verify they exist -> GetAll
-	list, err := storage.GetAllSortedMusicFromPlaylist(p.PlaylistId)
+	// 3. Verify Links
+	tracks, err := s.GetMusicFromPlaylist(session, p.PlaylistId)
 	if err != nil {
-		t.Fatalf("GetAllMusicFromPlaylist failed: %v", err)
+		t.Fatalf("Failed GetAllSortedMusicFromPlaylist: %v", err)
 	}
-	if len(list) != 2 {
-		t.Fatalf("expected 2 music in playlist before delete, got %d", len(list))
-	}
-
-	// Delete the playlist
-	if err := storage.DeletePlaylist(p.PlaylistId); err != nil {
-		t.Fatalf("DeletePlaylist failed: %v", err)
+	if len(tracks) != 1 {
+		t.Fatalf("Expected 1 track in playlist, got %d", len(tracks))
 	}
 
-	// Verify the playlist is gone
-	if _, err := storage.GetPlaylist(p.PlaylistId); err == nil {
-		t.Errorf("expected GetPlaylist to fail after deletion")
+	// 4. Initial Unlink
+	if err := s.DeleteMusicFromPlaylist(session, p.PlaylistId, "m1", SpotifySource); err != nil {
+		t.Fatalf("Failed initial DeleteMusicFromPlaylist: %v", err)
 	}
 
-	// Check that playlist_music entries were also removed
-	rows, err := storage.db.Query(
-		`SELECT COUNT(*) FROM playlist_music WHERE user_id = ? AND playlist_id = ?`,
-		storage.user.UserId, p.PlaylistId,
-	)
-	if err != nil {
-		t.Fatalf("query playlist_music count failed: %v", err)
-	}
-	defer rows.Close()
-
-	var count int
-	if rows.Next() {
-		if err := rows.Scan(&count); err != nil {
-			t.Fatalf("scan count failed: %v", err)
-		}
-	}
-	if count != 0 {
-		t.Errorf("expected 0 playlist_music after playlist delete, got %d", count)
+	// 5. Idempotent Unlink
+	if err := s.DeleteMusicFromPlaylist(session, p.PlaylistId, "m1", SpotifySource); err != nil {
+		t.Fatalf("Failed idempotent DeleteMusicFromPlaylist: %v", err)
 	}
 }
 
-func TestReadWriteMusicFile(t *testing.T) {
-	storage := newTestStorage(User{UserId: 1, Name: "Alice"})
-	defer storage.Close()
+func TestFileStorer_Idempotency(t *testing.T) {
+	s := setupTestStorage(t)
+	userID := createTestUser(t, s)
+	session := getTestUserSession(userID)
 
-	music := Music{Source: YouTubeSource, MusicId: "1234abcd"}
-	content := "hello"
+	m := Music{MusicId: "file1", Source: YouTubeSource}
+	content1 := []byte("audio-data-v1")
+	content2 := []byte("audio-data-v2")
 
-	_, err := storage.GetMusicFile(music)
-	if err == nil {
-		t.Errorf("expected error when get music file")
+	// 1. Initial File Put
+	if err := s.PutMusicFile(session, m, bytes.NewReader(content1)); err != nil {
+		t.Fatalf("Failed initial PutMusicFile: %v", err)
 	}
 
-	err = storage.CreateOrUpdateMusicFile(music, strings.NewReader(content))
+	// 2. Idempotent File Put (Overwrite)
+	if err := s.PutMusicFile(session, m, bytes.NewReader(content2)); err != nil {
+		t.Fatalf("Failed idempotent PutMusicFile: %v", err)
+	}
+
+	// 3. Read and Verify (Should match content2)
+	rc, err := s.GetMusicFile(session, m)
 	if err != nil {
-		t.Fatalf("CreateOrUpdateMusicFile failed: %v", err)
+		t.Fatalf("Failed GetMusicFile: %v", err)
 	}
 
-	file, err := storage.GetMusicFile(music)
+	readData, err := io.ReadAll(rc)
 	if err != nil {
-		t.Fatalf("GetMusicFile failed: %v", err)
+		t.Fatalf("Failed to read data: %v", err)
+	}
+	if string(readData) != string(content2) {
+		t.Errorf("Expected file content %s, got %s", content2, readData)
+		rc.Close()
+	}
+	rc.Close()
+
+	// 4. Initial Delete
+	if err := s.DeleteMusicFile(session, m); err != nil {
+		t.Fatalf("Failed initial DeleteMusicFile: %v", err)
 	}
 
-	readContent, err := io.ReadAll(file)
-	if err != nil {
-		file.Close()
-		t.Fatalf("Read music file content failed: %v", err)
+	// 5. Idempotent Delete (File already gone, should not error)
+	if err := s.DeleteMusicFile(session, m); err != nil {
+		t.Fatalf("Failed idempotent DeleteMusicFile: %v", err)
 	}
-	if string(readContent) != content {
-		file.Close()
-		t.Fatalf("Expected content = %v, got %v", content, string(readContent))
-	}
-	file.Close()
+}
 
-	err = storage.RemoveMusicFile(music)
+func TestGetPlaylistsFromUser(t *testing.T) {
+	s := setupTestStorage(t)
+	userID := createTestUser(t, s)
+	session := getTestUserSession(userID)
+
+	// 1. Test Empty State
+	playlists, err := s.GetPlaylistsFromUser(session)
 	if err != nil {
-		t.Fatalf("RemoveMusicFile failed: %v", err)
+		t.Fatalf("Expected no error for empty state, got %v", err)
+	}
+	if len(playlists) != 0 {
+		t.Fatalf("Expected 0 playlists, got %d", len(playlists))
+	}
+
+	// 2. Insert Test Data
+	p1, err := s.PutPlaylist(session, Playlist{
+		Title:     "Older Playlist",
+		CoverBlob: []byte{},
+	})
+	if err != nil {
+		t.Fatalf("Failed to insert first playlist: %v", err)
+	}
+
+	// Guarantee a distinct timestamp for the descending order check
+	time.Sleep(1 * time.Millisecond)
+
+	p2, err := s.PutPlaylist(session, Playlist{
+		Title:     "Newer Playlist",
+		CoverBlob: []byte{},
+	})
+	if err != nil {
+		t.Fatalf("Failed to insert second playlist: %v", err)
+	}
+
+	// 3. Test Retrieval and Sorting (ORDER BY modified_date DESC)
+	playlists, err = s.GetPlaylistsFromUser(session)
+	if err != nil {
+		t.Fatalf("Failed to GetPlaylistsFromUser: %v", err)
+	}
+	if len(playlists) != 2 {
+		t.Fatalf("Expected 2 playlists, got %d", len(playlists))
+	}
+
+	// p2 should be first because it was created last
+	if playlists[0].PlaylistId != p2.PlaylistId || playlists[0].Title != "Newer Playlist" {
+		t.Errorf("Expected first playlist to be 'Newer Playlist', got '%s'", playlists[0].Title)
+	}
+	if playlists[1].PlaylistId != p1.PlaylistId || playlists[1].Title != "Older Playlist" {
+		t.Errorf("Expected second playlist to be 'Older Playlist', got '%s'", playlists[1].Title)
 	}
 }

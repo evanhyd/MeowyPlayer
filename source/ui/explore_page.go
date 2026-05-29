@@ -23,12 +23,11 @@ import (
 
 type ExplorePage struct {
 	widget.BaseWidget
-	userContext    *context.UserContext
-	searchEngine   scrapers.MusicSearcher
-	searchResults  []scrapers.Result
-	cancelSearch   stdcontext.CancelFunc
-	searchMutex    sync.Mutex
-	downloadEngine scrapers.MusicDownloader
+	userContext   *context.UserContext
+	searchEngine  scrapers.MusicSearcher
+	searchResults []scrapers.Result
+	cancelSearch  stdcontext.CancelFunc
+	searchMutex   sync.Mutex
 
 	searchEntry  *widget.Entry
 	searchButton *widget.Button
@@ -37,11 +36,10 @@ type ExplorePage struct {
 
 func newExplorePage(userContext *context.UserContext) *ExplorePage {
 	p := ExplorePage{
-		userContext:    userContext,
-		searchEngine:   scrapers.NewInvidiousSearcher(),
-		downloadEngine: scrapers.NewCnvmp3Downloader(),
-		searchEntry:    widget.NewEntry(),
-		searchButton:   widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
+		userContext:  userContext,
+		searchEngine: scrapers.NewInvidiousSearcher(),
+		searchEntry:  widget.NewEntry(),
+		searchButton: widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
 	}
 
 	p.searchEntry.ActionItem = p.searchButton
@@ -86,7 +84,7 @@ func (p *ExplorePage) openInBrowser(result scrapers.Result) {
 }
 
 func (p *ExplorePage) showAddToPlaylistsDialog(result scrapers.Result) {
-	playlists, err := p.userContext.Storage().GetAllSortedPlaylists()
+	playlists, err := p.userContext.GetPlaylistsFromUser()
 	if err != nil {
 		slog.Error("failed to list the playlists", "error", err)
 		return
@@ -99,46 +97,29 @@ func (p *ExplorePage) showAddToPlaylistsDialog(result scrapers.Result) {
 	selects := widget.NewSelect(options, nil)
 	selects.PlaceHolder = lang.L("Select a playlist")
 
-	fyne.Do(func() {
-		dialog.ShowCustomConfirm(lang.L("Add to playlist"), lang.L("Add"), lang.L("Cancel"), selects,
-			func(confirm bool) {
-				if i := selects.SelectedIndex(); i != -1 && confirm {
-					go func() {
-						music := storages.Music{
-							MusicId:       result.ID,
-							Source:        result.Platform,
-							Title:         result.Title,
-							LengthSeconds: int64(result.Length.Seconds()),
-						}
-
-						// Download the music if not in the local storage.
-						musicFile, err := p.userContext.Storage().GetMusicFile(music)
-						if err != nil {
-							// Download the missing music files.
-							content, err := p.downloadEngine.Download(stdcontext.Background(), result)
-							if err != nil {
-								slog.Error("failed to download music", "error", err)
-								return
-							}
-							defer content.Close()
-							err = p.userContext.Storage().CreateOrUpdateMusicFile(music, content)
-							if err != nil {
-								slog.Error("failed to create music file", "error", err)
-								return
-							}
-						}
-						musicFile.Close()
-
-						// Add music relation to the storage.
-						err = p.userContext.AddMusic(playlists[i], music)
-						if err != nil {
-							slog.Error("failed to add music to playlist", "error", err)
-							return
-						}
-					}()
+	dialog.ShowCustomConfirm(lang.L("Add to playlist"), lang.L("Add"), lang.L("Cancel"), selects,
+		func(confirm bool) {
+			if i := selects.SelectedIndex(); i != -1 && confirm {
+				music := storages.Music{
+					MusicId:       result.ID,
+					Source:        result.Platform,
+					Title:         result.Title,
+					LengthSeconds: int64(result.Length.Seconds()),
 				}
-			}, fyne.CurrentApp().Driver().AllWindows()[0])
-	})
+
+				err := p.userContext.PutMusic(music)
+				if err != nil {
+					slog.Error("failed to put music", "error", err)
+					return
+				}
+
+				err = p.userContext.PutMusicInPlaylist(playlists[i].PlaylistId, music.MusicId, music.Source)
+				if err != nil {
+					slog.Error("failed to put music in playlist", "error", err)
+					return
+				}
+			}
+		}, fyne.CurrentApp().Driver().AllWindows()[0])
 }
 
 func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {

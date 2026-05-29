@@ -1,11 +1,13 @@
 package context
 
 import (
+	"io"
 	"log/slog"
 	"meowyplayer/storages"
 )
 
 type UserContext struct {
+	session    storages.UserSession
 	storage    storages.Storage
 	dispatcher EventsDispatcher
 }
@@ -18,18 +20,6 @@ func (u *UserContext) AddListener(event EventType, listener EventListener) {
 	u.dispatcher.AddListener(event, listener)
 }
 
-func (u *UserContext) Close() {
-	if u.storage != nil {
-		if err := u.storage.Close(); err != nil {
-			slog.Error("failed to close the storage", "error", err)
-		}
-	}
-}
-
-func (u *UserContext) Storage() storages.Storage {
-	return u.storage
-}
-
 func (u *UserContext) SetStorage(storage storages.Storage) {
 	if u.storage != nil {
 		if err := u.storage.Close(); err != nil {
@@ -40,66 +30,92 @@ func (u *UserContext) SetStorage(storage storages.Storage) {
 	u.dispatcher.Dispatch(OnSetStorageEvent, OnSetStorageEventData{Storage: u.storage})
 }
 
-/*
-Helpers to update the storage and the UI.
-*/
-
-func (u *UserContext) EnterPlaylist(playlist storages.Playlist) {
-	u.dispatcher.Dispatch(OnViewPlaylistEvent, OnEnterPlaylist{Playlist: playlist})
-}
-
-func (u *UserContext) ExitPlaylist() {
-	u.dispatcher.Dispatch(OnReturnBackFromPlaylistEvent, OnExitPlaylist{})
-}
-
-func (u *UserContext) CreatePlaylist(title string, coverBlob []byte) error {
-	playlist, err := u.storage.CreatePlaylist(title, coverBlob)
-	if err != nil {
-		return err
+func (u *UserContext) Close() {
+	if u.storage != nil {
+		if err := u.storage.Close(); err != nil {
+			slog.Error("failed to close the storage", "error", err)
+		}
 	}
-	u.dispatcher.Dispatch(OnCreatePlaylistEvent, OnCreatePlaylistEventData{Playlist: playlist})
-	return nil
 }
 
-func (u *UserContext) AddMusic(playlist storages.Playlist, music storages.Music) error {
-	err := u.storage.CreateMusic(music)
-	if err != nil {
-		return err
+// DB wrapper calls.
+func (u *UserContext) PutPlaylist(playlist storages.Playlist) (storages.Playlist, error) {
+	playlist, err := u.storage.PutPlaylist(u.session, playlist)
+	if err == nil {
+		u.dispatcher.Dispatch(OnPutPlaylistEvent, OnPutPlaylistEventData{Playlist: playlist})
 	}
-	err = u.storage.AddMusicToPlaylist(playlist.PlaylistId, music.MusicId, music.Source)
-	if err != nil {
-		return err
-	}
-
-	u.dispatcher.Dispatch(OnAddMusicToPlaylistEvent, OnAddMusicToPlaylistEventData{Playlist: playlist})
-	return nil
+	return playlist, err
 }
 
-func (u *UserContext) UpdatePlaylist(playlist storages.Playlist) error {
-	if err := u.storage.UpdatePlaylist(playlist); err != nil {
-		return err
-	}
-	u.dispatcher.Dispatch(OnUpdatePlaylistEvent, OnUpdatePlaylistEventData{Playlist: playlist})
-	return nil
+func (u *UserContext) GetPlaylist(playlistID int64) (storages.Playlist, error) {
+	return u.storage.GetPlaylist(u.session, playlistID)
 }
 
-func (u *UserContext) DeletePlaylist(playlist storages.Playlist) error {
-	if err := u.storage.DeletePlaylist(playlist.PlaylistId); err != nil {
-		return err
+func (u *UserContext) DeletePlaylist(playlistID int64) error {
+	err := u.storage.DeletePlaylist(u.session, playlistID)
+	if err == nil {
+		u.dispatcher.Dispatch(OnDeletePlaylistEvent, OnDeletePlaylistEventData{PlaylistId: playlistID})
 	}
-	u.dispatcher.Dispatch(OnDeletePlaylistEvent, OnDeletePlaylistEventData{})
-	return nil
+	return err
 }
 
-func (u *UserContext) PlayPlaylist(playlist storages.Playlist, selectedMusic storages.Music) error {
-	u.dispatcher.Dispatch(OnPlayPlaylistEvent, OnPlayPlaylistEventData{Playlist: playlist, SelectedMusic: selectedMusic})
-	return nil
+func (u *UserContext) PutMusic(music storages.Music) error {
+	return u.storage.PutMusic(u.session, music)
 }
 
-func (u *UserContext) DeleteMusicFromPlaylist(playlist storages.Playlist, music storages.Music) error {
-	if err := u.storage.DeleteMusic(music.MusicId, music.Source); err != nil {
-		return err
+func (u *UserContext) GetMusic(musicID string, source storages.MusicSource) (storages.Music, error) {
+	return u.storage.GetMusic(u.session, musicID, source)
+}
+
+func (u *UserContext) DeleteMusic(musicID string, source storages.MusicSource) error {
+	return u.storage.DeleteMusic(u.session, musicID, source)
+}
+
+func (u *UserContext) PutMusicFile(music storages.Music, content io.Reader) error {
+	return u.storage.PutMusicFile(u.session, music, content)
+}
+
+func (u *UserContext) GetMusicFile(music storages.Music) (io.ReadCloser, error) {
+	return u.storage.GetMusicFile(u.session, music)
+}
+
+func (u *UserContext) DeleteMusicFile(music storages.Music) error {
+	return u.storage.DeleteMusicFile(u.session, music)
+}
+
+func (u *UserContext) GetPlaylistsFromUser() ([]storages.Playlist, error) {
+	return u.storage.GetPlaylistsFromUser(u.session)
+}
+
+func (u *UserContext) GetMusicFromPlaylist(playlistID int64) ([]storages.Music, error) {
+	return u.storage.GetMusicFromPlaylist(u.session, playlistID)
+}
+
+func (u *UserContext) PutMusicInPlaylist(playlistID int64, musicID string, source storages.MusicSource) error {
+	err := u.storage.PutMusicInPlaylist(u.session, playlistID, musicID, source)
+	if err == nil {
+		u.dispatcher.Dispatch(OnPutMusicInPlaylistEvent, OnPutMusicInPlaylistEventData{PlaylistId: playlistID})
 	}
-	u.dispatcher.Dispatch(OnDeleteMusicEvent, OnDeleteMusicEventData{Playlist: playlist})
+	return err
+}
+
+func (u *UserContext) DeleteMusicFromPlaylist(playlistID int64, musicID string, source storages.MusicSource) error {
+	err := u.storage.DeleteMusicFromPlaylist(u.session, playlistID, musicID, source)
+	if err == nil {
+		u.dispatcher.Dispatch(OnDeleteMusicFromPlaylistEvent, OnDeleteMusicFromPlaylistEventData{PlaylistId: playlistID})
+	}
+	return err
+}
+
+func (u *UserContext) ViewPlaylistPage() {
+	u.dispatcher.Dispatch(OnViewPlaylistPageEvent, OnViewPlaylistPageEventData{})
+}
+
+func (u *UserContext) ViewMusicPage(playlist storages.Playlist) {
+	u.dispatcher.Dispatch(OnViewMusicPageEvent, OnViewMusicPageEventData{Playlist: playlist})
+}
+
+func (u *UserContext) PlayMusic(playlist storages.Playlist, music storages.Music) error {
+	u.dispatcher.Dispatch(OnPlayMusicEvent, OnPlayMusicEventData{Playlist: playlist, Music: music})
 	return nil
 }

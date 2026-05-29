@@ -44,7 +44,9 @@ type CmdSetPlaylist struct {
 var _ MusicPlayer = &BeepPlayer{}
 
 type BeepPlayer struct {
-	userContext     *context.UserContext
+	userContext          *context.UserContext
+	missingMusicCallback func(music storages.Music)
+
 	musicList       ringBuffer[storages.Music]
 	randomIndexList ringBuffer[int]
 	randomHistory   int
@@ -58,7 +60,7 @@ type BeepPlayer struct {
 	cmdChan chan Command
 }
 
-func MakeBeepPlayer(userContext *context.UserContext) *BeepPlayer {
+func MakeBeepPlayer(userContext *context.UserContext, missingMusicCallback func(music storages.Music)) *BeepPlayer {
 	sync.OnceFunc(func() {
 		err := speaker.Init(sampleRate, sampleRate.N(100*time.Millisecond))
 		if err != nil {
@@ -67,9 +69,10 @@ func MakeBeepPlayer(userContext *context.UserContext) *BeepPlayer {
 	})()
 
 	p := BeepPlayer{
-		userContext: userContext,
-		volume:      0.7,
-		cmdChan:     make(chan Command, 16),
+		userContext:          userContext,
+		missingMusicCallback: missingMusicCallback,
+		volume:               0.7,
+		cmdChan:              make(chan Command, 16),
 	}
 	go p.run()
 	return &p
@@ -132,16 +135,16 @@ func (p *BeepPlayer) SetVolume(volume float64) {
 	p.cmdChan <- CmdSetVolume{volume: volume}
 }
 
-// ---------------------------------------------------------
-// Internal Actor Loop
-// ---------------------------------------------------------
-
 func (p *BeepPlayer) playMusic(music storages.Music) {
 	p.currentMusic = music
-	musicFile, err := p.userContext.Storage().GetMusicFile(music)
+	musicFile, err := p.userContext.GetMusicFile(music)
 	if err != nil {
-		slog.Error("failed to get music file from the storage", "error", err)
-		return
+		p.missingMusicCallback(music)
+		musicFile, err = p.userContext.GetMusicFile(music)
+		if err != nil {
+			slog.Error("failed to get music file after downloading", "error", err)
+			return
+		}
 	}
 
 	speaker.Clear()
@@ -216,7 +219,7 @@ func (p *BeepPlayer) run() {
 			}
 
 		case CmdSetPlaylist:
-			music, err := p.userContext.Storage().GetAllSortedMusicFromPlaylist(c.playlist.PlaylistId)
+			music, err := p.userContext.GetMusicFromPlaylist(c.playlist.PlaylistId)
 			if err != nil {
 				slog.Error("failed to fetch music", "error", err)
 				continue

@@ -1,6 +1,8 @@
 package storages
 
-import "strings"
+import (
+	"strings"
+)
 
 type MusicSource int64
 

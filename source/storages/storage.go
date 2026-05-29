@@ -1,33 +1,42 @@
 package storages
 
-import "io"
+import (
+	"io"
+)
 
-// Storage defines operations for managing playlists, music, and their relationships.
-// Assumes user/session context is already encapsulated in the implementation.
+// All interface implementation must be idempotent.
+// Put creates or updates the data.
+// Delete deletes the data or do nothing if the data doesn't exist.
+
+type PlaylistStorer interface {
+	PutPlaylist(session UserSession, playlist Playlist) (Playlist, error)
+	GetPlaylist(session UserSession, playlistID int64) (Playlist, error)
+	DeletePlaylist(session UserSession, playlistID int64) error
+}
+
+type MusicStorer interface {
+	PutMusic(session UserSession, music Music) error
+	GetMusic(session UserSession, musicID string, source MusicSource) (Music, error)
+	DeleteMusic(session UserSession, musicID string, source MusicSource) error
+}
+
+type FileStorer interface {
+	PutMusicFile(session UserSession, music Music, content io.Reader) error
+	GetMusicFile(session UserSession, music Music) (io.ReadCloser, error)
+	DeleteMusicFile(session UserSession, music Music) error
+}
+
+type PlaylistManager interface {
+	GetPlaylistsFromUser(session UserSession) ([]Playlist, error)
+	GetMusicFromPlaylist(session UserSession, playlistID int64) ([]Music, error)
+	PutMusicInPlaylist(session UserSession, playlistID int64, musicID string, source MusicSource) error
+	DeleteMusicFromPlaylist(session UserSession, playlistID int64, musicID string, source MusicSource) error
+}
+
 type Storage interface {
-	// Playlist
-	CreatePlaylist(title string, coverBlob []byte) (Playlist, error)
-	UpdatePlaylist(playlist Playlist) error
-	DeletePlaylist(playlistID int64) error
-	GetPlaylist(playlistID int64) (Playlist, error)
-	GetAllSortedPlaylists() ([]Playlist, error) // By date
-
-	// Music
-	CreateMusic(music Music) error
-	UpdateMusic(music Music) error
-	DeleteMusic(musicID string, source MusicSource) error
-	GetMusic(musicID string, source MusicSource) (Music, error)
-	GetAllMusic() ([]Music, error)
-
-	// Playlist - Music association
-	AddMusicToPlaylist(playlistID int64, musicID string, source MusicSource) error
-	RemoveMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error
-	GetAllSortedMusicFromPlaylist(playlistID int64) ([]Music, error) // By date
-
-	// Filesystem manipulation. Does NOT affect the DB table.
-	CreateOrUpdateMusicFile(music Music, content io.Reader) error
-	RemoveMusicFile(music Music) error
-	GetMusicFile(music Music) (io.ReadCloser, error)
-
-	Close() error
+	PlaylistStorer
+	MusicStorer
+	FileStorer
+	PlaylistManager
+	io.Closer
 }

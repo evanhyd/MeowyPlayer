@@ -14,6 +14,6 @@ func (e *EventsDispatcher) AddListener(event EventType, listener EventListener) 
 
 func (e *EventsDispatcher) Dispatch(event EventType, eventData any) {
 	for _, listener := range e.listeners[event] {
-		listener(event, eventData)
+		listener(eventData)
 	}
 }

@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS playlist_music (
     added_at INTEGER NOT NULL,      -- Unix nano
     PRIMARY KEY(playlist_id, music_id, source),
     FOREIGN KEY(user_id, playlist_id) REFERENCES playlists(user_id, playlist_id) ON DELETE CASCADE,
-    FOREIGN KEY(music_id, source) REFERENCES music(music_id, source) ON DELETE CASCADE
+    FOREIGN KEY(music_id, source) REFERENCES music(music_id, source) ON DELETE RESTRICT
 );
 
 INSERT OR IGNORE INTO users VALUES (0, 'default', '', '');

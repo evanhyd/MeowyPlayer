@@ -3,51 +3,47 @@ package context
 import "meowyplayer/storages"
 
 type EventType int64
-type EventListener = func(EventType, any)
+type EventListener = func(any)
 
 const (
 	OnSetStorageEvent EventType = iota
-	OnViewPlaylistEvent
-	OnReturnBackFromPlaylistEvent
-	OnCreatePlaylistEvent
-	OnAddMusicToPlaylistEvent
-	OnUpdatePlaylistEvent
+	OnPutPlaylistEvent
 	OnDeletePlaylistEvent
-	OnPlayPlaylistEvent
-	OnDeleteMusicEvent
+	OnPutMusicInPlaylistEvent
+	OnDeleteMusicFromPlaylistEvent
+	OnViewPlaylistPageEvent
+	OnViewMusicPageEvent
+	OnPlayMusicEvent
 )
 
 type OnSetStorageEventData struct {
 	Storage storages.Storage
 }
 
-type OnEnterPlaylist struct {
-	Playlist storages.Playlist
-}
-
-type OnExitPlaylist struct {
-}
-
-type OnCreatePlaylistEventData struct {
-	Playlist storages.Playlist
-}
-
-type OnAddMusicToPlaylistEventData struct {
-	Playlist storages.Playlist
-}
-
-type OnUpdatePlaylistEventData struct {
+type OnPutPlaylistEventData struct {
 	Playlist storages.Playlist
 }
 
 type OnDeletePlaylistEventData struct {
+	PlaylistId int64
 }
 
-type OnPlayPlaylistEventData struct {
-	Playlist      storages.Playlist
-	SelectedMusic storages.Music
+type OnPutMusicInPlaylistEventData struct {
+	PlaylistId int64
 }
 
-type OnDeleteMusicEventData struct {
+type OnDeleteMusicFromPlaylistEventData struct {
+	PlaylistId int64
+}
+
+type OnViewPlaylistPageEventData struct {
+}
+
+type OnViewMusicPageEventData struct {
 	Playlist storages.Playlist
+}
+
+type OnPlayMusicEventData struct {
+	Playlist storages.Playlist
+	Music    storages.Music
 }

@@ -52,7 +52,7 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 			return mwidget.NewPlaylistCard(
 				func(playlist storages.Playlist) {
 					p.Hide()
-					p.userContext.EnterPlaylist(playlist)
+					p.userContext.ViewMusicPage(playlist)
 				},
 				p.showEditingMenu,
 			)
@@ -62,20 +62,17 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 		},
 	)
 
-	p.userContext.AddListener(context.OnSetStorageEvent, func(context.EventType, any) {
+	p.userContext.AddListener(context.OnSetStorageEvent, func(any) {
 		p.fetchPlaylists()
 		p.Show()
 	})
-	p.userContext.AddListener(context.OnReturnBackFromPlaylistEvent, func(context.EventType, any) {
+	p.userContext.AddListener(context.OnViewPlaylistPageEvent, func(any) {
 		p.Show()
 	})
-	p.userContext.AddListener(context.OnCreatePlaylistEvent, func(context.EventType, any) {
+	p.userContext.AddListener(context.OnPutPlaylistEvent, func(any) {
 		p.fetchPlaylists()
 	})
-	p.userContext.AddListener(context.OnUpdatePlaylistEvent, func(context.EventType, any) {
-		p.fetchPlaylists()
-	})
-	p.userContext.AddListener(context.OnDeletePlaylistEvent, func(context.EventType, any) {
+	p.userContext.AddListener(context.OnDeletePlaylistEvent, func(any) {
 		p.fetchPlaylists()
 	})
 
@@ -108,7 +105,7 @@ func (p *PlaylistPage) showEditPlaylistDialog(playlist storages.Playlist) {
 		func(confirm bool) {
 			if confirm {
 				playlist.Title, playlist.CoverBlob = editor.state()
-				if err := p.userContext.UpdatePlaylist(playlist); err != nil {
+				if _, err := p.userContext.PutPlaylist(playlist); err != nil {
 					slog.Error("failed to update the playlist", "error", err)
 					return
 				}
@@ -123,7 +120,7 @@ func (p *PlaylistPage) showDeletePlaylistDialog(playlist storages.Playlist) {
 		widget.NewLabel(lang.L("Do you want to delete the playlist: ")+playlist.Title),
 		func(confirm bool) {
 			if confirm {
-				if err := p.userContext.DeletePlaylist(playlist); err != nil {
+				if err := p.userContext.DeletePlaylist(playlist.PlaylistId); err != nil {
 					slog.Error("failed to delete the playlist", "error", err)
 					return
 				}
@@ -138,7 +135,8 @@ func (p *PlaylistPage) showCreatePlaylistDialog() {
 	dialog.ShowCustomConfirm(lang.L("Create Playlist"), lang.L("Create"), lang.L("Cancel"), editor,
 		func(confirm bool) {
 			if confirm {
-				err := p.userContext.CreatePlaylist(editor.state())
+				title, coverBlob := editor.state()
+				_, err := p.userContext.PutPlaylist(storages.Playlist{Title: title, CoverBlob: coverBlob})
 				if err != nil {
 					slog.Error("failed to create playlist", "error", err)
 				}
@@ -149,7 +147,7 @@ func (p *PlaylistPage) showCreatePlaylistDialog() {
 
 func (p *PlaylistPage) fetchPlaylists() {
 	var err error
-	p.queryResults, err = p.userContext.Storage().GetAllSortedPlaylists()
+	p.queryResults, err = p.userContext.GetPlaylistsFromUser()
 	if err != nil {
 		slog.Error("failed to query playlists", "error", err)
 		return

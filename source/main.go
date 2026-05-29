@@ -34,6 +34,6 @@ func main() {
 	userContext := context.MakeUserContext()
 
 	ui.RunApp(&userContext, func() {
-		userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath, storages.User{UserId: 0}))
+		userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath))
 	})
 }
