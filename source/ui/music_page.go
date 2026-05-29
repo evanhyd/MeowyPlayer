@@ -124,7 +124,10 @@ func (p *MusicPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewStack(
 		mcontainer.NewVSplit(0.5, container.NewStack(p.background, p.fadeOverlay), layout.NewSpacer()),
 		container.NewBorder(
-			mcontainer.NewCenter(0.62, 1, container.NewBorder(nil, nil, nil, p.backButton, p.searchEntry)),
+			mcontainer.NewHSplit(0.20,
+				layout.NewSpacer(),
+				container.NewBorder(nil, nil, nil, p.backButton, p.searchEntry),
+			),
 			nil,
 			nil,
 			nil,

@@ -23,7 +23,7 @@ func RunApp(userContext *context.UserContext, postUICallback func()) {
 	mainApp.Settings().SetTheme(newVanillaTheme())
 
 	mainWindow := mainApp.NewWindow(lang.L("MeowyPlayer"))
-	mainWindow.Resize(fyne.NewSize(809, 500))
+	mainWindow.Resize(fyne.NewSize(800, 550))
 	mainWindow.SetCloseIntercept(mainApp.Quit)
 	if desktop, ok := mainApp.(desktop.App); ok {
 		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", mainWindow.Show)))
@@ -32,6 +32,7 @@ func RunApp(userContext *context.UserContext, postUICallback func()) {
 	appTab := container.NewAppTabs(
 		container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage(userContext)),
 		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, container.NewStack(newPlaylistPage(userContext), newMusicPage(userContext))),
+		container.NewTabItemWithIcon(lang.L("Profile"), theme.AccountIcon(), newProfilePage()),
 	)
 	appTab.SetTabLocation(container.TabLocationLeading)
 	appTab.SelectIndex(1)

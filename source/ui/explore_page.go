@@ -17,6 +17,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -124,7 +125,8 @@ func (p *ExplorePage) showAddToPlaylistsDialog(result scrapers.Result) {
 
 func (p *ExplorePage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
-		mcontainer.NewCenter(0.62, 1, p.searchEntry), nil, nil, nil,
+		mcontainer.NewHSplit(0.20, layout.NewSpacer(), p.searchEntry),
+		nil, nil, nil,
 		mcontainer.NewCenter(0.8, 1, p.scrollList)))
 }
 

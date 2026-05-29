@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/lang"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -33,7 +34,7 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 		userContext:          userContext,
 		searchEntry:          widget.NewEntry(),
 		searchButton:         widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
-		createPlaylistButton: widget.NewButtonWithIcon(lang.L("Create Playlist"), theme.FolderNewIcon(), nil),
+		createPlaylistButton: widget.NewButtonWithIcon(lang.L("Playlist"), theme.FolderNewIcon(), nil),
 	}
 
 	p.searchEntry.ActionItem = p.searchButton
@@ -82,7 +83,10 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 
 func (p *PlaylistPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
-		mcontainer.NewCenter(0.62, 1, container.NewBorder(nil, nil, nil, p.createPlaylistButton, p.searchEntry)),
+		mcontainer.NewHSplit(0.20,
+			layout.NewSpacer(),
+			container.NewBorder(nil, nil, nil, p.createPlaylistButton, p.searchEntry),
+		),
 		nil,
 		nil,
 		nil,

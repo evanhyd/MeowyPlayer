@@ -40,7 +40,7 @@ type MusicController struct {
 	skipPrevButton *widget.Button
 	playButton     *widget.Button
 	skipNextButton *widget.Button
-	volumeSlider   *widget.Slider
+	volumeSlider   *mwidget.VolumeSlider
 }
 
 func newMusicController(userContext *context.UserContext) *MusicController {
@@ -57,7 +57,7 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 		skipPrevButton: widget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), nil),
 		playButton:     widget.NewButtonWithIcon("", theme.MediaRecordIcon(), nil),
 		skipNextButton: widget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), nil),
-		volumeSlider:   widget.NewSlider(0.0, 1.0),
+		volumeSlider:   mwidget.NewVolumeSlider(),
 	}
 
 	c.playlistCover.SetMinSize(mwidget.PlaylistCardSize)
@@ -86,11 +86,8 @@ func newMusicController(userContext *context.UserContext) *MusicController {
 	c.skipNextButton.Importance = widget.LowImportance
 	c.skipNextButton.OnTapped = c.musicPlayer.Next
 
-	c.volumeSlider.Step = 0.01
 	c.volumeSlider.OnChanged = c.musicPlayer.SetVolume
-
-	// Some music player initialization.
-	c.volumeSlider.SetValue(0.7)
+	c.volumeSlider.SetVolume(0.7)
 
 	c.userContext.AddListener(context.OnPlayMusicEvent, func(data any) {
 		c.fetchMusic(data.(context.OnPlayMusicEventData).Playlist, data.(context.OnPlayMusicEventData).Music)
