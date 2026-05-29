@@ -171,7 +171,7 @@ func (p *MusicPage) showDetailDialog(music storages.Music) {
 }
 
 func (p *MusicPage) showDeleteMusicDialog(music storages.Music) {
-	dialog.ShowCustomConfirm(lang.L("Delete Music Confirmation"), lang.L("delete"), lang.L("cancel"),
+	dialog.ShowCustomConfirm(lang.L("Delete Music Confirmation"), lang.L("Delete"), lang.L("Cancel"),
 		widget.NewLabel(lang.L("Do you want to delete ")+music.Title+" from the playlist"),
 		func(confirm bool) {
 			if confirm {

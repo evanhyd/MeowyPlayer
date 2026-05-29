@@ -101,7 +101,7 @@ func (p *PlaylistPage) showEditingMenu(playlist storages.Playlist, event *fyne.P
 
 func (p *PlaylistPage) showEditPlaylistDialog(playlist storages.Playlist) {
 	editor := newPlaylistEditorWithState(playlist.Title, fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob))
-	dialog.ShowCustomConfirm(lang.L("Edit Album"), lang.L("save"), lang.L("cancel"), editor,
+	dialog.ShowCustomConfirm(lang.L("Edit Album"), lang.L("Save"), lang.L("Cancel"), editor,
 		func(confirm bool) {
 			if confirm {
 				playlist.Title, playlist.CoverBlob = editor.state()
@@ -116,7 +116,7 @@ func (p *PlaylistPage) showEditPlaylistDialog(playlist storages.Playlist) {
 }
 
 func (p *PlaylistPage) showDeletePlaylistDialog(playlist storages.Playlist) {
-	dialog.ShowCustomConfirm(lang.L("Delete Playlist Confirmation"), lang.L("delete"), lang.L("cancel"),
+	dialog.ShowCustomConfirm(lang.L("Delete Playlist Confirmation"), lang.L("Delete"), lang.L("Cancel"),
 		widget.NewLabel(lang.L("Do you want to delete the playlist: ")+playlist.Title),
 		func(confirm bool) {
 			if confirm {
