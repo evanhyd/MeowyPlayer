@@ -21,7 +21,6 @@ var schemaSQL string
 var _ Storage = &SQLiteStorage{}
 
 type SQLiteStorage struct {
-	dbPath        string
 	musicFilePath string
 	db            *sql.DB
 	filesystemMux sync.RWMutex
@@ -29,7 +28,6 @@ type SQLiteStorage struct {
 
 func NewSQLiteStorage(dbPath string, musicFilePath string) *SQLiteStorage {
 	storage := &SQLiteStorage{
-		dbPath:        dbPath,
 		musicFilePath: musicFilePath,
 	}
 
@@ -186,7 +184,7 @@ func (s *SQLiteStorage) GetMusicFromPlaylist(session UserSession, playlistID int
         FROM music m
         JOIN playlist_music pm ON m.music_id = pm.music_id AND m.source = pm.source
         WHERE pm.user_id = ? AND pm.playlist_id = ?
-        ORDER BY pm.added_at ASC`,
+        ORDER BY pm.added_at DESC`,
 		session.UserId, playlistID,
 	)
 	if err != nil {

@@ -2,6 +2,7 @@ package scrapers
 
 import (
 	"context"
+	"io"
 	"testing"
 )
 
@@ -11,7 +12,11 @@ func testDownload(t *testing.T, d MusicDownloader, video Result) {
 
 	body, err := d.Download(context.Background(), video)
 	if err != nil {
-		t.Fatalf("Download failed: %v", err)
+		t.Fatalf("failed to start downloading: %v", err)
+	}
+
+	if _, err := io.Copy(io.Discard, body); err != nil {
+		t.Fatalf("failed to download: %v", err)
 	}
 	defer body.Close()
 }

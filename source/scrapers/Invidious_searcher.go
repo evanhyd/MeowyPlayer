@@ -25,17 +25,14 @@ type invSearchItem struct {
 }
 
 type invidiousSearcher struct {
-	apiBaseURL string
 }
 
 func NewInvidiousSearcher() *invidiousSearcher {
-	return &invidiousSearcher{
-		apiBaseURL: "https://inv.thepixora.com",
-	}
+	return &invidiousSearcher{}
 }
 
 func (s *invidiousSearcher) Search(ctx context.Context, title string) ([]Result, error) {
-	endpoint := fmt.Sprintf("%s/api/v1/search?q=%s&type=video", s.apiBaseURL, url.QueryEscape(title))
+	endpoint := fmt.Sprintf("https://inv.zoomerville.com/api/v1/search?q=%s&type=video", url.QueryEscape(title))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
