@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -14,9 +15,9 @@ import (
 )
 
 type cnvmp3Downloader struct {
-	referer          string
-	token            string
-	downloadVideoURL string
+	referer                 string
+	token                   string
+	downloadVideoScriptPath string
 }
 
 func NewCnvmp3Downloader() *cnvmp3Downloader {
@@ -40,15 +41,15 @@ func NewCnvmp3Downloader() *cnvmp3Downloader {
 
 	// Scrape download token.
 	downloadVideoToken := regexp.
-		MustCompile(`data.token = \"(.+)\";`).
+		MustCompile(`data.token = "(.+)";`).
 		FindStringSubmatch(string(content))[1]
 
 	// Scrape download URL.
-	downloadVidelURL := regexp.
+	downloadVideoScriptPath := regexp.
 		MustCompile(`function downloadVideo\(.+\) \{.+\n.+fetch\('(.+)', \{`).
 		FindStringSubmatch(string(content))[1]
 
-	return &cnvmp3Downloader{referer, downloadVideoToken, `https://cnvmp3.com/` + downloadVidelURL}
+	return &cnvmp3Downloader{referer: referer, token: downloadVideoToken, downloadVideoScriptPath: `https://cnvmp3.com/` + downloadVideoScriptPath}
 }
 
 func (d *cnvmp3Downloader) Download(ctx context.Context, video Result) (io.ReadCloser, error) {
@@ -139,7 +140,7 @@ func (d *cnvmp3Downloader) getVideoDownloadLink(ctx context.Context, video *Resu
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.downloadVideoURL, bytes.NewBuffer(requestData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.downloadVideoScriptPath, bytes.NewBuffer(requestData))
 	if err != nil {
 		return "", err
 	}
@@ -153,14 +154,14 @@ func (d *cnvmp3Downloader) getVideoDownloadLink(ctx context.Context, video *Resu
 
 	response := DownloadVideoResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return "", err
+		return "", errors.New("failed to decode DownloadVideoResponse: " + err.Error())
 	}
 
 	if !response.Success {
-		return "", fmt.Errorf("failed to get download video link")
+		return "", fmt.Errorf("failed to get download link")
 	}
 
 	paramCutOff := strings.Index(response.DownloadLink, "=") + 1
-	response.DownloadLink = response.DownloadLink[:paramCutOff] + url.QueryEscape(response.DownloadLink[paramCutOff:])
+	response.DownloadLink = response.DownloadLink[:paramCutOff] + url.PathEscape(response.DownloadLink[paramCutOff:])
 	return response.DownloadLink, nil
 }

@@ -17,7 +17,7 @@ func InitializeGlobalLogger(logFilePath string) Logger {
 		file = os.Stdout
 		log.Println(err)
 	}
-	handler := slog.NewJSONHandler(file, &slog.HandlerOptions{AddSource: true})
+	handler := slog.NewJSONHandler(file, &slog.HandlerOptions{AddSource: true, Level: slog.LevelDebug})
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 	return Logger{logger: logger, file: file}
