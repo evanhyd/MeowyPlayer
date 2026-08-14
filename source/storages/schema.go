@@ -1,9 +1,5 @@
 package storages
 
-import (
-	"strings"
-)
-
 type MusicSource int64
 
 const (
@@ -12,57 +8,36 @@ const (
 	SpotifySource
 )
 
-// Users table
-type User struct {
-	UserId         int64
-	Name           string
-	HashedPassword string
-	Salt           string
+type UserProfile struct {
+	UserId           string `db:"user_id"`
+	Username         string `db:"username"`
+	Language         int64  `db:"language"`
+	RegistrationDate int64  `db:"registration_date"`
+	Token            string `db:"token"`
+	CreatedAt        int64  `db:"created_at"`
+	ExpiresAt        int64  `db:"expires_at"`
 }
 
-// UserSessions table
-type UserSession struct {
-	UserId    int64
-	Token     string
-	CreatedAt int64 // Unix nano
-}
-
-// Playlist table
 type Playlist struct {
-	UserId       int64
-	PlaylistId   int64
-	Title        string
-	ModifiedDate int64 // Unix nano
-	CoverBlob    []byte
+	UserId       string `db:"user_id"`
+	PlaylistId   int64  `db:"playlist_id"`
+	Deleted      bool   `db:"deleted"`
+	Title        string `db:"title"`
+	ModifiedDate int64  `db:"modified_date"`
+	CoverBlob    []byte `db:"cover_blob"`
 }
 
-// Music table
 type Music struct {
-	MusicId       string
-	Source        MusicSource
-	Title         string
-	LengthSeconds int64
+	MusicId       string      `db:"music_id"`
+	Source        MusicSource `db:"source"`
+	Title         string      `db:"title"`
+	LengthSeconds int64       `db:"length_seconds"`
 }
 
-// PlaylistMusic table
 type PlaylistMusic struct {
-	UserId     int64
-	PlaylistId int64
-	MusicId    string
-	Source     MusicSource
-	AddedAt    int64 // Unix nano
-}
-
-func ComparePlaylist(l Playlist, r Playlist) int {
-	if l.UserId != r.UserId {
-		return int(l.UserId) - int(r.UserId)
-	}
-	return int(l.PlaylistId) - int(r.PlaylistId)
-}
-
-func CompareMusic(l Music, r Music) int {
-	if l.MusicId != r.MusicId {
-		return strings.Compare(l.MusicId, r.MusicId)
-	}
-	return int(l.Source) - int(r.Source)
+	UserId     string `db:"user_id"`
+	PlaylistId int64  `db:"playlist_id"`
+	MusicId    string `db:"music_id"`
+	Source     int64  `db:"source"`
+	AddedAt    int64  `db:"added_at"`
 }
