@@ -3,7 +3,7 @@ package players
 import (
 	"log/slog"
 	"math/rand/v2"
-	"meowyplayer/context"
+	"meowyplayer/mcontext"
 	"meowyplayer/storages"
 	"slices"
 	"sync"
@@ -44,7 +44,7 @@ type CmdSetPlaylist struct {
 var _ MusicPlayer = &BeepPlayer{}
 
 type BeepPlayer struct {
-	userContext          *context.UserContext
+	userContext          *mcontext.UserContext
 	missingMusicCallback func(music storages.Music)
 
 	musicList       ringBuffer[storages.Music]
@@ -60,7 +60,7 @@ type BeepPlayer struct {
 	cmdChan chan Command
 }
 
-func MakeBeepPlayer(userContext *context.UserContext, missingMusicCallback func(music storages.Music)) *BeepPlayer {
+func MakeBeepPlayer(userContext *mcontext.UserContext, missingMusicCallback func(music storages.Music)) *BeepPlayer {
 	sync.OnceFunc(func() {
 		err := speaker.Init(sampleRate, sampleRate.N(100*time.Millisecond))
 		if err != nil {

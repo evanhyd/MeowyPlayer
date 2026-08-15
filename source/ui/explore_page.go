@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"sync"
 
-	"meowyplayer/context"
+	"meowyplayer/mcontext"
 	"meowyplayer/scrapers"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
@@ -24,7 +24,7 @@ import (
 
 type ExplorePage struct {
 	widget.BaseWidget
-	userContext   *context.UserContext
+	userContext   *mcontext.UserContext
 	searchEngine  scrapers.MusicSearcher
 	searchResults []scrapers.Result
 	cancelSearch  stdcontext.CancelFunc
@@ -35,7 +35,7 @@ type ExplorePage struct {
 	scrollList   *widget.List
 }
 
-func newExplorePage(userContext *context.UserContext) *ExplorePage {
+func newExplorePage(userContext *mcontext.UserContext) *ExplorePage {
 	p := ExplorePage{
 		userContext:  userContext,
 		searchEngine: scrapers.NewInvidiousSearcher(),

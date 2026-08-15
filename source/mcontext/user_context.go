@@ -1,4 +1,4 @@
-package context
+package mcontext
 
 import (
 	"io"
@@ -7,26 +7,29 @@ import (
 )
 
 type UserContext struct {
+	config     UserConfig
 	storage    storages.Storage
 	dispatcher EventsDispatcher
 }
 
-func MakeUserContext() UserContext {
-	return UserContext{dispatcher: makeEventsDispatcher()}
+func MakeUserContext(config UserConfig, storage storages.Storage) UserContext {
+	return UserContext{
+		config:     config,
+		storage:    storage,
+		dispatcher: makeEventsDispatcher(),
+	}
 }
 
 func (u *UserContext) AddListener(event EventType, listener EventListener) {
 	u.dispatcher.AddListener(event, listener)
 }
 
-func (u *UserContext) SetStorage(storage storages.Storage) {
-	if u.storage != nil {
-		if err := u.storage.Close(); err != nil {
-			slog.Error("failed to close the storage", "error", err)
-		}
-	}
-	u.storage = storage
+func (u *UserContext) Refresh() {
 	u.dispatcher.Dispatch(OnSetStorageEvent, OnSetStorageEventData{Storage: u.storage})
+}
+
+func (u *UserContext) Config() *UserConfig {
+	return &u.config
 }
 
 func (u *UserContext) Close() {

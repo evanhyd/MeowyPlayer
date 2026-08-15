@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"log/slog"
-	"meowyplayer/context"
+	"meowyplayer/mcontext"
 	"meowyplayer/scrapers"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
@@ -25,7 +25,7 @@ import (
 
 type MusicPage struct {
 	widget.BaseWidget
-	userContext    *context.UserContext
+	userContext    *mcontext.UserContext
 	playlist       storages.Playlist
 	queryResults   []storages.Music
 	displayResults []storages.Music
@@ -42,7 +42,7 @@ type MusicPage struct {
 	scrollList          *widget.List
 }
 
-func newMusicPage(userContext *context.UserContext) *MusicPage {
+func newMusicPage(userContext *mcontext.UserContext) *MusicPage {
 	p := MusicPage{
 		userContext:         userContext,
 		background:          canvas.NewImageFromImage(nil),
@@ -93,26 +93,26 @@ func newMusicPage(userContext *context.UserContext) *MusicPage {
 	)
 	p.scrollList.HideSeparators = true
 
-	p.userContext.AddListener(context.OnSetStorageEvent, func(any) {
+	p.userContext.AddListener(mcontext.OnSetStorageEvent, func(any) {
 		p.Hide()
 	})
 
-	p.userContext.AddListener(context.OnViewMusicPageEvent, func(data any) {
-		p.fetchMusic(data.(context.OnViewMusicPageEventData).Playlist)
+	p.userContext.AddListener(mcontext.OnViewMusicPageEvent, func(data any) {
+		p.fetchMusic(data.(mcontext.OnViewMusicPageEventData).Playlist)
 		p.Show()
 	})
 
-	p.userContext.AddListener(context.OnViewPlaylistPageEvent, func(any) {
+	p.userContext.AddListener(mcontext.OnViewPlaylistPageEvent, func(any) {
 		p.Hide()
 	})
 
-	p.userContext.AddListener(context.OnPutMusicInPlaylistEvent, func(data any) {
-		if data.(context.OnPutMusicInPlaylistEventData).PlaylistId == p.playlist.PlaylistId {
+	p.userContext.AddListener(mcontext.OnPutMusicInPlaylistEvent, func(data any) {
+		if data.(mcontext.OnPutMusicInPlaylistEventData).PlaylistId == p.playlist.PlaylistId {
 			p.fetchMusic(p.playlist)
 		}
 	})
 
-	p.userContext.AddListener(context.OnDeleteMusicFromPlaylistEvent, func(data any) {
+	p.userContext.AddListener(mcontext.OnDeleteMusicFromPlaylistEvent, func(data any) {
 		p.fetchMusic(p.playlist)
 	})
 
@@ -153,6 +153,9 @@ func (p *MusicPage) showEditingMenu(music storages.Music, event *fyne.PointEvent
 }
 
 func (p *MusicPage) showDetailDialog(music storages.Music) {
+	fyne.CurrentApp().Clipboard().SetContent(music.MusicId)
+	fyne.CurrentApp().SendNotification(fyne.NewNotification("Success", lang.L("Successfully copied music ID.")))
+
 	dialog.ShowInformation(lang.L("Music Detail"),
 		fmt.Sprintf("%v: %v\nID: %v\n%v: %v\n%v: %v",
 			lang.L("Title"), music.Title,

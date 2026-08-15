@@ -1,9 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"log/slog"
-	"meowyplayer/context"
 	"meowyplayer/loggers"
+	"meowyplayer/mcontext"
 	"meowyplayer/storages"
 	"meowyplayer/ui"
 	"os"
@@ -28,12 +29,26 @@ func main() {
 	logger := loggers.InitializeGlobalLogger(logFilePath)
 	defer logger.Close()
 
-	// Local storage path.
-	dbPath := filepath.Join(baseDir, "local.db")
-	musicFilePath := filepath.Join(baseDir, "music")
-	userContext := context.MakeUserContext()
+	// Config.
+	config := mcontext.UserConfig{}
+	if configData, err := os.ReadFile(filepath.Join(baseDir, "config.json")); err != nil {
+		slog.Error("failed to read config, fallback to default", "error", err)
+		config.Endpoints = map[string]string{
+			"register":       `http://40.233.108.102/auth/register`,
+			"login":          `http://40.233.108.102/auth/login`,
+			"refresh":        `http://40.233.108.102/auth/refresh`,
+			"reset-password": `http://40.233.108.102/auth/reset-password`,
+			"me":             `http://40.233.108.102/users/me`,
+		}
+	} else if err = json.Unmarshal(configData, &config); err != nil {
+		slog.Error("failed to parse config", "error", err)
+		return
+	}
 
-	ui.RunApp(&userContext, func() {
-		userContext.SetStorage(storages.NewSQLiteStorage(dbPath, musicFilePath))
-	})
+	// Storage.
+	storage := storages.NewSQLiteStorage(filepath.Join(baseDir, "local.db"), filepath.Join(baseDir, "music"))
+	userContext := mcontext.MakeUserContext(config, storage)
+
+	// Start the app.
+	ui.RunApp(&userContext)
 }

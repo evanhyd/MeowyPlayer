@@ -2,7 +2,7 @@ package ui
 
 import (
 	"log/slog"
-	"meowyplayer/context"
+	"meowyplayer/mcontext"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
 	"meowyplayer/ui/internal/mutil"
@@ -20,7 +20,7 @@ import (
 
 type PlaylistPage struct {
 	widget.BaseWidget
-	userContext          *context.UserContext
+	userContext          *mcontext.UserContext
 	queryResults         []storages.Playlist
 	displayResults       []storages.Playlist
 	searchEntry          *widget.Entry
@@ -29,7 +29,7 @@ type PlaylistPage struct {
 	createPlaylistButton *widget.Button
 }
 
-func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
+func newPlaylistPage(userContext *mcontext.UserContext) *PlaylistPage {
 	p := PlaylistPage{
 		userContext:          userContext,
 		searchEntry:          widget.NewEntry(),
@@ -63,17 +63,17 @@ func newPlaylistPage(userContext *context.UserContext) *PlaylistPage {
 		},
 	)
 
-	p.userContext.AddListener(context.OnSetStorageEvent, func(any) {
+	p.userContext.AddListener(mcontext.OnSetStorageEvent, func(any) {
 		p.fetchPlaylists()
 		p.Show()
 	})
-	p.userContext.AddListener(context.OnViewPlaylistPageEvent, func(any) {
+	p.userContext.AddListener(mcontext.OnViewPlaylistPageEvent, func(any) {
 		p.Show()
 	})
-	p.userContext.AddListener(context.OnPutPlaylistEvent, func(any) {
+	p.userContext.AddListener(mcontext.OnPutPlaylistEvent, func(any) {
 		p.fetchPlaylists()
 	})
-	p.userContext.AddListener(context.OnDeletePlaylistEvent, func(any) {
+	p.userContext.AddListener(mcontext.OnDeletePlaylistEvent, func(any) {
 		p.fetchPlaylists()
 	})
 

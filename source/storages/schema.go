@@ -8,14 +8,23 @@ const (
 	SpotifySource
 )
 
+type Language int64
+
+const (
+	LangEnglish Language = iota
+	LangFrench
+	LangChinese
+	LangJapanese
+)
+
 type UserProfile struct {
-	UserId           string `db:"user_id"`
-	Username         string `db:"username"`
-	Language         int64  `db:"language"`
-	RegistrationDate int64  `db:"registration_date"`
-	Token            string `db:"token"`
-	CreatedAt        int64  `db:"created_at"`
-	ExpiresAt        int64  `db:"expires_at"`
+	UserId           string   `db:"user_id"`
+	Username         string   `db:"username"`
+	Language         Language `db:"language"`
+	RegistrationDate int64    `db:"registration_date"`
+	Token            string   `db:"token"`
+	CreatedAt        int64    `db:"created_at"`
+	ExpiresAt        int64    `db:"expires_at"`
 }
 
 type Playlist struct {
