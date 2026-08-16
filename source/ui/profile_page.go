@@ -73,6 +73,7 @@ type loginPage struct {
 	confirmPasswordEntry *widget.Entry
 	loginButton          *widget.Button
 	registerButton       *widget.Button
+	onLogin              func()
 }
 
 func newLoginPage(userContext *mcontext.UserContext, onLogin func(), onRegister func()) *loginPage {
@@ -82,22 +83,10 @@ func newLoginPage(userContext *mcontext.UserContext, onLogin func(), onRegister 
 		userIdEntry:   widget.NewEntry(),
 		passwordEntry: widget.NewPasswordEntry(),
 		loginButton: widget.NewButton(lang.L("Login"), func() {
-			win := fyne.CurrentApp().Driver().AllWindows()[0]
-			waitingDialog := dialog.NewCustomWithoutButtons(lang.L("logining"), widget.NewProgressBarInfinite(), win)
-
-			fyne.Do(func() {
-				waitingDialog.Show()
-				err := p.login(p.userIdEntry.Text, p.passwordEntry.Text)
-				waitingDialog.Dismiss()
-				if err != nil {
-					dialog.ShowError(err, win)
-					return
-				}
-				onLogin()
-			})
-
+			p.login(p.userIdEntry.Text, p.passwordEntry.Text)
 		}),
 		registerButton: widget.NewButton(lang.L("Go Register"), onRegister),
+		onLogin:        onLogin,
 	}
 	p.ExtendBaseWidget(&p)
 
@@ -127,50 +116,64 @@ func (p *loginPage) CreateRenderer() fyne.WidgetRenderer {
 	)))
 }
 
-func (p *loginPage) login(userId string, password string) error {
-	// Login to get token.
-	token, err := func() (string, error) {
-		request := handlers.LoginRequest{
-			UserId:   userId,
-			Password: password,
+func (p *loginPage) login(userId string, password string) {
+	win := fyne.CurrentApp().Driver().AllWindows()[0]
+	waitingDialog := dialog.NewCustomWithoutButtons(lang.L("logining"), widget.NewProgressBarInfinite(), win)
+
+	fyne.Do(func() {
+		waitingDialog.Show()
+		err := func() error {
+			// Login to get token.
+			token, err := func() (string, error) {
+				request := handlers.LoginRequest{
+					UserId:   userId,
+					Password: password,
+				}
+				response := handlers.LoginResponse{}
+				err := handlers.SendJSON(p.userContext.Config().Endpoints["login"], request, &response)
+				return response.Token, err
+			}()
+			if err != nil {
+				slog.Error("failed to login", "error", err)
+				return err
+			}
+
+			// Get user profile.
+			profile, err := func() (storages.UserProfile, error) {
+				request := handlers.MeRequest{
+					Token: token,
+				}
+				response := handlers.MeResponse{}
+				err := handlers.SendJSON(p.userContext.Config().Endpoints["me"], request, &response)
+
+				profile := storages.UserProfile{
+					UserId:           response.UserId,
+					Username:         response.Username,
+					Language:         response.Language,
+					RegistrationDate: response.RegistrationDate,
+					Token:            token,
+				}
+				return profile, err
+			}()
+			if err != nil {
+				slog.Error("failed to get user profile", "error", err)
+				return err
+			}
+
+			if err := p.userContext.PutUser(profile); err != nil {
+				slog.Error("failed to put user profile in the storage", "error", err)
+				return err
+			}
+			return nil
+		}()
+
+		waitingDialog.Dismiss()
+		if err != nil {
+			dialog.ShowError(err, win)
+			return
 		}
-		response := handlers.LoginResponse{}
-		err := handlers.SendJSON(p.userContext.Config().Endpoints["login"], request, &response)
-		return response.Token, err
-	}()
-	if err != nil {
-		slog.Error("failed to login", "error", err)
-		return err
-	}
-
-	// Get user profile.
-	profile, err := func() (storages.UserProfile, error) {
-		request := handlers.MeRequest{
-			Token: token,
-		}
-		response := handlers.MeResponse{}
-		err := handlers.SendJSON(p.userContext.Config().Endpoints["me"], request, &response)
-
-		profile := storages.UserProfile{
-			UserId:           response.UserId,
-			Username:         response.Username,
-			Language:         response.Language,
-			RegistrationDate: response.RegistrationDate,
-			Token:            token,
-		}
-		return profile, err
-	}()
-	if err != nil {
-		slog.Error("failed to get user profile", "error", err)
-		return err
-	}
-
-	if err := p.userContext.PutUser(profile); err != nil {
-		slog.Error("failed to put user profile in the storage", "error", err)
-		return err
-	}
-
-	return nil
+		p.onLogin()
+	})
 }
 
 type registerPage struct {
@@ -192,13 +195,7 @@ func newRegisterPage(userContext *mcontext.UserContext, onCancel func()) *regist
 		passwordEntry:        widget.NewPasswordEntry(),
 		confirmPasswordEntry: widget.NewPasswordEntry(),
 		submitButton: widget.NewButton(lang.L("Submit"), func() {
-			win := fyne.CurrentApp().Driver().AllWindows()[0]
-			_, err := p.registerUser(p.userIdEntry.Text, p.passwordEntry.Text)
-			if err != nil {
-				dialog.ShowError(err, win)
-				return
-			}
-			dialog.ShowInformation(lang.L("register"), lang.L("Register successfully!"), win)
+			p.registerUser(p.userIdEntry.Text, p.passwordEntry.Text)
 		}),
 		cancelButton: widget.NewButton(lang.L("Cancel"), onCancel),
 	}
@@ -237,18 +234,38 @@ func (p *registerPage) CreateRenderer() fyne.WidgetRenderer {
 	)))
 }
 
-func (p *registerPage) registerUser(userId string, password string) (handlers.RegisterResponse, error) {
-	// Send request to the server.
-	request := handlers.RegisterRequest{
-		UserId:   userId,
-		Username: userId,
-		Password: password,
-		Language: storages.LangEnglish,
-	}
+func (p *registerPage) registerUser(userId string, password string) {
+	win := fyne.CurrentApp().Driver().AllWindows()[0]
+	waitingDialog := dialog.NewCustomWithoutButtons(lang.L("registering"), widget.NewProgressBarInfinite(), win)
 
-	response := handlers.RegisterResponse{}
-	err := handlers.SendJSON(p.userContext.Config().Endpoints["register"], request, &response)
-	return response, err
+	fyne.Do(func() {
+		waitingDialog.Show()
+
+		// Send request..
+		request := handlers.RegisterRequest{
+			UserId:   userId,
+			Username: userId,
+			Password: password,
+			Language: storages.LangEnglish,
+		}
+
+		response := handlers.RegisterResponse{}
+		err := handlers.SendJSON(p.userContext.Config().Endpoints["register"], request, &response)
+		waitingDialog.Dismiss()
+		if err != nil {
+			dialog.ShowError(err, win)
+			return
+		}
+
+		// Remove the old entry values.
+		p.userIdEntry.SetText("")
+		p.passwordEntry.SetText("")
+		p.confirmPasswordEntry.SetText("")
+
+		// Go back to the login page.
+		dialog.ShowInformation(lang.L("register"), lang.L("Register successfully!"), win)
+		p.cancelButton.OnTapped()
+	})
 }
 
 type UserProfilePage struct {
