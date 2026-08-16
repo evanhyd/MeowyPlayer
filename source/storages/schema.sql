@@ -6,8 +6,6 @@ CREATE TABLE IF NOT EXISTS user_profile (
     language INTEGER NOT NULL,
     registration_date INTEGER NOT NULL, -- Unix
     token TEXT NOT NULL,
-    created_at INTEGER NOT NULL, -- Unix
-    expires_at INTEGER NOT NULL, -- Unix
     PRIMARY KEY(user_id)
 );
 

@@ -41,6 +41,10 @@ func (u *UserContext) Close() {
 }
 
 // DB wrapper calls.
+func (u *UserContext) PutUser(userProfile storages.UserProfile) error {
+	return u.storage.PutUser(userProfile)
+}
+
 func (u *UserContext) PutPlaylist(playlist storages.Playlist) (storages.Playlist, error) {
 	playlist, err := u.storage.PutPlaylist(playlist)
 	if err == nil {

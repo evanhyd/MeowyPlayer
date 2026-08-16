@@ -23,8 +23,6 @@ type UserProfile struct {
 	Language         Language `db:"language"`
 	RegistrationDate int64    `db:"registration_date"`
 	Token            string   `db:"token"`
-	CreatedAt        int64    `db:"created_at"`
-	ExpiresAt        int64    `db:"expires_at"`
 }
 
 type Playlist struct {

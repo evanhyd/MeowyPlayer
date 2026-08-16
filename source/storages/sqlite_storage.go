@@ -67,11 +67,9 @@ func (s *SQLiteStorage) PutUser(profile UserProfile) error {
 
 	_, err = tx.Exec(
 		`INSERT INTO user_profile (
-			user_id, username, language, registration_date, 
-			token, created_at, expires_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		profile.UserId, profile.Username, profile.Language, profile.RegistrationDate,
-		profile.Token, profile.CreatedAt, profile.ExpiresAt,
+			user_id, username, language, registration_date, token
+		) VALUES (?, ?, ?, ?, ?)`,
+		profile.UserId, profile.Username, profile.Language, profile.RegistrationDate, profile.Token,
 	)
 	if err != nil {
 		return err
@@ -102,16 +100,12 @@ func (s *SQLiteStorage) GetUser() (UserProfile, error) {
 	var p UserProfile
 	query := `
 		SELECT 
-			user_id, username, language, registration_date,
-			token, created_at, expires_at
+			user_id, username, language, registration_date, token
 		FROM user_profile 
 		LIMIT 1
 	`
 
-	err := s.db.QueryRow(query).Scan(
-		&p.UserId, &p.Username, &p.Language, &p.RegistrationDate,
-		&p.Token, &p.CreatedAt, &p.ExpiresAt,
-	)
+	err := s.db.QueryRow(query).Scan(&p.UserId, &p.Username, &p.Language, &p.RegistrationDate, &p.Token)
 	if err != nil {
 		return UserProfile{}, err
 	}

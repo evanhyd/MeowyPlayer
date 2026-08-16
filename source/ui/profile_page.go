@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"log/slog"
 	"meowyplayer/handlers"
 	"meowyplayer/mcontext"
 	"meowyplayer/storages"
@@ -20,13 +21,13 @@ import (
 func isValidUserId(userId string) error {
 	length := utf8.RuneCountInString(userId)
 	if length < 3 || length > 20 {
-		return errors.New("username length must be between 3 - 20 characters long")
+		return errors.New("user id length must be between 3 - 20 characters long")
 	}
 
 	hasLetter := false
 	for _, char := range userId {
 		if !unicode.IsLetter(char) && !unicode.IsNumber(char) {
-			return errors.New("username must contain only letter and optionally number")
+			return errors.New("user id must contain only letter and optionally number")
 		}
 		if unicode.IsLetter(char) {
 			hasLetter = true
@@ -34,7 +35,7 @@ func isValidUserId(userId string) error {
 	}
 
 	if !hasLetter {
-		return errors.New("username must contain only letter and optionally number")
+		return errors.New("user id must contain only letter and optionally number")
 	}
 	return nil
 }
@@ -67,35 +68,50 @@ func isValidPassword(password string) error {
 type loginPage struct {
 	widget.BaseWidget
 	userContext          *mcontext.UserContext
-	usernameEntry        *widget.Entry
+	userIdEntry          *widget.Entry
 	passwordEntry        *widget.Entry
 	confirmPasswordEntry *widget.Entry
 	loginButton          *widget.Button
 	registerButton       *widget.Button
 }
 
-func newLoginPage(userContext *mcontext.UserContext, onRegister func()) *loginPage {
+func newLoginPage(userContext *mcontext.UserContext, onLogin func(), onRegister func()) *loginPage {
 	var p loginPage
 	p = loginPage{
-		userContext:    userContext,
-		usernameEntry:  widget.NewEntry(),
-		passwordEntry:  widget.NewPasswordEntry(),
-		loginButton:    widget.NewButton(lang.L("Login"), nil),
+		userContext:   userContext,
+		userIdEntry:   widget.NewEntry(),
+		passwordEntry: widget.NewPasswordEntry(),
+		loginButton: widget.NewButton(lang.L("Login"), func() {
+			win := fyne.CurrentApp().Driver().AllWindows()[0]
+			waitingDialog := dialog.NewCustomWithoutButtons(lang.L("logining"), widget.NewProgressBarInfinite(), win)
+
+			fyne.Do(func() {
+				waitingDialog.Show()
+				err := p.login(p.userIdEntry.Text, p.passwordEntry.Text)
+				waitingDialog.Dismiss()
+				if err != nil {
+					dialog.ShowError(err, win)
+					return
+				}
+				onLogin()
+			})
+
+		}),
 		registerButton: widget.NewButton(lang.L("Go Register"), onRegister),
 	}
 	p.ExtendBaseWidget(&p)
 
 	checker := func(string) {
-		if p.usernameEntry.Validate() == nil && p.passwordEntry.Validate() == nil {
+		if p.userIdEntry.Validate() == nil && p.passwordEntry.Validate() == nil {
 			p.loginButton.Enable()
 		} else {
 			p.loginButton.Disable()
 		}
 	}
 
-	p.usernameEntry.Validator = isValidUserId
+	p.userIdEntry.Validator = isValidUserId
 	p.passwordEntry.Validator = isValidPassword
-	p.usernameEntry.OnChanged = checker
+	p.userIdEntry.OnChanged = checker
 	p.passwordEntry.OnChanged = checker
 
 	p.loginButton.Disable()
@@ -105,16 +121,62 @@ func newLoginPage(userContext *mcontext.UserContext, onRegister func()) *loginPa
 
 func (p *loginPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(mcontainer.NewCenter(0.65, 0.3, widget.NewForm(
-		widget.NewFormItem(lang.L("Username"), p.usernameEntry),
+		widget.NewFormItem(lang.L("UserId"), p.userIdEntry),
 		widget.NewFormItem(lang.L("Password"), p.passwordEntry),
 		widget.NewFormItem("", container.NewHBox(layout.NewSpacer(), p.loginButton, p.registerButton)),
 	)))
 }
 
+func (p *loginPage) login(userId string, password string) error {
+	// Login to get token.
+	token, err := func() (string, error) {
+		request := handlers.LoginRequest{
+			UserId:   userId,
+			Password: password,
+		}
+		response := handlers.LoginResponse{}
+		err := handlers.SendJSON(p.userContext.Config().Endpoints["login"], request, &response)
+		return response.Token, err
+	}()
+	if err != nil {
+		slog.Error("failed to login", "error", err)
+		return err
+	}
+
+	// Get user profile.
+	profile, err := func() (storages.UserProfile, error) {
+		request := handlers.MeRequest{
+			Token: token,
+		}
+		response := handlers.MeResponse{}
+		err := handlers.SendJSON(p.userContext.Config().Endpoints["me"], request, &response)
+
+		profile := storages.UserProfile{
+			UserId:           response.UserId,
+			Username:         response.Username,
+			Language:         response.Language,
+			RegistrationDate: response.RegistrationDate,
+			Token:            token,
+		}
+		return profile, err
+	}()
+	if err != nil {
+		slog.Error("failed to get user profile", "error", err)
+		return err
+	}
+
+	if err := p.userContext.PutUser(profile); err != nil {
+		slog.Error("failed to put user profile in the storage", "error", err)
+		return err
+	}
+
+	return nil
+}
+
 type registerPage struct {
 	widget.BaseWidget
 	userContext          *mcontext.UserContext
-	usernameEntry        *widget.Entry
+	userIdEntry          *widget.Entry
 	passwordEntry        *widget.Entry
 	confirmPasswordEntry *widget.Entry
 	captchaEntry         *widget.Entry
@@ -126,12 +188,12 @@ func newRegisterPage(userContext *mcontext.UserContext, onCancel func()) *regist
 	var p registerPage
 	p = registerPage{
 		userContext:          userContext,
-		usernameEntry:        widget.NewEntry(),
+		userIdEntry:          widget.NewEntry(),
 		passwordEntry:        widget.NewPasswordEntry(),
 		confirmPasswordEntry: widget.NewPasswordEntry(),
 		submitButton: widget.NewButton(lang.L("Submit"), func() {
 			win := fyne.CurrentApp().Driver().AllWindows()[0]
-			_, err := p.registerUser(p.usernameEntry.Text, p.passwordEntry.Text)
+			_, err := p.registerUser(p.userIdEntry.Text, p.passwordEntry.Text)
 			if err != nil {
 				dialog.ShowError(err, win)
 				return
@@ -143,14 +205,14 @@ func newRegisterPage(userContext *mcontext.UserContext, onCancel func()) *regist
 	p.ExtendBaseWidget(&p)
 
 	checker := func(string) {
-		if p.usernameEntry.Validate() == nil && p.passwordEntry.Validate() == nil && p.confirmPasswordEntry.Validate() == nil {
+		if p.userIdEntry.Validate() == nil && p.passwordEntry.Validate() == nil && p.confirmPasswordEntry.Validate() == nil {
 			p.submitButton.Enable()
 		} else {
 			p.submitButton.Disable()
 		}
 	}
 
-	p.usernameEntry.Validator = isValidUserId
+	p.userIdEntry.Validator = isValidUserId
 	p.passwordEntry.Validator = isValidPassword
 	p.confirmPasswordEntry.Validator = func(s string) error {
 		if s != p.passwordEntry.Text {
@@ -158,7 +220,7 @@ func newRegisterPage(userContext *mcontext.UserContext, onCancel func()) *regist
 		}
 		return nil
 	}
-	p.usernameEntry.OnChanged = checker
+	p.userIdEntry.OnChanged = checker
 	p.passwordEntry.OnChanged = checker
 	p.confirmPasswordEntry.OnChanged = checker
 	p.submitButton.Disable()
@@ -168,18 +230,18 @@ func newRegisterPage(userContext *mcontext.UserContext, onCancel func()) *regist
 
 func (p *registerPage) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(mcontainer.NewCenter(0.65, 0.3, widget.NewForm(
-		widget.NewFormItem(lang.L("Username"), p.usernameEntry),
+		widget.NewFormItem(lang.L("User ID"), p.userIdEntry),
 		widget.NewFormItem(lang.L("Password"), p.passwordEntry),
 		widget.NewFormItem(lang.L("Confirm Password"), p.confirmPasswordEntry),
 		widget.NewFormItem("", container.NewHBox(layout.NewSpacer(), p.submitButton, p.cancelButton)),
 	)))
 }
 
-func (p *registerPage) registerUser(username string, password string) (handlers.RegisterResponse, error) {
+func (p *registerPage) registerUser(userId string, password string) (handlers.RegisterResponse, error) {
 	// Send request to the server.
 	request := handlers.RegisterRequest{
-		UserId:   username,
-		Username: username,
+		UserId:   userId,
+		Username: userId,
 		Password: password,
 		Language: storages.LangEnglish,
 	}
@@ -187,7 +249,14 @@ func (p *registerPage) registerUser(username string, password string) (handlers.
 	response := handlers.RegisterResponse{}
 	err := handlers.SendJSON(p.userContext.Config().Endpoints["register"], request, &response)
 	return response, err
+}
 
+type UserProfilePage struct {
+	widget.BaseWidget
+	userContext           *mcontext.UserContext
+	userIdLabel           *widget.Label
+	usernameLabel         *widget.Label
+	registrationDateLabel *widget.Label
 }
 
 type ProfilePage struct {
@@ -200,12 +269,17 @@ type ProfilePage struct {
 func newProfilePage(userContext *mcontext.UserContext) *ProfilePage {
 	var p ProfilePage
 	p = ProfilePage{
-		userContext:  userContext,
-		loginView:    newLoginPage(userContext, p.showRegisterPage),
+		userContext: userContext,
+		loginView: newLoginPage(
+			userContext,
+			func() {
+				dialog.ShowInformation(lang.L("login"), lang.L("Welcome back"), fyne.CurrentApp().Driver().AllWindows()[0])
+			},
+			p.showRegisterPage,
+		),
 		registerView: newRegisterPage(userContext, p.showLoginPage),
 	}
 	p.ExtendBaseWidget(&p)
-
 	p.registerView.Hide()
 	return &p
 }

@@ -46,8 +46,6 @@ func TestUserOperations(t *testing.T) {
 		Language:         1,
 		RegistrationDate: time.Now().Unix(),
 		Token:            "token_xyz",
-		CreatedAt:        time.Now().Unix(),
-		ExpiresAt:        time.Now().Add(24 * time.Hour).Unix(),
 	}
 
 	// 1. Create User
