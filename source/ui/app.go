@@ -32,7 +32,7 @@ func RunApp(userContext *mcontext.UserContext) {
 	appTab := container.NewAppTabs(
 		container.NewTabItemWithIcon(lang.L("Explore"), theme.MediaMusicIcon(), newExplorePage(userContext)),
 		container.NewTabItemWithIcon(lang.L("Playlist"), resourcePlaylistSvg, container.NewStack(newPlaylistPage(userContext), newMusicPage(userContext))),
-		container.NewTabItemWithIcon(lang.L("Profile"), theme.AccountIcon(), newProfilePage(userContext)),
+		container.NewTabItemWithIcon(lang.L("Profile"), theme.AccountIcon(), newAuthPage(userContext)),
 	)
 	appTab.SetTabLocation(container.TabLocationLeading)
 	appTab.SelectIndex(1)

@@ -42,7 +42,23 @@ func (u *UserContext) Close() {
 
 // DB wrapper calls.
 func (u *UserContext) PutUser(userProfile storages.UserProfile) error {
-	return u.storage.PutUser(userProfile)
+	err := u.storage.PutUser(userProfile)
+	if err == nil {
+		u.dispatcher.Dispatch(OnPutUserEvent, OnPutUserEventData{UserProfile: userProfile})
+	}
+	return err
+}
+
+func (u *UserContext) DeleteUser() error {
+	err := u.storage.DeleteUser()
+	if err == nil {
+		u.dispatcher.Dispatch(OnDeleteUserEvent, OnDeleteUserEventData{})
+	}
+	return err
+}
+
+func (u *UserContext) GetUser() (storages.UserProfile, error) {
+	return u.storage.GetUser()
 }
 
 func (u *UserContext) PutPlaylist(playlist storages.Playlist) (storages.Playlist, error) {
