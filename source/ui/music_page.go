@@ -92,10 +92,7 @@ func newMusicPage(userContext *mcontext.UserContext) *MusicPage {
 		},
 	)
 	p.scrollList.HideSeparators = true
-
-	p.userContext.AddListener(mcontext.OnSetStorageEvent, func(any) {
-		p.Hide()
-	})
+	p.Hide()
 
 	p.userContext.AddListener(mcontext.OnViewMusicPageEvent, func(data any) {
 		p.fetchMusic(data.(mcontext.OnViewMusicPageEventData).Playlist)
@@ -112,7 +109,7 @@ func newMusicPage(userContext *mcontext.UserContext) *MusicPage {
 		}
 	})
 
-	p.userContext.AddListener(mcontext.OnDeleteMusicFromPlaylistEvent, func(data any) {
+	p.userContext.AddListener(mcontext.OnDeleteMusicFromPlaylistEvent, func(any) {
 		p.fetchMusic(p.playlist)
 	})
 

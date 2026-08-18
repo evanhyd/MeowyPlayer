@@ -6,8 +6,7 @@ type EventType int64
 type EventListener = func(any)
 
 const (
-	OnSetStorageEvent EventType = iota
-	OnPutPlaylistEvent
+	OnPutPlaylistEvent EventType = iota
 	OnDeletePlaylistEvent
 	OnPutMusicInPlaylistEvent
 	OnDeleteMusicFromPlaylistEvent
@@ -17,10 +16,6 @@ const (
 	OnPutUserEvent
 	OnDeleteUserEvent
 )
-
-type OnSetStorageEventData struct {
-	Storage storages.Storage
-}
 
 type OnPutPlaylistEventData struct {
 	Playlist storages.Playlist

@@ -11,6 +11,39 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+type AuthPage struct {
+	widget.BaseWidget
+	loginPage        *LoginPage
+	registrationPage *RegistrationPage
+}
+
+func newAuthPage(userContext *mcontext.UserContext) *AuthPage {
+	var p AuthPage
+	p = AuthPage{
+		loginPage:        newLoginPage(userContext, p.showRegisterPage),
+		registrationPage: newRegistrationPage(userContext, p.showLoginPage),
+	}
+	p.ExtendBaseWidget(&p)
+	p.showLoginPage()
+	return &p
+}
+
+func (p *AuthPage) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(container.NewStack(p.registrationPage, p.loginPage))
+}
+
+func (p *AuthPage) showLoginPage() {
+	p.loginPage.clearEntry()
+	p.registrationPage.Hide()
+	p.loginPage.Show()
+}
+
+func (p *AuthPage) showRegisterPage() {
+	p.registrationPage.clearEntry()
+	p.loginPage.Hide()
+	p.registrationPage.Show()
+}
+
 func isValidUserId(userId string) error {
 	length := utf8.RuneCountInString(userId)
 	if length < 3 || length > 20 {
@@ -56,75 +89,4 @@ func isValidPassword(password string) error {
 		return errors.New("password must contain at least letter, number, and a special character !@#$%^&*()")
 	}
 	return nil
-}
-
-type AuthPage struct {
-	widget.BaseWidget
-	userContext      *mcontext.UserContext
-	profilePage      *ProfilePage
-	loginPage        *LoginPage
-	registrationPage *RegistrationPage
-}
-
-func newAuthPage(userContext *mcontext.UserContext) *AuthPage {
-	var p AuthPage
-	p = AuthPage{
-		userContext:      userContext,
-		profilePage:      newProfilePage(userContext),
-		loginPage:        newLoginPage(userContext, p.showRegisterPage),
-		registrationPage: newRegistrationPage(userContext, p.showLoginPage),
-	}
-	p.ExtendBaseWidget(&p)
-
-	p.userContext.AddListener(mcontext.OnPutUserEvent, func(data any) {
-		p.loginPage.clearEntry()
-		p.registrationPage.clearEntry()
-
-		p.loginPage.Hide()
-		p.registrationPage.Hide()
-		p.profilePage.Show()
-	})
-
-	p.userContext.AddListener(mcontext.OnSetStorageEvent, func(any) {
-		p.loginPage.clearEntry()
-		p.registrationPage.clearEntry()
-
-		if _, err := p.userContext.GetUser(); err == nil {
-			p.loginPage.Hide()
-			p.registrationPage.Hide()
-			p.profilePage.Show()
-		} else {
-			p.registrationPage.Hide()
-			p.profilePage.Hide()
-			p.loginPage.Show()
-		}
-	})
-
-	p.userContext.AddListener(mcontext.OnDeleteUserEvent, func(any) {
-		p.profilePage.Hide()
-		p.registrationPage.Hide()
-		p.loginPage.Show()
-	})
-
-	return &p
-}
-
-func (p *AuthPage) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(container.NewStack(p.registrationPage, p.loginPage, p.profilePage))
-}
-
-func (p *AuthPage) showLoginPage() {
-	p.registrationPage.clearEntry()
-	p.loginPage.clearEntry()
-
-	p.registrationPage.Hide()
-	p.loginPage.Show()
-}
-
-func (p *AuthPage) showRegisterPage() {
-	p.loginPage.clearEntry()
-	p.registrationPage.clearEntry()
-
-	p.loginPage.Hide()
-	p.registrationPage.Show()
 }

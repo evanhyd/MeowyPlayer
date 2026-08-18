@@ -63,19 +63,10 @@ func newPlaylistPage(userContext *mcontext.UserContext) *PlaylistPage {
 		},
 	)
 
-	p.userContext.AddListener(mcontext.OnSetStorageEvent, func(any) {
-		p.fetchPlaylists()
-		p.Show()
-	})
-	p.userContext.AddListener(mcontext.OnViewPlaylistPageEvent, func(any) {
-		p.Show()
-	})
-	p.userContext.AddListener(mcontext.OnPutPlaylistEvent, func(any) {
-		p.fetchPlaylists()
-	})
-	p.userContext.AddListener(mcontext.OnDeletePlaylistEvent, func(any) {
-		p.fetchPlaylists()
-	})
+	p.userContext.AddListener(mcontext.OnViewPlaylistPageEvent, func(any) { p.Show() })
+	p.userContext.AddListener(mcontext.OnPutPlaylistEvent, func(any) { p.fetchPlaylists() })
+	p.userContext.AddListener(mcontext.OnDeletePlaylistEvent, func(any) { p.fetchPlaylists() })
+	p.fetchPlaylists()
 
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -100,6 +91,7 @@ func (p *PlaylistPage) showEditingMenu(playlist storages.Playlist, event *fyne.P
 	deleteMenu := fyne.NewMenuItemWithIcon(lang.L("Delete"), theme.DeleteIcon(), func() {
 		p.showDeletePlaylistDialog(playlist)
 	})
+
 	widget.ShowPopUpMenuAtPosition(fyne.NewMenu("", editMenu, deleteMenu), fyne.CurrentApp().Driver().AllWindows()[0].Canvas(), event.AbsolutePosition)
 }
 

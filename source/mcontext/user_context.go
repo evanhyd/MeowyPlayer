@@ -24,10 +24,6 @@ func (u *UserContext) AddListener(event EventType, listener EventListener) {
 	u.dispatcher.AddListener(event, listener)
 }
 
-func (u *UserContext) Refresh() {
-	u.dispatcher.Dispatch(OnSetStorageEvent, OnSetStorageEventData{Storage: u.storage})
-}
-
 func (u *UserContext) Config() *UserConfig {
 	return &u.config
 }

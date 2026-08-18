@@ -66,7 +66,7 @@ func newRegistrationPage(userContext *mcontext.UserContext, onGoLogin func()) *R
 }
 
 func (p *RegistrationPage) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(mcontainer.NewCenter(0.65, 0.4, widget.NewForm(
+	return widget.NewSimpleRenderer(mcontainer.NewCenter(0.65, 1.0, widget.NewForm(
 		widget.NewFormItem("", widget.NewLabelWithStyle(lang.L("Registration Page"), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})),
 		widget.NewFormItem(lang.L("User ID"), p.userIdEntry),
 		widget.NewFormItem(lang.L("Password"), p.passwordEntry),
@@ -88,7 +88,7 @@ func (p *RegistrationPage) registerUser(userId string, password string) {
 	fyne.Do(func() {
 		waitingDialog.Show()
 
-		// Send request..
+		// Send registration request.
 		request := handlers.RegisterRequest{
 			UserId:   userId,
 			Username: userId,

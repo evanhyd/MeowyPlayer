@@ -33,17 +33,11 @@ func newProfilePage(userContext *mcontext.UserContext) *ProfilePage {
 		logoutButton:          widget.NewButtonWithIcon(lang.L("Logout"), theme.LogoutIcon(), p.logout),
 	}
 
-	userContext.AddListener(mcontext.OnPutUserEvent, func(data any) {
-		p.setProfile(data.(mcontext.OnPutUserEventData).UserProfile)
-	})
-
-	userContext.AddListener(mcontext.OnSetStorageEvent, func(any) {
-		profile, err := p.userContext.GetUser()
-		if err != nil {
-			slog.Error("failed to get user profile", "error", err)
-		}
+	if profile, err := p.userContext.GetUser(); err != nil {
+		slog.Error("failed to get user profile", "error", err)
+	} else {
 		p.setProfile(profile)
-	})
+	}
 
 	p.ExtendBaseWidget(&p)
 	return &p
@@ -70,4 +64,5 @@ func (p *ProfilePage) logout() {
 	if err := p.userContext.DeleteUser(); err != nil {
 		slog.Error("failed to delete user", "error", err)
 	}
+	fyne.CurrentApp().Quit()
 }

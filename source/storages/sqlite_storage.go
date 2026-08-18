@@ -135,7 +135,7 @@ func (s *SQLiteStorage) DeleteUser() error {
 func (s *SQLiteStorage) PutPlaylist(p Playlist) (Playlist, error) {
 	user, err := s.GetUser()
 	if err != nil {
-		return p, fmt.Errorf("failed to get user context: %w", err)
+		return Playlist{}, fmt.Errorf("failed to get user: %v", err)
 	}
 
 	currentTime := time.Now().UnixNano()
@@ -163,7 +163,7 @@ func (s *SQLiteStorage) PutPlaylist(p Playlist) (Playlist, error) {
 func (s *SQLiteStorage) DeletePlaylist(playlistID int64) error {
 	user, err := s.GetUser()
 	if err != nil {
-		return fmt.Errorf("failed to get user context: %w", err)
+		return fmt.Errorf("failed to get user: %v", err)
 	}
 
 	_, err = s.db.Exec(`DELETE FROM playlist WHERE user_id = ? AND playlist_id = ?`, user.UserId, playlistID)
@@ -173,7 +173,7 @@ func (s *SQLiteStorage) DeletePlaylist(playlistID int64) error {
 func (s *SQLiteStorage) GetPlaylist(playlistID int64) (Playlist, error) {
 	user, err := s.GetUser()
 	if err != nil {
-		return Playlist{}, fmt.Errorf("failed to get user context: %w", err)
+		return Playlist{}, fmt.Errorf("failed to get user: %v", err)
 	}
 
 	var p Playlist
@@ -252,7 +252,7 @@ func (s *SQLiteStorage) GetMusicFile(music Music) (io.ReadCloser, error) {
 func (s *SQLiteStorage) GetPlaylistsFromUser() ([]Playlist, error) {
 	user, err := s.GetUser()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user context: %w", err)
+		return nil, fmt.Errorf("failed to get user: %v", err)
 	}
 
 	rows, err := s.db.Query(
@@ -279,7 +279,7 @@ func (s *SQLiteStorage) GetPlaylistsFromUser() ([]Playlist, error) {
 func (s *SQLiteStorage) GetMusicFromPlaylist(playlistID int64) ([]Music, error) {
 	user, err := s.GetUser()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user context: %w", err)
+		return nil, fmt.Errorf("failed to get user: %v", err)
 	}
 
 	rows, err := s.db.Query(
@@ -309,7 +309,7 @@ func (s *SQLiteStorage) GetMusicFromPlaylist(playlistID int64) ([]Music, error) 
 func (s *SQLiteStorage) PutMusicInPlaylist(playlistID int64, musicID string, source MusicSource) error {
 	user, err := s.GetUser()
 	if err != nil {
-		return fmt.Errorf("failed to get user context: %w", err)
+		return fmt.Errorf("failed to get user: %v", err)
 	}
 
 	tx, err := s.db.Begin()
@@ -338,7 +338,7 @@ func (s *SQLiteStorage) PutMusicInPlaylist(playlistID int64, musicID string, sou
 func (s *SQLiteStorage) DeleteMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error {
 	user, err := s.GetUser()
 	if err != nil {
-		return fmt.Errorf("failed to get user context: %w", err)
+		return fmt.Errorf("failed to get user: %v", err)
 	}
 
 	tx, err := s.db.Begin()

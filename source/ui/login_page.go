@@ -33,7 +33,7 @@ func newLoginPage(userContext *mcontext.UserContext, onGoRegister func()) *Login
 		userIdEntry:   widget.NewEntry(),
 		passwordEntry: widget.NewPasswordEntry(),
 		submitButton: widget.NewButtonWithIcon(lang.L("Submit"), theme.LoginIcon(), func() {
-			p.login(p.userIdEntry.Text, p.passwordEntry.Text)
+			p.login()
 		}),
 		goRegisterButton: widget.NewButton(lang.L("Go Register"), onGoRegister),
 	}
@@ -58,7 +58,7 @@ func newLoginPage(userContext *mcontext.UserContext, onGoRegister func()) *Login
 }
 
 func (p *LoginPage) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(mcontainer.NewCenter(0.65, 0.4, widget.NewForm(
+	return widget.NewSimpleRenderer(mcontainer.NewCenter(0.65, 1.0, widget.NewForm(
 		widget.NewFormItem("", widget.NewLabelWithStyle(lang.L("Login Page"), fyne.TextAlignCenter, fyne.TextStyle{Bold: true})),
 		widget.NewFormItem(lang.L("User ID"), p.userIdEntry),
 		widget.NewFormItem(lang.L("Password"), p.passwordEntry),
@@ -71,7 +71,7 @@ func (p *LoginPage) clearEntry() {
 	p.passwordEntry.SetText("")
 }
 
-func (p *LoginPage) login(userId string, password string) {
+func (p *LoginPage) login() {
 	win := fyne.CurrentApp().Driver().AllWindows()[0]
 	waitingDialog := dialog.NewCustomWithoutButtons(lang.L("logining"), widget.NewProgressBarInfinite(), win)
 
@@ -81,8 +81,8 @@ func (p *LoginPage) login(userId string, password string) {
 			// Login to get token.
 			token, err := func() (string, error) {
 				request := handlers.LoginRequest{
-					UserId:   userId,
-					Password: password,
+					UserId:   p.userIdEntry.Text,
+					Password: p.passwordEntry.Text,
 				}
 				response := handlers.LoginResponse{}
 				err := handlers.SendJSON(p.userContext.Config().Endpoints["login"], request, &response)
