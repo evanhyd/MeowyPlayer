@@ -29,17 +29,12 @@ type SQLiteStorage struct {
 }
 
 func NewSQLiteStorage(dbPath string, musicFilePath string) *SQLiteStorage {
-	storage := &SQLiteStorage{
-		musicFilePath: musicFilePath,
-	}
-
-	var err error
-	storage.db, err = sql.Open("sqlite", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		slog.Error("failed to open SQLite database", "error", err)
 		return nil
 	}
-	if _, err := storage.db.Exec(schemaSQL); err != nil {
+	if _, err := db.Exec(schemaSQL); err != nil {
 		slog.Error("failed to create schema", "error", err)
 		return nil
 	}
@@ -48,7 +43,11 @@ func NewSQLiteStorage(dbPath string, musicFilePath string) *SQLiteStorage {
 		slog.Error("failed to create music file directory", "error", err)
 		return nil
 	}
-	return storage
+
+	return &SQLiteStorage{
+		musicFilePath: musicFilePath,
+		db:            db,
+	}
 }
 
 // ---------------- User Storer Methods ----------------
@@ -60,15 +59,12 @@ func (s *SQLiteStorage) PutUser(profile UserProfile) error {
 	}
 	defer tx.Rollback()
 
-	// Enforce the "at most 1 row" rule by wiping the table before insert
 	if _, err := tx.Exec(`DELETE FROM user_profile`); err != nil {
 		return err
 	}
 
 	_, err = tx.Exec(
-		`INSERT INTO user_profile (
-			user_id, username, language, registration_date, token
-		) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO user_profile (user_id, username, language, registration_date, token) VALUES (?, ?, ?, ?, ?)`,
 		profile.UserId, profile.Username, profile.Language, profile.RegistrationDate, profile.Token,
 	)
 	if err != nil {
@@ -79,7 +75,6 @@ func (s *SQLiteStorage) PutUser(profile UserProfile) error {
 		return err
 	}
 
-	// Invalidate the cache. GetUser() will lazily fetch the single source of truth.
 	s.userMutex.Lock()
 	s.cachedProfile = nil
 	s.userMutex.Unlock()
@@ -91,42 +86,29 @@ func (s *SQLiteStorage) GetUser() (UserProfile, error) {
 	s.userMutex.Lock()
 	defer s.userMutex.Unlock()
 
-	// 1. Return from cache if it exists
 	if s.cachedProfile != nil {
 		return *s.cachedProfile, nil
 	}
 
-	// 2. Otherwise, lazily fetch from database
 	var p UserProfile
-	query := `
-		SELECT 
-			user_id, username, language, registration_date, token
-		FROM user_profile 
-		LIMIT 1
-	`
-
-	err := s.db.QueryRow(query).Scan(&p.UserId, &p.Username, &p.Language, &p.RegistrationDate, &p.Token)
+	err := s.db.QueryRow(`SELECT user_id, username, language, registration_date, token FROM user_profile LIMIT 1`).
+		Scan(&p.UserId, &p.Username, &p.Language, &p.RegistrationDate, &p.Token)
 	if err != nil {
 		return UserProfile{}, err
 	}
 
-	// 3. Populate cache
 	s.cachedProfile = &p
-
 	return p, nil
 }
 
 func (s *SQLiteStorage) DeleteUser() error {
-	_, err := s.db.Exec(`DELETE FROM user_profile`)
-	if err != nil {
+	if _, err := s.db.Exec(`DELETE FROM user_profile`); err != nil {
 		return err
 	}
 
-	// Invalidate cache
 	s.userMutex.Lock()
 	s.cachedProfile = nil
 	s.userMutex.Unlock()
-
 	return nil
 }
 
@@ -138,23 +120,23 @@ func (s *SQLiteStorage) PutPlaylist(p Playlist) (Playlist, error) {
 		return Playlist{}, fmt.Errorf("failed to get user: %v", err)
 	}
 
-	currentTime := time.Now().UnixNano()
-	p.ModifiedDate = currentTime
-	p.UserId = user.UserId // Enforce the user ID from context
-
+	p.UserId = user.UserId
+	now := time.Now().UnixNano()
 	if p.PlaylistId == 0 {
-		p.PlaylistId = currentTime
+		p.PlaylistId = now
+	}
+	if p.ModifiedDate == 0 {
+		p.ModifiedDate = now
 	}
 
 	_, err = s.db.Exec(
-		`INSERT INTO playlist (user_id, playlist_id, deleted, title, modified_date, cover_blob)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(user_id, playlist_id) DO UPDATE SET 
-            deleted = excluded.deleted,
-            title = excluded.title, 
-            modified_date = excluded.modified_date, 
-            cover_blob = excluded.cover_blob`,
-		p.UserId, p.PlaylistId, p.Deleted, p.Title, p.ModifiedDate, p.CoverBlob,
+		`INSERT INTO playlist (user_id, playlist_id, title, modified_date, cover_blob)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(user_id, playlist_id) DO UPDATE SET 
+			title = excluded.title, 
+			modified_date = excluded.modified_date, 
+			cover_blob = excluded.cover_blob`,
+		p.UserId, p.PlaylistId, p.Title, p.ModifiedDate, p.CoverBlob,
 	)
 
 	return p, err
@@ -178,10 +160,10 @@ func (s *SQLiteStorage) GetPlaylist(playlistID int64) (Playlist, error) {
 
 	var p Playlist
 	err = s.db.QueryRow(
-		`SELECT user_id, playlist_id, deleted, title, modified_date, cover_blob
-        FROM playlist WHERE user_id = ? AND playlist_id = ?`,
+		`SELECT user_id, playlist_id, title, modified_date, cover_blob
+		FROM playlist WHERE user_id = ? AND playlist_id = ?`,
 		user.UserId, playlistID,
-	).Scan(&p.UserId, &p.PlaylistId, &p.Deleted, &p.Title, &p.ModifiedDate, &p.CoverBlob)
+	).Scan(&p.UserId, &p.PlaylistId, &p.Title, &p.ModifiedDate, &p.CoverBlob)
 
 	return p, err
 }
@@ -191,7 +173,7 @@ func (s *SQLiteStorage) GetPlaylist(playlistID int64) (Playlist, error) {
 func (s *SQLiteStorage) PutMusic(m Music) error {
 	_, err := s.db.Exec(
 		`INSERT INTO music (music_id, source, title, length_seconds) VALUES (?, ?, ?, ?)
-        ON CONFLICT(music_id, source) DO UPDATE SET title = excluded.title, length_seconds = excluded.length_seconds`,
+		ON CONFLICT(music_id, source) DO UPDATE SET title = excluded.title, length_seconds = excluded.length_seconds`,
 		m.MusicId, m.Source, m.Title, m.LengthSeconds,
 	)
 	return err
@@ -213,24 +195,28 @@ func (s *SQLiteStorage) GetMusic(musicID string, source MusicSource) (Music, err
 }
 
 // ---------------- File Storer Methods ----------------
-// Filesystem storage logic remains unchanged.
 
 func (s *SQLiteStorage) getMusicFilePath(music Music) string {
 	return filepath.Join(s.musicFilePath, fmt.Sprintf("%v_%v.mp3", music.Source, music.MusicId))
 }
 
 func (s *SQLiteStorage) PutMusicFile(music Music, content io.Reader) error {
-	file, err := os.OpenFile(s.getMusicFilePath(music), os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0700)
+	path := s.getMusicFilePath(music)
+
+	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(file, content)
-	file.Close()
 
-	// Remove partially completed files.
-	if err != nil {
-		os.Remove(s.getMusicFilePath(music))
-		return err
+	_, copyErr := io.Copy(file, content)
+	closeErr := file.Close()
+
+	if copyErr != nil || closeErr != nil {
+		os.Remove(path) // Cleanup partial/failed file
+		if copyErr != nil {
+			return copyErr
+		}
+		return closeErr
 	}
 	return nil
 }
@@ -243,7 +229,7 @@ func (s *SQLiteStorage) DeleteMusicFile(music Music) error {
 	return err
 }
 
-func (s *SQLiteStorage) GetMusicFile(music Music) (io.ReadCloser, error) {
+func (s *SQLiteStorage) GetMusicFile(music Music) (io.ReadSeekCloser, error) {
 	return os.Open(s.getMusicFilePath(music))
 }
 
@@ -256,7 +242,7 @@ func (s *SQLiteStorage) GetPlaylistsFromUser() ([]Playlist, error) {
 	}
 
 	rows, err := s.db.Query(
-		`SELECT user_id, playlist_id, deleted, title, modified_date, cover_blob 
+		`SELECT user_id, playlist_id,  title, modified_date, cover_blob 
 		 FROM playlist WHERE user_id = ? ORDER BY modified_date DESC`,
 		user.UserId,
 	)
@@ -265,13 +251,17 @@ func (s *SQLiteStorage) GetPlaylistsFromUser() ([]Playlist, error) {
 	}
 	defer rows.Close()
 
-	var playlists []Playlist
+	playlists := make([]Playlist, 0)
 	for rows.Next() {
 		var p Playlist
-		if err := rows.Scan(&p.UserId, &p.PlaylistId, &p.Deleted, &p.Title, &p.ModifiedDate, &p.CoverBlob); err != nil {
+		if err := rows.Scan(&p.UserId, &p.PlaylistId, &p.Title, &p.ModifiedDate, &p.CoverBlob); err != nil {
 			return nil, err
 		}
 		playlists = append(playlists, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return playlists, nil
 }
@@ -284,10 +274,10 @@ func (s *SQLiteStorage) GetMusicFromPlaylist(playlistID int64) ([]Music, error) 
 
 	rows, err := s.db.Query(
 		`SELECT m.music_id, m.source, m.title, m.length_seconds
-        FROM music m
-        JOIN playlist_music pm ON m.music_id = pm.music_id AND m.source = pm.source
-        WHERE pm.user_id = ? AND pm.playlist_id = ?
-        ORDER BY pm.added_at DESC`,
+		FROM music m
+		JOIN playlist_music pm ON m.music_id = pm.music_id AND m.source = pm.source
+		WHERE pm.user_id = ? AND pm.playlist_id = ?
+		ORDER BY pm.added_at DESC`,
 		user.UserId, playlistID,
 	)
 	if err != nil {
@@ -295,13 +285,17 @@ func (s *SQLiteStorage) GetMusicFromPlaylist(playlistID int64) ([]Music, error) 
 	}
 	defer rows.Close()
 
-	var musics []Music
+	musics := make([]Music, 0)
 	for rows.Next() {
 		var m Music
 		if err := rows.Scan(&m.MusicId, &m.Source, &m.Title, &m.LengthSeconds); err != nil {
 			return nil, err
 		}
 		musics = append(musics, m)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return musics, nil
 }
@@ -318,16 +312,17 @@ func (s *SQLiteStorage) PutMusicInPlaylist(playlistID int64, musicID string, sou
 	}
 	defer tx.Rollback()
 
+	now := time.Now().UnixNano()
 	res, err := tx.Exec(
 		`INSERT OR IGNORE INTO playlist_music (user_id, playlist_id, music_id, source, added_at) VALUES (?, ?, ?, ?, ?)`,
-		user.UserId, playlistID, musicID, int64(source), time.Now().UnixNano(),
+		user.UserId, playlistID, musicID, int64(source), now,
 	)
 	if err != nil {
 		return err
 	}
 
 	if affected, _ := res.RowsAffected(); affected > 0 {
-		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`, time.Now().UnixNano(), user.UserId, playlistID); err != nil {
+		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`, now, user.UserId, playlistID); err != nil {
 			return err
 		}
 	}

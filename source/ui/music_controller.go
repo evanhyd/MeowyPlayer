@@ -20,6 +20,7 @@ import (
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/dhowden/tag"
 )
 
 const (
@@ -129,9 +130,32 @@ func (c *MusicController) CreateRenderer() fyne.WidgetRenderer {
 	))
 }
 
+func (c *MusicController) extractCover(music storages.Music) []byte {
+	file, err := c.userContext.GetMusicFile(music)
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+
+	m, err := tag.ReadFrom(file)
+	if err != nil {
+		return nil
+	}
+
+	pic := m.Picture()
+	if pic == nil {
+		return nil
+	}
+	return pic.Data
+}
+
 func (c *MusicController) fetchMusic(playlist storages.Playlist, selectedMusic storages.Music) {
 	go c.musicPlayer.SetPlaylist(playlist, selectedMusic)
-	c.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob)
+	if cover := c.extractCover(selectedMusic); cover != nil {
+		c.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), cover)
+	} else {
+		c.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob)
+	}
 	c.playlistCover.Refresh()
 }
 

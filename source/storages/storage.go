@@ -24,7 +24,7 @@ type MusicStorer interface {
 
 type FileStorer interface {
 	PutMusicFile(music Music, content io.Reader) error
-	GetMusicFile(music Music) (io.ReadCloser, error)
+	GetMusicFile(music Music) (io.ReadSeekCloser, error)
 	DeleteMusicFile(music Music) error
 }
 

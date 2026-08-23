@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS user_profile (
 CREATE TABLE IF NOT EXISTS playlist (
     user_id TEXT NOT NULL,
     playlist_id INTEGER NOT NULL,
-    deleted BOOLEAN NOT NULL,
     title TEXT NOT NULL,
     modified_date INTEGER NOT NULL,  -- Unix nano
     cover_blob BLOB NOT NULL,

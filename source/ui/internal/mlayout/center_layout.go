@@ -5,7 +5,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-var _ fyne.Layout = &CenterLayout{}
+var _ fyne.Layout = (*CenterLayout)(nil)
 
 // Fixate the object in the middle of the container, and expand horizontal and vertically by ratio.
 type CenterLayout struct {

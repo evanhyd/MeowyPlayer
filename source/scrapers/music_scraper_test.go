@@ -36,8 +36,8 @@ func testSearch(t *testing.T, s MusicSearcher, query string) []Result {
 }
 
 // Table-driven tests for the searcher
-func TestInvidiousSearcher(t *testing.T) {
-	searcher := NewInvidiousSearcher()
+func TestPipedSearcher(t *testing.T) {
+	searcher := NewPipedSearcher()
 
 	titles := []string{
 		"chicken nugget",

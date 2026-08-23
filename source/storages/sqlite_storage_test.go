@@ -91,7 +91,6 @@ func TestPlaylistOperations(t *testing.T) {
 	p := Playlist{
 		PlaylistId: 1001, // Explicitly set ID
 		Title:      "My Favorites",
-		Deleted:    false,
 		CoverBlob:  []byte{},
 	}
 

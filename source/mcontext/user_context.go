@@ -37,6 +37,10 @@ func (u *UserContext) Close() {
 }
 
 // DB wrapper calls.
+func (u *UserContext) OnInit() {
+	u.dispatcher.Dispatch(OnInitEvent, OnInitEventData{})
+}
+
 func (u *UserContext) PutUser(userProfile storages.UserProfile) error {
 	err := u.storage.PutUser(userProfile)
 	if err == nil {
@@ -93,7 +97,7 @@ func (u *UserContext) PutMusicFile(music storages.Music, content io.Reader) erro
 	return u.storage.PutMusicFile(music, content)
 }
 
-func (u *UserContext) GetMusicFile(music storages.Music) (io.ReadCloser, error) {
+func (u *UserContext) GetMusicFile(music storages.Music) (io.ReadSeekCloser, error) {
 	return u.storage.GetMusicFile(music)
 }
 

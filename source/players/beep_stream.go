@@ -10,7 +10,7 @@ import (
 	"github.com/gopxl/beep/v2/speaker"
 )
 
-var _ beep.StreamCloser = &BeepStream{}
+var _ beep.StreamCloser = (*BeepStream)(nil)
 
 type BeepStream struct {
 	stream     beep.StreamSeekCloser

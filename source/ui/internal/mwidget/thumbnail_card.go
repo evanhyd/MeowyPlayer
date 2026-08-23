@@ -15,7 +15,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-var _ desktop.Hoverable = &ThumbnailCard{}
+var _ desktop.Hoverable = (*ThumbnailCard)(nil)
 
 type ThumbnailCard struct {
 	widget.BaseWidget

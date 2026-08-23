@@ -41,7 +41,7 @@ type CmdSetPlaylist struct {
 // BeepPlayer Implementation
 // ==========================================
 
-var _ MusicPlayer = &BeepPlayer{}
+var _ MusicPlayer = (*BeepPlayer)(nil)
 
 type BeepPlayer struct {
 	userContext          *mcontext.UserContext

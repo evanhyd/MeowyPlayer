@@ -24,17 +24,23 @@ func RunApp(userContext *mcontext.UserContext) {
 	meowApp.SetIcon(resourceIconPng)
 	meowApp.Settings().SetTheme(newVanillaTheme())
 
-	// Auth window.
-	authWindow := newAuthWindow(meowApp, userContext)
+	// Check if already login. This bypasses the server check and allows the user to access the music player offline.
+	if _, err := userContext.GetUser(); err != nil {
+		authWindow := newAuthWindow(meowApp, userContext)
+		userContext.AddListener(mcontext.OnPutUserEvent, func(any) {
+			musicWin := newMusicWindow(meowApp, userContext)
+			authWindow.Close()
+			musicWin.Show()
+			userContext.OnInit()
+		})
+		authWindow.ShowAndRun()
 
-	// Switch to the music player window if login successfully.
-	userContext.AddListener(mcontext.OnPutUserEvent, func(any) {
+	} else {
 		musicWin := newMusicWindow(meowApp, userContext)
-		authWindow.Close()
 		musicWin.Show()
-	})
-
-	authWindow.ShowAndRun()
+		userContext.OnInit()
+		meowApp.Run()
+	}
 }
 
 func newAuthWindow(meowApp fyne.App, userContext *mcontext.UserContext) fyne.Window {

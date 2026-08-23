@@ -38,7 +38,7 @@ type ExplorePage struct {
 func newExplorePage(userContext *mcontext.UserContext) *ExplorePage {
 	p := ExplorePage{
 		userContext:  userContext,
-		searchEngine: scrapers.NewInvidiousSearcher(),
+		searchEngine: scrapers.NewPipedSearcher(),
 		searchEntry:  widget.NewEntry(),
 		searchButton: widget.NewButtonWithIcon("", theme.SearchIcon(), nil),
 	}

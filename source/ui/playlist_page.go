@@ -64,9 +64,9 @@ func newPlaylistPage(userContext *mcontext.UserContext) *PlaylistPage {
 	)
 
 	p.userContext.AddListener(mcontext.OnViewPlaylistPageEvent, func(any) { p.Show() })
+	p.userContext.AddListener(mcontext.OnInitEvent, func(any) { p.fetchPlaylists() })
 	p.userContext.AddListener(mcontext.OnPutPlaylistEvent, func(any) { p.fetchPlaylists() })
 	p.userContext.AddListener(mcontext.OnDeletePlaylistEvent, func(any) { p.fetchPlaylists() })
-	p.fetchPlaylists()
 
 	p.ExtendBaseWidget(&p)
 	return &p

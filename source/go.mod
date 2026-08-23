@@ -13,6 +13,7 @@ require (
 	fyne.io/systray v1.11.1-0.20250603113521-ca66a66d8b58 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dhowden/tag v0.0.0-20240417053706-3d75831295e8 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/oto/v3 v3.3.3 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect

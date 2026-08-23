@@ -12,7 +12,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-var _ desktop.Hoverable = &PlaylistCard{}
+var _ desktop.Hoverable = (*PlaylistCard)(nil)
 
 type PlaylistCard struct {
 	widget.BaseWidget
