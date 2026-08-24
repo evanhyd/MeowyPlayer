@@ -44,8 +44,9 @@ type CmdSetPlaylist struct {
 var _ MusicPlayer = (*BeepPlayer)(nil)
 
 type BeepPlayer struct {
-	userContext          *mcontext.UserContext
-	missingMusicCallback func(music storages.Music)
+	userContext    *mcontext.UserContext
+	onMissingMusic func(storages.Music)
+	onPlayingMusic func(storages.Music)
 
 	musicList       ringBuffer[storages.Music]
 	randomIndexList ringBuffer[int]
@@ -60,7 +61,7 @@ type BeepPlayer struct {
 	cmdChan chan Command
 }
 
-func MakeBeepPlayer(userContext *mcontext.UserContext, missingMusicCallback func(music storages.Music)) *BeepPlayer {
+func MakeBeepPlayer(userContext *mcontext.UserContext, onMissingMusic func(storages.Music), onPlayingMusic func(storages.Music)) *BeepPlayer {
 	sync.OnceFunc(func() {
 		err := speaker.Init(sampleRate, sampleRate.N(100*time.Millisecond))
 		if err != nil {
@@ -69,10 +70,11 @@ func MakeBeepPlayer(userContext *mcontext.UserContext, missingMusicCallback func
 	})()
 
 	p := BeepPlayer{
-		userContext:          userContext,
-		missingMusicCallback: missingMusicCallback,
-		volume:               0.7,
-		cmdChan:              make(chan Command, 16),
+		userContext:    userContext,
+		onMissingMusic: onMissingMusic,
+		onPlayingMusic: onPlayingMusic,
+		volume:         0.7,
+		cmdChan:        make(chan Command, 16),
 	}
 	go p.run()
 	return &p
@@ -139,7 +141,7 @@ func (p *BeepPlayer) playMusic(music storages.Music) {
 	p.currentMusic = music
 	musicFile, err := p.userContext.GetMusicFile(music)
 	if err != nil {
-		p.missingMusicCallback(music)
+		p.onMissingMusic(music)
 		musicFile, err = p.userContext.GetMusicFile(music)
 		if err != nil {
 			slog.Error("failed to get music file after downloading", "error", err)
@@ -158,6 +160,7 @@ func (p *BeepPlayer) playMusic(music storages.Music) {
 	}
 
 	speaker.Play(beep.Seq(p.stream, beep.Callback(p.Next)))
+	p.onPlayingMusic(music)
 }
 
 func (p *BeepPlayer) run() {

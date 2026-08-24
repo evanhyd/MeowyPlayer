@@ -32,6 +32,7 @@ type MusicController struct {
 	widget.BaseWidget
 	userContext *mcontext.UserContext
 	musicPlayer players.MusicPlayer
+	playlist    storages.Playlist
 
 	playlistCover  *canvas.Image
 	title          *widget.RichText
@@ -48,7 +49,7 @@ func newMusicController(userContext *mcontext.UserContext) *MusicController {
 	var c MusicController
 	c = MusicController{
 		userContext:   userContext,
-		musicPlayer:   players.MakeBeepPlayer(userContext, c.downloadMusic),
+		musicPlayer:   players.MakeBeepPlayer(userContext, c.downloadMusic, c.onPlayMusic),
 		playlistCover: canvas.NewImageFromResource(resourceIconPng),
 		title: widget.NewRichText(&widget.TextSegment{
 			Style: widget.RichTextStyle{SizeName: theme.SizeNameSubHeadingText, TextStyle: fyne.TextStyle{Bold: true}},
@@ -102,8 +103,6 @@ func newMusicController(userContext *mcontext.UserContext) *MusicController {
 			music := c.musicPlayer.GetMusic()
 			playedDuration := int64(float64(music.LengthSeconds) * progress)
 			fyne.DoAndWait(func() {
-				c.title.Segments[0].(*widget.TextSegment).Text = music.Title
-				c.title.Refresh()
 				c.durationLabel.SetText(fmt.Sprintf("%s / %s", mutil.SecondsToTime(playedDuration), mutil.SecondsToTime(music.LengthSeconds)))
 				c.progressSlider.SetValue(progress)
 			})
@@ -149,14 +148,22 @@ func (c *MusicController) extractCover(music storages.Music) []byte {
 	return pic.Data
 }
 
-func (c *MusicController) fetchMusic(playlist storages.Playlist, selectedMusic storages.Music) {
-	go c.musicPlayer.SetPlaylist(playlist, selectedMusic)
-	if cover := c.extractCover(selectedMusic); cover != nil {
-		c.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), cover)
+func (c *MusicController) onPlayMusic(music storages.Music) {
+	// Update title and cover.
+	c.title.Segments[0].(*widget.TextSegment).Text = music.Title
+	c.title.Refresh()
+
+	if cover := c.extractCover(music); cover != nil {
+		c.playlistCover.Resource = fyne.NewStaticResource(music.MusicId, cover)
 	} else {
-		c.playlistCover.Resource = fyne.NewStaticResource(mutil.PlaylistIdToString(playlist.PlaylistId), playlist.CoverBlob)
+		c.playlistCover.Resource = fyne.NewStaticResource(music.MusicId, c.playlist.CoverBlob)
 	}
 	c.playlistCover.Refresh()
+}
+
+func (c *MusicController) fetchMusic(playlist storages.Playlist, music storages.Music) {
+	c.playlist = playlist
+	c.musicPlayer.SetPlaylist(playlist, music)
 }
 
 func (c *MusicController) downloadMusic(music storages.Music) {
