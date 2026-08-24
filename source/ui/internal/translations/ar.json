@@ -46,5 +46,17 @@
     "Confirm Password": "تأكيد كلمة المرور",
     "registering": "جاري التسجيل...",
     "register": "تسجيل",
-    "Register successfully!": "تم التسجيل بنجاح!"
+    "Register successfully!": "تم التسجيل بنجاح!",
+    "Quit": "إنهاء",
+    "Select a playlist": "حدد قائمة تشغيل",
+    "Enter the title here": "أدخل العنوان هنا",
+    "Advanced": "متقدم",
+    "Confirm": "تأكيد",
+    "OK": "موافق",
+    "Error": "خطأ",
+    "user id length must be between 3 - 20 characters long": "يجب أن يتراوح طول معرف المستخدم بين 3 إلى 20 حرفًا",
+    "user id must contain only letter and optionally number": "يجب أن يحتوي معرف المستخدم على أحرف فقط وأرقام اختيارية",
+    "password length must be between 8 - 30 characters long": "يجب أن يتراوح طول كلمة المرور بين 8 إلى 30 حرفًا",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "يجب أن تحتوي كلمة المرور على حرف ورقم وحرف خاص واحد على الأقل !@#$%^&*()",
+    "password is not the same": "كلمات المرور غير متطابقة"
 }

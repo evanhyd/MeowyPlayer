@@ -46,5 +46,17 @@
     "Confirm Password": "Passwort bestätigen",
     "registering": "Registrierung läuft...",
     "register": "Registrieren",
-    "Register successfully!": "Registrierung erfolgreich!"
+    "Register successfully!": "Registrierung erfolgreich!",
+    "Quit": "Beenden",
+    "Select a playlist": "Wiedergabeliste auswählen",
+    "Enter the title here": "Titel hier eingeben",
+    "Advanced": "Erweitert",
+    "Confirm": "Bestätigen",
+    "OK": "OK",
+    "Error": "Fehler",
+    "user id length must be between 3 - 20 characters long": "Die Benutzer-ID muss zwischen 3 und 20 Zeichen lang sein",
+    "user id must contain only letter and optionally number": "Die Benutzer-ID darf nur Buchstaben und optional Zahlen enthalten",
+    "password length must be between 8 - 30 characters long": "Das Passwort muss zwischen 8 und 30 Zeichen lang sein",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "Das Passwort muss mindestens einen Buchstaben, eine Zahl und ein Sonderzeichen !@#$%^&*() enthalten",
+    "password is not the same": "Passwörter stimmen nicht überein"
 }

@@ -149,16 +149,18 @@ func (c *MusicController) extractCover(music storages.Music) []byte {
 }
 
 func (c *MusicController) onPlayMusic(music storages.Music) {
-	// Update title and cover.
-	c.title.Segments[0].(*widget.TextSegment).Text = music.Title
-	c.title.Refresh()
+	fyne.DoAndWait(func() {
+		// Update title and cover.
+		c.title.Segments[0].(*widget.TextSegment).Text = music.Title
+		c.title.Refresh()
 
-	if cover := c.extractCover(music); cover != nil {
-		c.playlistCover.Resource = fyne.NewStaticResource(music.MusicId, cover)
-	} else {
-		c.playlistCover.Resource = fyne.NewStaticResource(music.MusicId, c.playlist.CoverBlob)
-	}
-	c.playlistCover.Refresh()
+		if cover := c.extractCover(music); cover != nil {
+			c.playlistCover.Resource = fyne.NewStaticResource(music.MusicId, cover)
+		} else {
+			c.playlistCover.Resource = fyne.NewStaticResource(music.MusicId, c.playlist.CoverBlob)
+		}
+		c.playlistCover.Refresh()
+	})
 }
 
 func (c *MusicController) fetchMusic(playlist storages.Playlist, music storages.Music) {

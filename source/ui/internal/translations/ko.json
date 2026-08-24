@@ -46,5 +46,17 @@
     "Confirm Password": "비밀번호 확인",
     "registering": "등록 중...",
     "register": "등록",
-    "Register successfully!": "성공적으로 등록되었습니다!"
+    "Register successfully!": "성공적으로 등록되었습니다!",
+    "Quit": "종료",
+    "Select a playlist": "재생목록 선택",
+    "Enter the title here": "여기에 제목 입력",
+    "Advanced": "고급",
+    "Confirm": "확인",
+    "OK": "확인",
+    "Error": "오류",
+    "user id length must be between 3 - 20 characters long": "사용자 ID 길이는 3~20자 사이여야 합니다",
+    "user id must contain only letter and optionally number": "사용자 ID는 문자만 포함해야 하며 선택적으로 숫자를 포함할 수 있습니다",
+    "password length must be between 8 - 30 characters long": "비밀번호 길이는 8~30자 사이여야 합니다",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "비밀번호는 문자, 숫자, 특수 문자 !@#$%^&*()를 최소 하나 이상 포함해야 합니다",
+    "password is not the same": "비밀번호가 일치하지 않습니다"
 }

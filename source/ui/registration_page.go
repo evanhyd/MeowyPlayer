@@ -53,7 +53,7 @@ func newRegistrationPage(userContext *mcontext.UserContext, onGoLogin func()) *R
 	p.passwordEntry.Validator = isValidPassword
 	p.confirmPasswordEntry.Validator = func(s string) error {
 		if s != p.passwordEntry.Text {
-			return errors.New("password is not the same")
+			return errors.New(lang.L("password is not the same"))
 		}
 		return nil
 	}

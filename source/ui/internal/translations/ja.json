@@ -46,5 +46,17 @@
     "Confirm Password": "パスワード（確認）",
     "registering": "登録中...",
     "register": "登録",
-    "Register successfully!": "登録が完了しました！"
+    "Register successfully!": "登録が完了しました！",
+    "Quit": "終了",
+    "Select a playlist": "プレイリストを選択",
+    "Enter the title here": "ここにタイトルを入力",
+    "Advanced": "詳細設定",
+    "Confirm": "確認",
+    "OK": "OK",
+    "Error": "エラー",
+    "user id length must be between 3 - 20 characters long": "ユーザーIDの長さは3〜20文字である必要があります",
+    "user id must contain only letter and optionally number": "ユーザーIDには文字と、オプションで数字のみを含める必要があります",
+    "password length must be between 8 - 30 characters long": "パスワードの長さは8〜30文字である必要があります",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "パスワードには、少なくとも文字、数字、特殊文字 !@#$%^&*() が含まれている必要があります",
+    "password is not the same": "パスワードが一致しません"
 }

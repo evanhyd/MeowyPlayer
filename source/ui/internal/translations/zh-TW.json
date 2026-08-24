@@ -46,5 +46,17 @@
     "Confirm Password": "確認密碼",
     "registering": "註冊中...",
     "register": "註冊",
-    "Register successfully!": "註冊成功！"
+    "Register successfully!": "註冊成功！",
+    "Quit": "退出",
+    "Select a playlist": "選擇播放清單",
+    "Enter the title here": "在此輸入標題",
+    "Advanced": "進階",
+    "Confirm": "確認",
+    "OK": "確定",
+    "Error": "錯誤",
+    "user id length must be between 3 - 20 characters long": "使用者ID長度必須在3到20個字元之間",
+    "user id must contain only letter and optionally number": "使用者ID必須僅包含字母和（可選）數字",
+    "password length must be between 8 - 30 characters long": "密碼長度必須在8到30個字元之間",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "密碼必須至少包含字母、數字和特殊字元 !@#$%^&*()",
+    "password is not the same": "密碼不一致"
 }

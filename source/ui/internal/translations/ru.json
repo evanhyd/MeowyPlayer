@@ -46,5 +46,17 @@
     "Confirm Password": "Подтвердите пароль",
     "registering": "Регистрация...",
     "register": "Зарегистрироваться",
-    "Register successfully!": "Регистрация успешно завершена!"
+    "Register successfully!": "Регистрация успешно завершена!",
+    "Quit": "Выйти",
+    "Select a playlist": "Выберите плейлист",
+    "Enter the title here": "Введите название здесь",
+    "Advanced": "Дополнительно",
+    "Confirm": "Подтвердить",
+    "OK": "ОК",
+    "Error": "Ошибка",
+    "user id length must be between 3 - 20 characters long": "Длина ID пользователя должна быть от 3 до 20 символов",
+    "user id must contain only letter and optionally number": "ID пользователя должен содержать только буквы и, при необходимости, цифры",
+    "password length must be between 8 - 30 characters long": "Длина пароля должна быть от 8 до 30 символов",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "Пароль должен содержать как минимум букву, цифру и специальный символ !@#$%^&*()",
+    "password is not the same": "Пароли не совпадают"
 }

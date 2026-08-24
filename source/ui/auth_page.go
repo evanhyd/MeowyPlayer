@@ -8,6 +8,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -47,13 +48,13 @@ func (p *AuthPage) showRegisterPage() {
 func isValidUserId(userId string) error {
 	length := utf8.RuneCountInString(userId)
 	if length < 3 || length > 20 {
-		return errors.New("user id length must be between 3 - 20 characters long")
+		return errors.New(lang.L("user id length must be between 3 - 20 characters long"))
 	}
 
 	hasLetter := false
 	for _, char := range userId {
 		if !unicode.IsLetter(char) && !unicode.IsNumber(char) {
-			return errors.New("user id must contain only letter and optionally number")
+			return errors.New(lang.L("user id must contain only letter and optionally number"))
 		}
 		if unicode.IsLetter(char) {
 			hasLetter = true
@@ -61,7 +62,7 @@ func isValidUserId(userId string) error {
 	}
 
 	if !hasLetter {
-		return errors.New("user id must contain only letter and optionally number")
+		return errors.New(lang.L("user id must contain only letter and optionally number"))
 	}
 	return nil
 }
@@ -70,7 +71,7 @@ func isValidUserId(userId string) error {
 func isValidPassword(password string) error {
 	length := utf8.RuneCountInString(password)
 	if length < 8 || length > 30 {
-		return errors.New("password length must be between 8 - 30 characters long")
+		return errors.New(lang.L("password length must be between 8 - 30 characters long"))
 	}
 
 	var hasLetter, hasNumber, hasSpecial bool
@@ -86,7 +87,7 @@ func isValidPassword(password string) error {
 	}
 
 	if !(hasLetter && hasNumber && hasSpecial) {
-		return errors.New("password must contain at least letter, number, and a special character !@#$%^&*()")
+		return errors.New(lang.L("password must contain at least letter, number, and a special character !@#$%^&*()"))
 	}
 	return nil
 }

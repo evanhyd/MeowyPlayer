@@ -46,5 +46,17 @@
     "Confirm Password": "पासवर्ड की पुष्टि करें",
     "registering": "पंजीकरण हो रहा है...",
     "register": "रजिस्टर करें",
-    "Register successfully!": "पंजीकरण सफल रहा!"
+    "Register successfully!": "पंजीकरण सफल रहा!",
+    "Quit": "बाहर जाएं",
+    "Select a playlist": "प्लेलिस्ट चुनें",
+    "Enter the title here": "यहाँ शीर्षक दर्ज करें",
+    "Advanced": "उन्नत",
+    "Confirm": "पुष्टि करें",
+    "OK": "ठीक है",
+    "Error": "त्रुटि",
+    "user id length must be between 3 - 20 characters long": "उपयोगकर्ता आईडी की लंबाई 3 से 20 वर्णों के बीच होनी चाहिए",
+    "user id must contain only letter and optionally number": "उपयोगकर्ता आईडी में केवल अक्षर और वैकल्पिक रूप से संख्याएँ होनी चाहिए",
+    "password length must be between 8 - 30 characters long": "पासवर्ड की लंबाई 8 से 30 वर्णों के बीच होनी चाहिए",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "पासवर्ड में कम से कम एक अक्षर, एक संख्या, और एक विशेष वर्ण !@#$%^&*() होना चाहिए",
+    "password is not the same": "पासवर्ड मेल नहीं खाते"
 }

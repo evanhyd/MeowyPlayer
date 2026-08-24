@@ -2,7 +2,9 @@ package ui
 
 import (
 	"embed"
+	"log/slog"
 	"meowyplayer/mcontext"
+	"path"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -17,7 +19,10 @@ var translations embed.FS
 
 func RunApp(userContext *mcontext.UserContext) {
 	// Localization.
-	lang.AddTranslationsFS(translations, ".")
+	err := lang.AddTranslationsFS(translations, path.Join("internal", "translations"))
+	if err != nil {
+		slog.Error("failed to add translation", "error", err)
+	}
 
 	// Main app.
 	meowApp := app.New()

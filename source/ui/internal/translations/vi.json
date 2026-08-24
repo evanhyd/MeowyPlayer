@@ -46,5 +46,17 @@
     "Confirm Password": "Xác nhận mật khẩu",
     "registering": "Đang đăng ký...",
     "register": "Đăng ký",
-    "Register successfully!": "Đăng ký thành công!"
+    "Register successfully!": "Đăng ký thành công!",
+    "Quit": "Thoát",
+    "Select a playlist": "Chọn danh sách phát",
+    "Enter the title here": "Nhập tiêu đề vào đây",
+    "Advanced": "Nâng cao",
+    "Confirm": "Xác nhận",
+    "OK": "Đồng ý",
+    "Error": "Lỗi",
+    "user id length must be between 3 - 20 characters long": "Độ dài ID người dùng phải từ 3 đến 20 ký tự",
+    "user id must contain only letter and optionally number": "ID người dùng chỉ được chứa chữ cái và tùy chọn chứa chữ số",
+    "password length must be between 8 - 30 characters long": "Độ dài mật khẩu phải từ 8 đến 30 ký tự",
+    "password must contain at least letter, number, and a special character !@#$%^&*()": "Mật khẩu phải chứa ít nhất chữ cái, số và ký tự đặc biệt !@#$%^&*()",
+    "password is not the same": "Mật khẩu không khớp"
 }
