@@ -1,6 +1,4 @@
-package mcontext
-
-import "meowyplayer/storages"
+package storages
 
 type EventType int64
 type EventListener = func(any)
@@ -22,7 +20,7 @@ type OnInitEventData struct {
 }
 
 type OnPutPlaylistEventData struct {
-	Playlist storages.Playlist
+	Playlist Playlist
 }
 
 type OnDeletePlaylistEventData struct {
@@ -41,16 +39,16 @@ type OnViewPlaylistPageEventData struct {
 }
 
 type OnViewMusicPageEventData struct {
-	Playlist storages.Playlist
+	Playlist Playlist
 }
 
 type OnPlayMusicEventData struct {
-	Playlist storages.Playlist
-	Music    storages.Music
+	Playlist Playlist
+	Music    Music
 }
 
 type OnPutUserEventData struct {
-	UserProfile storages.UserProfile
+	UserProfile UserProfile
 }
 
 type OnDeleteUserEventData struct {

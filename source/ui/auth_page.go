@@ -2,7 +2,7 @@ package ui
 
 import (
 	"errors"
-	"meowyplayer/mcontext"
+	"meowyplayer/storages"
 	"unicode"
 	"unicode/utf8"
 
@@ -18,7 +18,7 @@ type AuthPage struct {
 	registrationPage *RegistrationPage
 }
 
-func newAuthPage(userContext *mcontext.UserContext) *AuthPage {
+func newAuthPage(userContext *storages.UserContext) *AuthPage {
 	var p AuthPage
 	p = AuthPage{
 		loginPage:        newLoginPage(userContext, p.showRegisterPage),

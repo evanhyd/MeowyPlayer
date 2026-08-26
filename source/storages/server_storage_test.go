@@ -2,7 +2,7 @@ package storages
 
 import (
 	"encoding/json"
-	"meowyplayer/handlers"
+	"meowyplayer/schemas"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -51,7 +51,7 @@ func setupTestEnvironment(t *testing.T, handler http.HandlerFunc) (*ServerStorag
 		"putMusicInPlaylistBulk":  ts.URL + "/putMusicInPlaylistBulk",
 	}
 
-	serverStore := NewServerStorage(localStore, endpoints)
+	serverStore := NewServerStorage(http.DefaultClient, localStore, endpoints)
 
 	cleanup := func() {
 		ts.Close()
@@ -67,7 +67,7 @@ func setupTestEnvironment(t *testing.T, handler http.HandlerFunc) (*ServerStorag
 func TestServerStorage_PutPlaylist(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(handlers.PutPlaylistResponse{})
+		json.NewEncoder(w).Encode(schemas.PutPlaylistResponse{})
 	}
 	store, cleanup := setupTestEnvironment(t, handler)
 	defer cleanup()
@@ -102,7 +102,7 @@ func TestServerStorage_PutPlaylist(t *testing.T) {
 func TestServerStorage_DeletePlaylist(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(handlers.DeletePlaylistResponse{})
+		json.NewEncoder(w).Encode(schemas.DeletePlaylistResponse{})
 	}
 	store, cleanup := setupTestEnvironment(t, handler)
 	defer cleanup()
@@ -126,7 +126,7 @@ func TestServerStorage_DeletePlaylist(t *testing.T) {
 func TestServerStorage_PutMusic(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(handlers.PutMusicResponse{})
+		json.NewEncoder(w).Encode(schemas.PutMusicResponse{})
 	}
 	store, cleanup := setupTestEnvironment(t, handler)
 	defer cleanup()
@@ -157,7 +157,7 @@ func TestServerStorage_PutMusic(t *testing.T) {
 func TestServerStorage_PutMusicInPlaylist(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(handlers.PutMusicInPlaylistResponse{})
+		json.NewEncoder(w).Encode(schemas.PutMusicInPlaylistResponse{})
 	}
 	store, cleanup := setupTestEnvironment(t, handler)
 	defer cleanup()
@@ -179,7 +179,7 @@ func TestServerStorage_PutMusicInPlaylist(t *testing.T) {
 func TestServerStorage_DeleteMusicFromPlaylist(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(handlers.DeleteMusicFromPlaylistResponse{})
+		json.NewEncoder(w).Encode(schemas.DeleteMusicFromPlaylistResponse{})
 	}
 	store, cleanup := setupTestEnvironment(t, handler)
 	defer cleanup()
@@ -204,7 +204,7 @@ func TestServerStorage_DeleteMusicFromPlaylist(t *testing.T) {
 func TestServerStorage_NetworkFailure_SetsOffline(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(handlers.ErrorResponse{Error: "server crash"})
+		json.NewEncoder(w).Encode(schemas.ErrorResponse{Error: "server crash"})
 	}
 	store, cleanup := setupTestEnvironment(t, handler)
 	defer cleanup()
@@ -225,15 +225,15 @@ func TestServerStorage_PreSync_Recovery_FullState(t *testing.T) {
 		// Mock responses for downloading a cloud playlist
 		case "/getPlaylistsFromUser":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(handlers.GetPlaylistsFromUserResponse{
-				Playlists: []handlers.Playlist{
+			json.NewEncoder(w).Encode(schemas.GetPlaylistsFromUserResponse{
+				Playlists: []schemas.Playlist{
 					{PlaylistId: 999, Title: "Cloud Sync Playlist", CoverBlob: []byte("synced_cover_blob"), ModifiedDate: 999999999},
 				},
 			})
 		case "/getPlaylistContent":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(handlers.GetPlaylistContentResponse{
-				Musics: []handlers.Music{
+			json.NewEncoder(w).Encode(schemas.GetPlaylistContentResponse{
+				Musics: []schemas.Music{
 					{MusicId: "song_1", Title: "Cloud Song", Source: int64(YouTubeSource)},
 				},
 			})
@@ -241,16 +241,16 @@ func TestServerStorage_PreSync_Recovery_FullState(t *testing.T) {
 		// Mock responses for uploading a local playlist
 		case "/putPlaylist":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(handlers.PutPlaylistResponse{})
+			json.NewEncoder(w).Encode(schemas.PutPlaylistResponse{})
 		case "/putMusicBulk":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(handlers.PutMusicBulkResponse{})
+			json.NewEncoder(w).Encode(schemas.PutMusicBulkResponse{})
 		case "/putMusicInPlaylistBulk":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(handlers.PutMusicInPlaylistBulkResponse{})
+			json.NewEncoder(w).Encode(schemas.PutMusicInPlaylistBulkResponse{})
 		case "/putMusicInPlaylist":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(handlers.PutMusicInPlaylistResponse{})
+			json.NewEncoder(w).Encode(schemas.PutMusicInPlaylistResponse{})
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}

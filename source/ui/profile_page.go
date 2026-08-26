@@ -2,7 +2,6 @@ package ui
 
 import (
 	"log/slog"
-	"meowyplayer/mcontext"
 	"meowyplayer/storages"
 	"time"
 
@@ -16,14 +15,14 @@ import (
 
 type ProfilePage struct {
 	widget.BaseWidget
-	userContext           *mcontext.UserContext
+	userContext           *storages.UserContext
 	userIdLabel           *widget.Label
 	usernameLabel         *widget.Label
 	registrationDateLabel *widget.Label
 	logoutButton          *widget.Button
 }
 
-func newProfilePage(userContext *mcontext.UserContext) *ProfilePage {
+func newProfilePage(userContext *storages.UserContext) *ProfilePage {
 	var p ProfilePage
 	p = ProfilePage{
 		userContext:           userContext,

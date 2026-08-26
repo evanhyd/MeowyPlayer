@@ -2,8 +2,7 @@ package ui
 
 import (
 	"errors"
-	"meowyplayer/handlers"
-	"meowyplayer/mcontext"
+	"meowyplayer/schemas"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
 
@@ -18,7 +17,7 @@ import (
 
 type RegistrationPage struct {
 	widget.BaseWidget
-	userContext          *mcontext.UserContext
+	userContext          *storages.UserContext
 	userIdEntry          *widget.Entry
 	passwordEntry        *widget.Entry
 	confirmPasswordEntry *widget.Entry
@@ -27,7 +26,7 @@ type RegistrationPage struct {
 	goLoginButton        *widget.Button
 }
 
-func newRegistrationPage(userContext *mcontext.UserContext, onGoLogin func()) *RegistrationPage {
+func newRegistrationPage(userContext *storages.UserContext, onGoLogin func()) *RegistrationPage {
 	var p RegistrationPage
 	p = RegistrationPage{
 		userContext:          userContext,
@@ -89,15 +88,15 @@ func (p *RegistrationPage) registerUser(userId string, password string) {
 		waitingDialog.Show()
 
 		// Send registration request.
-		request := handlers.RegisterRequest{
+		request := schemas.RegisterRequest{
 			UserId:   userId,
 			Username: userId,
 			Password: password,
 			Language: storages.LangEnglish,
 		}
 
-		response := handlers.RegisterResponse{}
-		err := handlers.SendJSON(p.userContext.Config().Endpoints["register"], request, &response)
+		response := schemas.RegisterResponse{}
+		err := schemas.SendJSON(p.userContext.HttpClient(), p.userContext.Config().Endpoints["register"], request, &response)
 		waitingDialog.Dismiss()
 		if err != nil {
 			dialog.ShowError(err, win)

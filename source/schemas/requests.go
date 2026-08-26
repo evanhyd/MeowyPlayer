@@ -1,10 +1,12 @@
-package handlers
+package schemas
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 )
 
 type MusicSource = int64
@@ -216,7 +218,7 @@ type DeleteMusicFromPlaylistRequest struct {
 type DeleteMusicFromPlaylistResponse struct {
 }
 
-func SendJSON[T any, Y any](url string, request T, response *Y) error {
+func SendJSON[T any, Y any](client *http.Client, url string, request T, response *Y) error {
 	// Encode request object.
 	buffer := bytes.Buffer{}
 	err := json.NewEncoder(&buffer).Encode(request)
@@ -225,13 +227,15 @@ func SendJSON[T any, Y any](url string, request T, response *Y) error {
 	}
 
 	// Send request.
-	req, err := http.NewRequest("POST", url, &buffer)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "POST", url, &buffer)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	rsp, err := http.DefaultClient.Do(req)
+	rsp, err := client.Do(req)
 	if err != nil {
 		return err
 	}

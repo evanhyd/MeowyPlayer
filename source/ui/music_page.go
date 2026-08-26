@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"log/slog"
-	"meowyplayer/mcontext"
 	"meowyplayer/scrapers"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
@@ -25,7 +24,7 @@ import (
 
 type MusicPage struct {
 	widget.BaseWidget
-	userContext    *mcontext.UserContext
+	userContext    *storages.UserContext
 	playlist       storages.Playlist
 	queryResults   []storages.Music
 	displayResults []storages.Music
@@ -42,7 +41,7 @@ type MusicPage struct {
 	scrollList          *widget.List
 }
 
-func newMusicPage(userContext *mcontext.UserContext) *MusicPage {
+func newMusicPage(userContext *storages.UserContext) *MusicPage {
 	p := MusicPage{
 		userContext:         userContext,
 		background:          canvas.NewImageFromImage(nil),
@@ -94,22 +93,22 @@ func newMusicPage(userContext *mcontext.UserContext) *MusicPage {
 	p.scrollList.HideSeparators = true
 	p.Hide()
 
-	p.userContext.AddListener(mcontext.OnViewMusicPageEvent, func(data any) {
-		p.fetchMusic(data.(mcontext.OnViewMusicPageEventData).Playlist)
+	p.userContext.AddListener(storages.OnViewMusicPageEvent, func(data any) {
+		p.fetchMusic(data.(storages.OnViewMusicPageEventData).Playlist)
 		p.Show()
 	})
 
-	p.userContext.AddListener(mcontext.OnViewPlaylistPageEvent, func(any) {
+	p.userContext.AddListener(storages.OnViewPlaylistPageEvent, func(any) {
 		p.Hide()
 	})
 
-	p.userContext.AddListener(mcontext.OnPutMusicInPlaylistEvent, func(data any) {
-		if data.(mcontext.OnPutMusicInPlaylistEventData).PlaylistId == p.playlist.PlaylistId {
+	p.userContext.AddListener(storages.OnPutMusicInPlaylistEvent, func(data any) {
+		if data.(storages.OnPutMusicInPlaylistEventData).PlaylistId == p.playlist.PlaylistId {
 			p.fetchMusic(p.playlist)
 		}
 	})
 
-	p.userContext.AddListener(mcontext.OnDeleteMusicFromPlaylistEvent, func(any) {
+	p.userContext.AddListener(storages.OnDeleteMusicFromPlaylistEvent, func(any) {
 		p.fetchMusic(p.playlist)
 	})
 

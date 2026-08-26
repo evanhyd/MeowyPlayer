@@ -2,7 +2,6 @@ package storages
 
 import (
 	"database/sql"
-	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	_ "embed"
 
 	_ "modernc.org/sqlite"
 )

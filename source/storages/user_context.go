@@ -1,19 +1,21 @@
-package mcontext
+package storages
 
 import (
 	"io"
 	"log/slog"
-	"meowyplayer/storages"
+	"net/http"
 )
 
 type UserContext struct {
+	httpClient *http.Client
 	config     UserConfig
-	storage    storages.Storage
+	storage    Storage
 	dispatcher EventsDispatcher
 }
 
-func MakeUserContext(config UserConfig, storage storages.Storage) UserContext {
+func MakeUserContext(httpClient *http.Client, config UserConfig, storage Storage) UserContext {
 	return UserContext{
+		httpClient: httpClient,
 		config:     config,
 		storage:    storage,
 		dispatcher: makeEventsDispatcher(),
@@ -24,11 +26,17 @@ func (u *UserContext) AddListener(event EventType, listener EventListener) {
 	u.dispatcher.AddListener(event, listener)
 }
 
+func (u *UserContext) HttpClient() *http.Client {
+	return u.httpClient
+}
+
 func (u *UserContext) Config() *UserConfig {
 	return &u.config
 }
 
 func (u *UserContext) Close() {
+	u.httpClient.CloseIdleConnections()
+
 	if u.storage != nil {
 		if err := u.storage.Close(); err != nil {
 			slog.Error("failed to close the storage", "error", err)
@@ -41,7 +49,7 @@ func (u *UserContext) OnInit() {
 	u.dispatcher.Dispatch(OnInitEvent, OnInitEventData{})
 }
 
-func (u *UserContext) PutUser(userProfile storages.UserProfile) error {
+func (u *UserContext) PutUser(userProfile UserProfile) error {
 	err := u.storage.PutUser(userProfile)
 	if err == nil {
 		u.dispatcher.Dispatch(OnPutUserEvent, OnPutUserEventData{UserProfile: userProfile})
@@ -57,11 +65,11 @@ func (u *UserContext) DeleteUser() error {
 	return err
 }
 
-func (u *UserContext) GetUser() (storages.UserProfile, error) {
+func (u *UserContext) GetUser() (UserProfile, error) {
 	return u.storage.GetUser()
 }
 
-func (u *UserContext) PutPlaylist(playlist storages.Playlist) (storages.Playlist, error) {
+func (u *UserContext) PutPlaylist(playlist Playlist) (Playlist, error) {
 	playlist, err := u.storage.PutPlaylist(playlist)
 	if err == nil {
 		u.dispatcher.Dispatch(OnPutPlaylistEvent, OnPutPlaylistEventData{Playlist: playlist})
@@ -69,7 +77,7 @@ func (u *UserContext) PutPlaylist(playlist storages.Playlist) (storages.Playlist
 	return playlist, err
 }
 
-func (u *UserContext) GetPlaylist(playlistID int64) (storages.Playlist, error) {
+func (u *UserContext) GetPlaylist(playlistID int64) (Playlist, error) {
 	return u.storage.GetPlaylist(playlistID)
 }
 
@@ -81,39 +89,39 @@ func (u *UserContext) DeletePlaylist(playlistID int64) error {
 	return err
 }
 
-func (u *UserContext) PutMusic(music storages.Music) error {
+func (u *UserContext) PutMusic(music Music) error {
 	return u.storage.PutMusic(music)
 }
 
-func (u *UserContext) GetMusic(musicID string, source storages.MusicSource) (storages.Music, error) {
+func (u *UserContext) GetMusic(musicID string, source MusicSource) (Music, error) {
 	return u.storage.GetMusic(musicID, source)
 }
 
-func (u *UserContext) DeleteMusic(musicID string, source storages.MusicSource) error {
+func (u *UserContext) DeleteMusic(musicID string, source MusicSource) error {
 	return u.storage.DeleteMusic(musicID, source)
 }
 
-func (u *UserContext) PutMusicFile(music storages.Music, content io.Reader) error {
+func (u *UserContext) PutMusicFile(music Music, content io.Reader) error {
 	return u.storage.PutMusicFile(music, content)
 }
 
-func (u *UserContext) GetMusicFile(music storages.Music) (io.ReadSeekCloser, error) {
+func (u *UserContext) GetMusicFile(music Music) (io.ReadSeekCloser, error) {
 	return u.storage.GetMusicFile(music)
 }
 
-func (u *UserContext) DeleteMusicFile(music storages.Music) error {
+func (u *UserContext) DeleteMusicFile(music Music) error {
 	return u.storage.DeleteMusicFile(music)
 }
 
-func (u *UserContext) GetPlaylistsFromUser() ([]storages.Playlist, error) {
+func (u *UserContext) GetPlaylistsFromUser() ([]Playlist, error) {
 	return u.storage.GetPlaylistsFromUser()
 }
 
-func (u *UserContext) GetMusicFromPlaylist(playlistID int64) ([]storages.Music, error) {
+func (u *UserContext) GetMusicFromPlaylist(playlistID int64) ([]Music, error) {
 	return u.storage.GetMusicFromPlaylist(playlistID)
 }
 
-func (u *UserContext) PutMusicInPlaylist(playlistID int64, musicID string, source storages.MusicSource) error {
+func (u *UserContext) PutMusicInPlaylist(playlistID int64, musicID string, source MusicSource) error {
 	err := u.storage.PutMusicInPlaylist(playlistID, musicID, source)
 	if err == nil {
 		u.dispatcher.Dispatch(OnPutMusicInPlaylistEvent, OnPutMusicInPlaylistEventData{PlaylistId: playlistID})
@@ -121,7 +129,7 @@ func (u *UserContext) PutMusicInPlaylist(playlistID int64, musicID string, sourc
 	return err
 }
 
-func (u *UserContext) DeleteMusicFromPlaylist(playlistID int64, musicID string, source storages.MusicSource) error {
+func (u *UserContext) DeleteMusicFromPlaylist(playlistID int64, musicID string, source MusicSource) error {
 	err := u.storage.DeleteMusicFromPlaylist(playlistID, musicID, source)
 	if err == nil {
 		u.dispatcher.Dispatch(OnDeleteMusicFromPlaylistEvent, OnDeleteMusicFromPlaylistEventData{PlaylistId: playlistID})
@@ -133,11 +141,11 @@ func (u *UserContext) ViewPlaylistPage() {
 	u.dispatcher.Dispatch(OnViewPlaylistPageEvent, OnViewPlaylistPageEventData{})
 }
 
-func (u *UserContext) ViewMusicPage(playlist storages.Playlist) {
+func (u *UserContext) ViewMusicPage(playlist Playlist) {
 	u.dispatcher.Dispatch(OnViewMusicPageEvent, OnViewMusicPageEventData{Playlist: playlist})
 }
 
-func (u *UserContext) PlayMusic(playlist storages.Playlist, music storages.Music) error {
+func (u *UserContext) PlayMusic(playlist Playlist, music Music) error {
 	u.dispatcher.Dispatch(OnPlayMusicEvent, OnPlayMusicEventData{Playlist: playlist, Music: music})
 	return nil
 }

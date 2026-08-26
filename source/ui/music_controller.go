@@ -4,7 +4,6 @@ import (
 	stdcontext "context"
 	"fmt"
 	"log/slog"
-	"meowyplayer/mcontext"
 	"meowyplayer/players"
 	"meowyplayer/scrapers"
 	"meowyplayer/storages"
@@ -30,7 +29,7 @@ const (
 
 type MusicController struct {
 	widget.BaseWidget
-	userContext *mcontext.UserContext
+	userContext *storages.UserContext
 	musicPlayer players.MusicPlayer
 	playlist    storages.Playlist
 
@@ -45,7 +44,7 @@ type MusicController struct {
 	volumeSlider   *mwidget.VolumeSlider
 }
 
-func newMusicController(userContext *mcontext.UserContext) *MusicController {
+func newMusicController(userContext *storages.UserContext) *MusicController {
 	var c MusicController
 	c = MusicController{
 		userContext:   userContext,
@@ -91,8 +90,8 @@ func newMusicController(userContext *mcontext.UserContext) *MusicController {
 	c.volumeSlider.OnChanged = c.musicPlayer.SetVolume
 	c.volumeSlider.SetVolume(0.7)
 
-	c.userContext.AddListener(mcontext.OnPlayMusicEvent, func(data any) {
-		c.fetchMusic(data.(mcontext.OnPlayMusicEventData).Playlist, data.(mcontext.OnPlayMusicEventData).Music)
+	c.userContext.AddListener(storages.OnPlayMusicEvent, func(data any) {
+		c.fetchMusic(data.(storages.OnPlayMusicEventData).Playlist, data.(storages.OnPlayMusicEventData).Music)
 	})
 
 	// UI update thread

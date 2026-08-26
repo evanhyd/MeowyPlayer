@@ -2,8 +2,7 @@ package ui
 
 import (
 	"log/slog"
-	"meowyplayer/handlers"
-	"meowyplayer/mcontext"
+	"meowyplayer/schemas"
 	"meowyplayer/storages"
 	"meowyplayer/ui/internal/mcontainer"
 
@@ -18,7 +17,7 @@ import (
 
 type LoginPage struct {
 	widget.BaseWidget
-	userContext          *mcontext.UserContext
+	userContext          *storages.UserContext
 	userIdEntry          *widget.Entry
 	passwordEntry        *widget.Entry
 	confirmPasswordEntry *widget.Entry
@@ -26,7 +25,7 @@ type LoginPage struct {
 	goRegisterButton     *widget.Button
 }
 
-func newLoginPage(userContext *mcontext.UserContext, onGoRegister func()) *LoginPage {
+func newLoginPage(userContext *storages.UserContext, onGoRegister func()) *LoginPage {
 	var p LoginPage
 	p = LoginPage{
 		userContext:   userContext,
@@ -80,12 +79,12 @@ func (p *LoginPage) login() {
 		err := func() error {
 			// Login to get token.
 			token, err := func() (string, error) {
-				request := handlers.LoginRequest{
+				request := schemas.LoginRequest{
 					UserId:   p.userIdEntry.Text,
 					Password: p.passwordEntry.Text,
 				}
-				response := handlers.LoginResponse{}
-				err := handlers.SendJSON(p.userContext.Config().Endpoints["login"], request, &response)
+				response := schemas.LoginResponse{}
+				err := schemas.SendJSON(p.userContext.HttpClient(), p.userContext.Config().Endpoints["login"], request, &response)
 				return response.Token, err
 			}()
 			if err != nil {
@@ -95,11 +94,11 @@ func (p *LoginPage) login() {
 
 			// Get user profile.
 			profile, err := func() (storages.UserProfile, error) {
-				request := handlers.MeRequest{
+				request := schemas.MeRequest{
 					Token: token,
 				}
-				response := handlers.MeResponse{}
-				err := handlers.SendJSON(p.userContext.Config().Endpoints["me"], request, &response)
+				response := schemas.MeResponse{}
+				err := schemas.SendJSON(p.userContext.HttpClient(), p.userContext.Config().Endpoints["me"], request, &response)
 
 				profile := storages.UserProfile{
 					UserId:           response.UserId,

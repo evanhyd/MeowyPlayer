@@ -1,4 +1,4 @@
-package mcontext
+package storages
 
 type EventsDispatcher struct {
 	listeners map[EventType][]EventListener

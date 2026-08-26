@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"meowyplayer/loggers"
-	"meowyplayer/mcontext"
 	"meowyplayer/storages"
 	"meowyplayer/ui"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func main() {
@@ -29,8 +31,8 @@ func main() {
 	logger := loggers.InitializeGlobalLogger(logFilePath)
 	defer logger.Close()
 
-	// Config.
-	config := mcontext.UserConfig{}
+	// User config.
+	config := storages.UserConfig{}
 	if configData, err := os.ReadFile(filepath.Join(baseDir, "config.json")); err != nil {
 		slog.Info("missing config file, fallback to default", "info", err)
 		config.Endpoints = map[string]string{
@@ -56,11 +58,24 @@ func main() {
 		return
 	}
 
-	// Storage.
-	localStorage := storages.NewSQLiteStorage(filepath.Join(baseDir, "local.db"), filepath.Join(baseDir, "music"))
-	serverStorage := storages.NewServerStorage(localStorage, config.Endpoints)
-	userContext := mcontext.MakeUserContext(config, serverStorage)
+	// Network client with low timeout limit. This ensure UI doesn't freeze for too long.
+	// Not the best solution, but works for now.
+	httpClient := http.Client{
+		Transport: &http.Transport{
+			DialContext: (&net.Dialer{Timeout: 200 * time.Millisecond}).DialContext,
+		},
+		Timeout: 0,
+	}
 
-	// Start the app.
+	userContext := storages.MakeUserContext(
+		&httpClient,
+		config,
+		storages.NewServerStorage(
+			&httpClient,
+			storages.NewSQLiteStorage(filepath.Join(baseDir, "local.db"), filepath.Join(baseDir, "music")),
+			config.Endpoints,
+		),
+	)
+
 	ui.RunApp(&userContext)
 }
