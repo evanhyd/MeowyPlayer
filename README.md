@@ -28,7 +28,7 @@
 - Run `go run build.go` to compile the program with optional `-release` flag.
 
 ## Self-Hosting Servers
-[MeowStore: MeowyPlayer Playlist storage server](https://github.com/evanhyd/MeowStore)
+[MeowStore: MeowyPlayer Playlist storage server](https://github.com/evanhyd/MeowStore)  
 [MeowAuth: MeowyPlayer Authentication server](https://github.com/evanhyd/MeowAuth)
 
 ## Design Documents
