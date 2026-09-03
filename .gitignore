@@ -25,6 +25,8 @@
 *.so
 *.dylib
 *.com
+*.apk
+*.app
 
 # Test binary, built with `go test -c`
 *.test

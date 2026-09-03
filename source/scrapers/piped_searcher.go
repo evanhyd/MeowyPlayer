@@ -14,6 +14,8 @@ import (
 	"meowyplayer/storages"
 )
 
+var _ MusicSearcher = (*pipedSearcher)(nil)
+
 type PipedVideoItem struct {
 	URL              string `json:"url"`
 	Type             string `json:"type"`

@@ -155,6 +155,7 @@ func (p *BeepPlayer) playMusic(music storages.Music) {
 
 	p.stream = newBeepStream(musicFile, sampleRate, p.volume)
 	if p.stream == nil {
+		p.onMissingMusic(music)
 		return
 	}
 
