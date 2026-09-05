@@ -9,7 +9,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
 )
@@ -71,11 +70,5 @@ func newMusicWindow(meowApp fyne.App, userContext *storages.UserContext) fyne.Wi
 	tabs.SelectIndex(1)
 	controller := newMusicController(userContext)
 	win.SetContent(container.NewBorder(nil, controller, nil, nil, tabs))
-
-	// System tray menu.
-	if desktop, ok := meowApp.(desktop.App); ok {
-		desktop.SetSystemTrayMenu(fyne.NewMenu("", fyne.NewMenuItem("Show", win.Show)))
-	}
-
 	return win
 }

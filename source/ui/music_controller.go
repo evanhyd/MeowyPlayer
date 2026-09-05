@@ -16,6 +16,7 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -98,6 +99,8 @@ func newMusicController(userContext *storages.UserContext) *MusicController {
 		c.loadPlaylist(evt.Playlist, evt.Music)
 	})
 
+	c.setupSystemTray()
+
 	go func() {
 		for range time.NewTicker(time.Second).C {
 			progress := c.musicPlayer.GetProgress()
@@ -125,6 +128,27 @@ func (c *MusicController) CreateRenderer() fyne.WidgetRenderer {
 			container.NewBorder(nil, nil, nil, c.durationLabel, c.progressSlider),
 		),
 	))
+}
+
+func (c *MusicController) setupSystemTray() {
+	if deskApp, ok := fyne.CurrentApp().(desktop.App); ok {
+		menu := fyne.NewMenu("",
+			fyne.NewMenuItem(lang.L("Play")+"/"+lang.L("Pause"), func() {
+				c.playButton.OnTapped()
+			}),
+			fyne.NewMenuItem(lang.L("Previous"), func() {
+				c.skipPrevButton.OnTapped()
+			}),
+			fyne.NewMenuItem(lang.L("Next"), func() {
+				c.skipNextButton.OnTapped()
+			}),
+			fyne.NewMenuItem("Show", func() {
+				fyne.CurrentApp().Driver().AllWindows()[0].Show()
+			}),
+		)
+		deskApp.SetSystemTrayMenu(menu)
+		deskApp.SetSystemTrayIcon(resourceIconPng)
+	}
 }
 
 func (c *MusicController) extractCover(music storages.Music) []byte {
