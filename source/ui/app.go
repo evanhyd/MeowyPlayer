@@ -50,10 +50,9 @@ func RunApp(userContext *storages.UserContext) {
 
 func newAuthWindow(meowApp fyne.App, userContext *storages.UserContext) fyne.Window {
 	win := meowApp.NewWindow(lang.L("MeowyPlayer Auth Window"))
-	win.Resize(fyne.NewSize(550, 250))
+	win.Resize(fyne.NewSize(750, 250))
 	win.SetContent(newAuthPage(userContext))
 	win.CenterOnScreen()
-	win.SetFixedSize(true)
 	return win
 }
 
