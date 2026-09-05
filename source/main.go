@@ -34,7 +34,6 @@ func main() {
 	// User config.
 	config := storages.UserConfig{}
 	if configData, err := os.ReadFile(filepath.Join(baseDir, "config.json")); err != nil {
-		slog.Info("missing config file, fallback to default", "info", err)
 		config.Endpoints = map[string]string{
 			"register":                `http://40.233.108.102/auth/register`,
 			"login":                   `http://40.233.108.102/auth/login`,

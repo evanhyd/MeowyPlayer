@@ -22,11 +22,6 @@ import (
 	"github.com/dhowden/tag"
 )
 
-const (
-	Pause  = 0
-	Resume = 1
-)
-
 type MusicController struct {
 	widget.BaseWidget
 	userContext *storages.UserContext
@@ -45,62 +40,70 @@ type MusicController struct {
 }
 
 func newMusicController(userContext *storages.UserContext) *MusicController {
-	var c MusicController
-	c = MusicController{
-		userContext:   userContext,
-		musicPlayer:   players.MakeBeepPlayer(userContext, c.downloadMusic, c.onPlayMusic),
-		playlistCover: canvas.NewImageFromResource(resourceIconPng),
-		title: widget.NewRichText(&widget.TextSegment{
-			Style: widget.RichTextStyle{SizeName: theme.SizeNameSubHeadingText, TextStyle: fyne.TextStyle{Bold: true}},
-		}),
+	c := &MusicController{
+		userContext:    userContext,
+		playlistCover:  canvas.NewImageFromResource(resourceIconPng),
+		title:          widget.NewRichText(&widget.TextSegment{Style: widget.RichTextStyle{SizeName: theme.SizeNameSubHeadingText, TextStyle: fyne.TextStyle{Bold: true}}}),
 		durationLabel:  widget.NewLabel("00:00"),
 		modeDropDown:   mwidget.NewDropDown(),
 		skipPrevButton: widget.NewButtonWithIcon("", theme.MediaSkipPreviousIcon(), nil),
-		playButton:     widget.NewButtonWithIcon("", theme.MediaRecordIcon(), nil),
+		playButton:     widget.NewButtonWithIcon("", theme.MediaPauseIcon(), nil),
 		skipNextButton: widget.NewButtonWithIcon("", theme.MediaSkipNextIcon(), nil),
 		volumeSlider:   mwidget.NewVolumeSlider(),
 	}
 
-	c.playlistCover.SetMinSize(mwidget.PlaylistCardSize)
-	c.playlistCover.CornerRadius = 8.0
+	c.musicPlayer = players.MakeBeepPlayer(userContext, c.downloadMusic, c.onPlayMusic)
 
+	c.playlistCover.SetMinSize(mwidget.ControllerPlaylistCardSize)
+	c.playlistCover.CornerRadius = 8.0
 	c.title.Truncation = fyne.TextTruncateEllipsis
 
-	c.progressSlider = mwidget.NewProgressSlider(c.musicPlayer.SetProgress)
+	c.progressSlider = mwidget.NewProgressSlider(func(percent float64) {
+		c.musicPlayer.SetProgress(percent)
+		c.playButton.SetIcon(theme.MediaPauseIcon())
+	})
 
 	c.modeDropDown.Add(fyne.NewMenuItemWithIcon(lang.L("Sequential"), theme.MailForwardIcon(), func() { c.musicPlayer.SetQueueMode(players.SequentialQueueMode) }))
 	c.modeDropDown.Add(fyne.NewMenuItemWithIcon(lang.L("Random"), resourceRandomSvg, func() { c.musicPlayer.SetQueueMode(players.RandomQueueMode) }))
 	c.modeDropDown.Select(0)
 
 	c.skipPrevButton.Importance = widget.LowImportance
-	c.skipPrevButton.OnTapped = c.musicPlayer.Previous
+	c.skipPrevButton.OnTapped = func() {
+		c.musicPlayer.Previous()
+		c.playButton.SetIcon(theme.MediaPauseIcon())
+	}
 
 	c.playButton.Importance = widget.LowImportance
 	c.playButton.OnTapped = func() {
 		if c.musicPlayer.IsPlaying() {
 			c.musicPlayer.Pause()
+			c.playButton.SetIcon(theme.MediaPlayIcon())
 		} else {
 			c.musicPlayer.Resume()
+			c.playButton.SetIcon(theme.MediaPauseIcon())
 		}
 	}
 
 	c.skipNextButton.Importance = widget.LowImportance
-	c.skipNextButton.OnTapped = c.musicPlayer.Next
+	c.skipNextButton.OnTapped = func() {
+		c.musicPlayer.Next()
+		c.playButton.SetIcon(theme.MediaPauseIcon())
+	}
 
 	c.volumeSlider.OnChanged = c.musicPlayer.SetVolume
 	c.volumeSlider.SetVolume(0.7)
 
 	c.userContext.AddListener(storages.OnPlayMusicEvent, func(data any) {
-		c.fetchMusic(data.(storages.OnPlayMusicEventData).Playlist, data.(storages.OnPlayMusicEventData).Music)
+		evt := data.(storages.OnPlayMusicEventData)
+		c.loadPlaylist(evt.Playlist, evt.Music)
 	})
 
-	// UI update thread
 	go func() {
-		ticker := time.NewTicker(1 * time.Second)
-		for range ticker.C {
+		for range time.NewTicker(time.Second).C {
 			progress := c.musicPlayer.GetProgress()
 			music := c.musicPlayer.GetMusic()
 			playedDuration := int64(float64(music.LengthSeconds) * progress)
+
 			fyne.DoAndWait(func() {
 				c.durationLabel.SetText(fmt.Sprintf("%s / %s", mutil.SecondsToTime(playedDuration), mutil.SecondsToTime(music.LengthSeconds)))
 				c.progressSlider.SetValue(progress)
@@ -108,21 +111,17 @@ func newMusicController(userContext *storages.UserContext) *MusicController {
 		}
 	}()
 
-	c.ExtendBaseWidget(&c)
-	return &c
+	c.ExtendBaseWidget(c)
+	return c
 }
 
 func (c *MusicController) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(container.NewBorder(
-		nil,
-		nil,
-		c.playlistCover,
-		nil,
+		nil, nil, c.playlistCover, nil,
 		container.NewBorder(
 			c.title,
 			mcontainer.NewHSplit(0.8, container.NewCenter(container.NewHBox(c.modeDropDown, c.skipPrevButton, c.playButton, c.skipNextButton)), c.volumeSlider),
-			nil,
-			nil,
+			nil, nil,
 			container.NewBorder(nil, nil, nil, c.durationLabel, c.progressSlider),
 		),
 	))
@@ -136,20 +135,14 @@ func (c *MusicController) extractCover(music storages.Music) []byte {
 	defer file.Close()
 
 	m, err := tag.ReadFrom(file)
-	if err != nil {
+	if err != nil || m.Picture() == nil {
 		return nil
 	}
-
-	pic := m.Picture()
-	if pic == nil {
-		return nil
-	}
-	return pic.Data
+	return m.Picture().Data
 }
 
 func (c *MusicController) onPlayMusic(music storages.Music) {
 	fyne.DoAndWait(func() {
-		// Update title and cover.
 		c.title.Segments[0].(*widget.TextSegment).Text = music.Title
 		c.title.Refresh()
 
@@ -162,16 +155,21 @@ func (c *MusicController) onPlayMusic(music storages.Music) {
 	})
 }
 
-func (c *MusicController) fetchMusic(playlist storages.Playlist, music storages.Music) {
+func (c *MusicController) loadPlaylist(playlist storages.Playlist, music storages.Music) {
 	c.playlist = playlist
 	c.musicPlayer.SetPlaylist(playlist, music)
+	c.playButton.SetIcon(theme.MediaPauseIcon())
 }
 
 func (c *MusicController) downloadMusic(music storages.Music) {
-	progressBar := dialog.NewCustomWithoutButtons(lang.L("Downloading"), widget.NewProgressBarInfinite(), fyne.CurrentApp().Driver().AllWindows()[0])
-	fyne.DoAndWait(progressBar.Show)
+	var progressBar dialog.Dialog
 
-	// Download the missing music files.
+	fyne.DoAndWait(func() {
+		progressBar = dialog.NewCustomWithoutButtons(lang.L("Downloading"), widget.NewProgressBarInfinite(), fyne.CurrentApp().Driver().AllWindows()[0])
+		progressBar.Show()
+	})
+	defer fyne.DoAndWait(progressBar.Dismiss)
+
 	downloader := scrapers.NewCnvmp3Downloader()
 	content, err := downloader.Download(stdcontext.Background(), scrapers.Result{
 		Platform: music.Source,
@@ -184,11 +182,7 @@ func (c *MusicController) downloadMusic(music storages.Music) {
 	}
 	defer content.Close()
 
-	err = c.userContext.PutMusicFile(music, content)
-	if err != nil {
+	if err = c.userContext.PutMusicFile(music, content); err != nil {
 		slog.Error("failed to put music file", "error", err)
-		return
 	}
-
-	fyne.DoAndWait(progressBar.Dismiss)
 }
