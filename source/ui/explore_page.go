@@ -93,24 +93,76 @@ func (p *ExplorePage) openInBrowser(result scrapers.Result) {
 }
 
 func (p *ExplorePage) showAddToPlaylistsDialog(res scrapers.Result) {
-	playlists, err := p.userContext.GetPlaylistsFromUser()
-	if err != nil {
-		slog.Error("failed to list playlists", "error", err)
-		return
-	}
+	win := fyne.CurrentApp().Driver().AllWindows()[0]
 
-	opts := make([]string, len(playlists))
-	for i, pl := range playlists {
-		opts[i] = pl.Title
-	}
-
-	sel := widget.NewSelect(opts, nil)
+	var activePlaylists []storages.Playlist
+	sel := widget.NewSelect([]string{}, nil)
 	sel.PlaceHolder = lang.L("Select a playlist")
 
-	win := fyne.CurrentApp().Driver().AllWindows()[0]
-	dialog.ShowCustomConfirm(lang.L("Add to playlist"), lang.L("Add"), lang.L("Cancel"), sel, func(confirm bool) {
+	// Initial load happens on the UI thread, no fyne.Do needed here.
+	if plists, err := p.userContext.GetPlaylistsFromUser(); err == nil {
+		activePlaylists = plists
+		opts := make([]string, len(plists))
+		for i, pl := range plists {
+			opts[i] = pl.Title
+		}
+		sel.Options = opts
+	}
+
+	createBtn := widget.NewButtonWithIcon(lang.L("Create"), theme.DocumentCreateIcon(), func() {
+		editor := newPlaylistEditor()
+
+		dialog.ShowCustomConfirm(lang.L("Create Playlist"), lang.L("Save"), lang.L("Cancel"), editor, func(confirm bool) {
+			if !confirm {
+				return
+			}
+
+			title, cover := editor.state()
+			if title == "" {
+				title = lang.L("New Playlist")
+			}
+
+			newPlaylist, err := p.userContext.PutPlaylist(storages.Playlist{
+				Title:     title,
+				CoverBlob: cover,
+			})
+			if err != nil {
+				slog.Error("failed to create playlist", "error", err)
+				return
+			}
+
+			fyne.Do(func() {
+				plists, err := p.userContext.GetPlaylistsFromUser()
+				if err != nil {
+					slog.Error("failed to list playlists", "error", err)
+					return
+				}
+				activePlaylists = plists
+
+				opts := make([]string, len(plists))
+				for i, pl := range plists {
+					opts[i] = pl.Title
+				}
+
+				sel.Options = opts
+				sel.Refresh()
+
+				// Auto-select the exact playlist we just created
+				for i, pl := range activePlaylists {
+					if pl.PlaylistId == newPlaylist.PlaylistId {
+						sel.SetSelectedIndex(i)
+						break
+					}
+				}
+			})
+		}, win)
+	})
+
+	dialogContent := container.NewBorder(nil, nil, nil, createBtn, sel)
+
+	dialog.ShowCustomConfirm(lang.L("Add to playlist"), lang.L("Add"), lang.L("Cancel"), dialogContent, func(confirm bool) {
 		i := sel.SelectedIndex()
-		if !confirm || i == -1 {
+		if !confirm || i == -1 || i >= len(activePlaylists) {
 			return
 		}
 
@@ -122,8 +174,12 @@ func (p *ExplorePage) showAddToPlaylistsDialog(res scrapers.Result) {
 		}
 
 		if err := p.userContext.PutMusic(m); err == nil {
-			if err := p.userContext.PutMusicInPlaylist(playlists[i].PlaylistId, m.MusicId, m.Source); err != nil {
+			if err := p.userContext.PutMusicInPlaylist(activePlaylists[i].PlaylistId, m.MusicId, m.Source); err != nil {
 				slog.Error("failed to put music in playlist", "error", err)
+			} else {
+				fyne.Do(func() {
+					dialog.ShowInformation(lang.L("Success"), lang.L("Added to playlist"), win)
+				})
 			}
 		} else {
 			slog.Error("failed to put music", "error", err)
