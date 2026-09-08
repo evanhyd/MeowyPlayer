@@ -42,7 +42,7 @@
 With additional supports from LLM.
 
 ## Why MeowyPlayer
-It was a tranquil summer night in 2022. I was chilling in my room doing competitive programming while listening to my friend's anime music playlist on YouTube. I tried to port the playlist to my Spotify, but to my surprise, Spotify's search engine failed to fetch the music due to a regional license restriction. Lots of anime/game OST or platform specific music were simply not available to users. I was a broke student who could barely afford his tuition (via student loans), therefore I had to spend days hacking around all kinds of sketchy websites to collect that music. It was a very frustrating and painful process, and that's when I decided to start this project.
+It was a tranquil summer night in 2022. I was chilling in my room doing competitive programming while listening to my friend's anime music playlist on YouTube. I tried to port the playlist to my Spotify, but to my surprise, Spotify's search engine failed to fetch the music due to regional license restriction. Lots of anime/game OST or platform specific music were simply not available to the users. I was a broke student who could barely afford his tuition (via student loan), therefore I had to spend days hacking around all kinds of sketchy websites to collect that music. It was a very frustrated and painful process, and that's when I decided to start this project.
 
 MeowyPlayer started in July 2022 and has been re-written 5 times as of August 2026, with each iteration introducing new features, better UI design, and a more-maintainable system design.
 
