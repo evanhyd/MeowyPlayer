@@ -1,7 +1,26 @@
 package storages
 
 type EventType int64
+
 type EventListener = func(any)
+
+type EventsDispatcher struct {
+	listeners map[EventType][]EventListener
+}
+
+func makeEventsDispatcher() EventsDispatcher {
+	return EventsDispatcher{listeners: make(map[EventType][]EventListener)}
+}
+
+func (e *EventsDispatcher) AddListener(event EventType, listener EventListener) {
+	e.listeners[event] = append(e.listeners[event], listener)
+}
+
+func (e *EventsDispatcher) Dispatch(event EventType, eventData any) {
+	for _, listener := range e.listeners[event] {
+		listener(eventData)
+	}
+}
 
 const (
 	OnInitEvent EventType = iota

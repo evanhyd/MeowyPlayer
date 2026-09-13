@@ -100,7 +100,7 @@ func (p *ExplorePage) showAddToPlaylistsDialog(res scrapers.Result) {
 	sel.PlaceHolder = lang.L("Select a playlist")
 
 	// Initial load happens on the UI thread, no fyne.Do needed here.
-	if plists, err := p.userContext.GetPlaylistsFromUser(); err == nil {
+	if plists, err := p.userContext.GetPlaylists(); err == nil {
 		activePlaylists = plists
 		opts := make([]string, len(plists))
 		for i, pl := range plists {
@@ -132,7 +132,7 @@ func (p *ExplorePage) showAddToPlaylistsDialog(res scrapers.Result) {
 			}
 
 			fyne.Do(func() {
-				plists, err := p.userContext.GetPlaylistsFromUser()
+				plists, err := p.userContext.GetPlaylists()
 				if err != nil {
 					slog.Error("failed to list playlists", "error", err)
 					return
@@ -174,7 +174,13 @@ func (p *ExplorePage) showAddToPlaylistsDialog(res scrapers.Result) {
 		}
 
 		if err := p.userContext.PutMusic(m); err == nil {
-			if err := p.userContext.PutMusicInPlaylist(activePlaylists[i].PlaylistId, m.MusicId, m.Source); err != nil {
+			playlistMusic := storages.PlaylistMusic{
+				PlaylistId: activePlaylists[i].PlaylistId,
+				MusicId:    m.MusicId,
+				Source:     m.Source,
+				AddedAt:    time.Now().UnixNano(),
+			}
+			if err := p.userContext.PutPlaylistMusic(playlistMusic); err != nil {
 				slog.Error("failed to put music in playlist", "error", err)
 			} else {
 				fyne.Do(func() {

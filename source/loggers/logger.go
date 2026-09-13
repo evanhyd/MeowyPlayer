@@ -17,6 +17,11 @@ func InitializeGlobalLogger(logFilePath string) Logger {
 		file = os.Stdout
 		log.Println(err)
 	}
+
+	if err != nil {
+		// Fallback or handle configuration error
+	}
+
 	handler := slog.NewJSONHandler(file, &slog.HandlerOptions{AddSource: true, Level: slog.LevelDebug})
 	logger := slog.New(handler)
 	slog.SetDefault(logger)

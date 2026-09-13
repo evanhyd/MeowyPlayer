@@ -19,6 +19,7 @@ type ProfilePage struct {
 	userIdLabel           *widget.Label
 	usernameLabel         *widget.Label
 	registrationDateLabel *widget.Label
+	storagePathLabel      *widget.Label
 	logoutButton          *widget.Button
 }
 
@@ -29,8 +30,14 @@ func newProfilePage(userContext *storages.UserContext) *ProfilePage {
 		userIdLabel:           widget.NewLabel(""),
 		usernameLabel:         widget.NewLabel(""),
 		registrationDateLabel: widget.NewLabel(""),
+		storagePathLabel:      widget.NewLabel(fyne.CurrentApp().Storage().RootURI().Path()),
 		logoutButton:          widget.NewButtonWithIcon(lang.L("Logout"), theme.LogoutIcon(), p.logout),
 	}
+
+	p.userIdLabel.Truncation = fyne.TextTruncateEllipsis
+	p.usernameLabel.Truncation = fyne.TextTruncateEllipsis
+	p.registrationDateLabel.Truncation = fyne.TextTruncateEllipsis
+	p.storagePathLabel.Truncation = fyne.TextTruncateEllipsis
 
 	if profile, err := p.userContext.GetUser(); err != nil {
 		slog.Error("failed to get user profile", "error", err)
@@ -47,6 +54,7 @@ func (p *ProfilePage) CreateRenderer() fyne.WidgetRenderer {
 		widget.NewFormItem(lang.L("User ID"), p.userIdLabel),
 		widget.NewFormItem(lang.L("Username"), p.usernameLabel),
 		widget.NewFormItem(lang.L("Registration Date"), p.registrationDateLabel),
+		widget.NewFormItem(lang.L("Storage Path"), p.storagePathLabel),
 		widget.NewFormItem("", container.NewHBox(layout.NewSpacer(), p.logoutButton)),
 	))
 }

@@ -17,6 +17,7 @@ const (
 	LangJapanese
 )
 
+// UserProfile table.
 type UserProfile struct {
 	UserId           string   `db:"user_id" json:"userId"`
 	Username         string   `db:"username" json:"username"`
@@ -25,6 +26,7 @@ type UserProfile struct {
 	Token            string   `db:"token" json:"token"`
 }
 
+// Playlist table.
 type Playlist struct {
 	UserId       string `db:"user_id" json:"userId"`
 	PlaylistId   int64  `db:"playlist_id" json:"playlistId"`
@@ -33,6 +35,7 @@ type Playlist struct {
 	CoverBlob    []byte `db:"cover_blob" json:"coverBlob"`
 }
 
+// Music table.
 type Music struct {
 	MusicId       string      `db:"music_id" json:"musicId"`
 	Source        MusicSource `db:"source" json:"source"`
@@ -40,6 +43,7 @@ type Music struct {
 	LengthSeconds int64       `db:"length_seconds" json:"lengthSeconds"`
 }
 
+// PlaylistMusic table.
 type PlaylistMusic struct {
 	UserId     string `db:"user_id" json:"userId"`
 	PlaylistId int64  `db:"playlist_id" json:"playlistId"`

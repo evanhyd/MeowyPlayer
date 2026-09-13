@@ -1,33 +1,41 @@
 package storages
 
 import (
-	"io"
+	"fmt"
 	"log/slog"
 	"meowyplayer/schemas"
 	"net/http"
 	"sync"
+	"time"
 )
 
+var _ Storage = (*ServerStorage)(nil)
+
 type ServerStorage struct {
-	httpClient *http.Client
-	local      *SQLiteStorage
-	endpoints  map[string]string
-	offline    bool
-	offlineMux sync.Mutex
-	syncingMux sync.Mutex
+	Storage
+
+	httpClient       *http.Client
+	endpointProvider EndpointProvider
+	offline          bool
+	syncedOnce       bool
+	offlineMux       sync.Mutex
+	syncingMux       sync.Mutex
+	stopWatch        chan struct{}
 }
 
-func NewServerStorage(client *http.Client, local *SQLiteStorage, endpoints map[string]string) *ServerStorage {
+func NewServerStorage(client *http.Client, localStorage Storage, provider EndpointProvider) *ServerStorage {
 	return &ServerStorage{
-		local:      local,
-		httpClient: client,
-		endpoints:  endpoints,
-		offline:    false,
+		Storage:          localStorage,
+		httpClient:       client,
+		endpointProvider: provider,
+		offline:          false,
+		syncedOnce:       false,
+		stopWatch:        make(chan struct{}),
 	}
 }
 
 func (s *ServerStorage) getToken() string {
-	user, err := s.local.GetUser()
+	user, err := s.Storage.GetUser() // Call embedded method explicitly
 	if err != nil {
 		return ""
 	}
@@ -36,9 +44,22 @@ func (s *ServerStorage) getToken() string {
 
 func (s *ServerStorage) markOffline() {
 	s.offlineMux.Lock()
-	defer s.offlineMux.Unlock()
+	if s.offline {
+		s.offlineMux.Unlock()
+		return
+	}
 	s.offline = true
-	slog.Info("enter offline mode")
+	slog.Info("entered offline mode; starting background reconnection watcher")
+	s.offlineMux.Unlock()
+
+	go s.watchForReconnection()
+}
+
+func (s *ServerStorage) markOnline() {
+	s.offlineMux.Lock()
+	defer s.offlineMux.Unlock()
+	s.offline = false
+	slog.Info("entered online mode")
 }
 
 func (s *ServerStorage) isCurrentlyOffline() bool {
@@ -47,18 +68,108 @@ func (s *ServerStorage) isCurrentlyOffline() bool {
 	return s.offline
 }
 
-// tryRemote abstracts the preSync -> network call -> offline fallback pattern
-func tryRemote[T any, Y any](s *ServerStorage, endpointKey string, req T, resp *Y) {
-	if err := s.preSync(); err != nil {
-		return
+func (s *ServerStorage) hasSynced() bool {
+	s.offlineMux.Lock()
+	defer s.offlineMux.Unlock()
+	return s.syncedOnce
+}
+
+func (s *ServerStorage) setSynced(val bool) {
+	s.offlineMux.Lock()
+	defer s.offlineMux.Unlock()
+	s.syncedOnce = val
+}
+
+func (s *ServerStorage) checkOnline() bool {
+	token := s.getToken()
+	if token == "" {
+		return false
 	}
-	if err := schemas.SendJSON(s.httpClient, s.endpoints[endpointKey], req, resp); err != nil {
-		s.markOffline()
+
+	endpoint, err := s.endpointProvider.GetEndpoint("me")
+	if err != nil {
+		return false
+	}
+
+	request := schemas.MeRequest{Token: token}
+	response := schemas.MeResponse{}
+	if err := schemas.SendJSON(s.httpClient, endpoint, request, &response); err != nil {
+		return false
+	}
+
+	if err := s.Storage.PutUser(UserProfile{
+		UserId:           response.UserId,
+		Username:         response.Username,
+		Language:         response.Language,
+		RegistrationDate: response.RegistrationDate,
+		Token:            token,
+	}); err != nil {
+		slog.Error("failed to update user profile during online check", "error", err)
+	}
+
+	return true
+}
+
+func (s *ServerStorage) watchForReconnection() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-s.stopWatch:
+			return
+		case <-ticker.C:
+			if !s.isCurrentlyOffline() {
+				return
+			}
+
+			if s.checkOnline() {
+				slog.Info("connection restored to server")
+				s.markOnline()
+
+				go func() {
+					if err := s.preSync(); err != nil {
+						slog.Error("error during catch-up preSync", "error", err)
+					}
+				}()
+				return
+			}
+		}
 	}
 }
 
+func tryRemote[T any, Y any](s *ServerStorage, endpointKey string, req T, resp *Y) {
+	go func() {
+		if s.isCurrentlyOffline() {
+			return
+		}
+
+		endpoint, err := s.endpointProvider.GetEndpoint(endpointKey)
+		if err != nil {
+			return
+		}
+
+		if err := schemas.SendJSON(s.httpClient, endpoint, req, resp); err != nil {
+			slog.Warn("remote request failed, switching to offline mode", "endpoint", endpointKey, "error", err)
+			s.markOffline()
+		}
+	}()
+}
+
 func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error {
-	// 1. Upload Playlist.
+	epPutPlaylist, err := s.endpointProvider.GetEndpoint("putPlaylist")
+	if err != nil {
+		return err
+	}
+	epPutMusicBulk, err := s.endpointProvider.GetEndpoint("putMusicBulk")
+	if err != nil {
+		return err
+	}
+	epPutMusicInPlaylistBulk, err := s.endpointProvider.GetEndpoint("putMusicInPlaylistBulk")
+	if err != nil {
+		return err
+	}
+
 	putReq := schemas.PutPlaylistRequest{
 		Token: token,
 		Playlist: schemas.Playlist{
@@ -69,21 +180,25 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 			CoverBlob:    lp.CoverBlob,
 		},
 	}
-	if err := schemas.SendJSON(s.httpClient, s.endpoints["putPlaylist"], putReq, &schemas.PutPlaylistResponse{}); err != nil {
+
+	localRelations, err := s.Storage.GetAllPlaylistMusic(lp.PlaylistId)
+	if err != nil {
 		return err
 	}
 
-	// 2. Fetch local music.
-	musics, err := s.local.GetMusicFromPlaylist(lp.PlaylistId)
-	if err != nil || len(musics) == 0 {
-		return err
+	if len(localRelations) == 0 {
+		return schemas.SendJSON(s.httpClient, epPutPlaylist, putReq, &schemas.PutPlaylistResponse{})
 	}
 
-	// 3. Prepare music and relations bulks.
-	bulkMusic := make([]schemas.Music, len(musics))
-	bulkRelations := make([]schemas.PlaylistMusic, len(musics))
+	bulkMusic := make([]schemas.Music, len(localRelations))
+	bulkRelations := make([]schemas.PlaylistMusic, len(localRelations))
 
-	for i, m := range musics {
+	for i, rel := range localRelations {
+		m, err := s.Storage.GetMusic(rel.MusicId, MusicSource(rel.Source))
+		if err != nil {
+			return fmt.Errorf("failed fetching music metadata for sync: %v", err)
+		}
+
 		bulkMusic[i] = schemas.Music{
 			MusicId:       m.MusicId,
 			Source:        schemas.MusicSource(m.Source),
@@ -93,23 +208,40 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 		bulkRelations[i] = schemas.PlaylistMusic{
 			UserId:     lp.UserId,
 			PlaylistId: lp.PlaylistId,
-			MusicId:    m.MusicId,
-			Source:     int64(m.Source),
+			MusicId:    rel.MusicId,
+			Source:     rel.Source,
+			AddedAt:    rel.AddedAt,
 		}
 	}
 
-	// 4. Bulk Uploads
 	mReq := schemas.PutMusicBulkRequest{Token: token, Music: bulkMusic}
-	if err := schemas.SendJSON(s.httpClient, s.endpoints["putMusicBulk"], mReq, &schemas.PutMusicBulkResponse{}); err != nil {
-		return err
+	linkReq := schemas.PutMusicInPlaylistBulkRequest{Token: token, Relations: bulkRelations}
+
+	errChan := make(chan error, 2)
+
+	go func() {
+		errChan <- schemas.SendJSON(s.httpClient, epPutPlaylist, putReq, &schemas.PutPlaylistResponse{})
+	}()
+
+	go func() {
+		errChan <- schemas.SendJSON(s.httpClient, epPutMusicBulk, mReq, &schemas.PutMusicBulkResponse{})
+	}()
+
+	for i := 0; i < 2; i++ {
+		if err := <-errChan; err != nil {
+			return err
+		}
 	}
 
-	linkReq := schemas.PutMusicInPlaylistBulkRequest{Token: token, Relations: bulkRelations}
-	return schemas.SendJSON(s.httpClient, s.endpoints["putMusicInPlaylistBulk"], linkReq, &schemas.PutMusicInPlaylistBulkResponse{})
+	return schemas.SendJSON(s.httpClient, epPutMusicInPlaylistBulk, linkReq, &schemas.PutMusicInPlaylistBulkResponse{})
 }
 
 func (s *ServerStorage) downloadPlaylistFromServer(rp schemas.Playlist, token string) error {
-	// 1. Save metadata locally.
+	epGetPlaylistContent, err := s.endpointProvider.GetEndpoint("getPlaylistContent")
+	if err != nil {
+		return err
+	}
+
 	pl := Playlist{
 		UserId:       rp.UserId,
 		PlaylistId:   rp.PlaylistId,
@@ -117,18 +249,20 @@ func (s *ServerStorage) downloadPlaylistFromServer(rp schemas.Playlist, token st
 		ModifiedDate: rp.ModifiedDate,
 		CoverBlob:    rp.CoverBlob,
 	}
-	if _, err := s.local.PutPlaylist(pl); err != nil {
+	if pl.CoverBlob == nil {
+		pl.CoverBlob = make([]byte, 0)
+	}
+
+	if _, err := s.Storage.PutPlaylist(pl); err != nil {
 		return err
 	}
 
-	// 2. Fetch contents
 	reqC := schemas.GetPlaylistContentRequest{Token: token, PlaylistId: rp.PlaylistId}
 	var respC schemas.GetPlaylistContentResponse
-	if err := schemas.SendJSON(s.httpClient, s.endpoints["getPlaylistContent"], reqC, &respC); err != nil {
+	if err := schemas.SendJSON(s.httpClient, epGetPlaylistContent, reqC, &respC); err != nil {
 		return err
 	}
 
-	// 3. Save music and relations
 	for _, m := range respC.Musics {
 		music := Music{
 			MusicId:       m.MusicId,
@@ -136,33 +270,83 @@ func (s *ServerStorage) downloadPlaylistFromServer(rp schemas.Playlist, token st
 			Title:         m.Title,
 			LengthSeconds: m.LengthSeconds,
 		}
-		if err := s.local.PutMusic(music); err != nil {
-			return err
-		}
-		if err := s.local.PutMusicInPlaylist(rp.PlaylistId, m.MusicId, MusicSource(m.Source)); err != nil {
+		if err := s.Storage.PutMusic(music); err != nil {
 			return err
 		}
 	}
+
+	localRels, err := s.Storage.GetAllPlaylistMusic(rp.PlaylistId)
+	if err != nil {
+		return err
+	}
+
+	type musicKey struct {
+		Source  int64
+		MusicId string
+	}
+
+	localMap := make(map[musicKey]PlaylistMusic, len(localRels))
+	for _, lr := range localRels {
+		localMap[musicKey{Source: lr.Source, MusicId: lr.MusicId}] = lr
+	}
+
+	serverMap := make(map[musicKey]schemas.PlaylistMusic, len(respC.Relations))
+	for _, rr := range respC.Relations {
+		serverMap[musicKey{Source: rr.Source, MusicId: rr.MusicId}] = rr
+	}
+
+	for key, lr := range localMap {
+		if _, exists := serverMap[key]; !exists {
+			if err := s.Storage.DeletePlaylistMusic(rp.PlaylistId, lr.MusicId, MusicSource(lr.Source)); err != nil {
+				return err
+			}
+		}
+	}
+
+	for key, rr := range serverMap {
+		lr, exists := localMap[key]
+		if !exists || lr.AddedAt != rr.AddedAt {
+			if err := s.Storage.PutPlaylistMusic(PlaylistMusic{
+				UserId:     rr.UserId,
+				PlaylistId: rr.PlaylistId,
+				MusicId:    rr.MusicId,
+				Source:     rr.Source,
+				AddedAt:    rr.AddedAt,
+			}); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
 func (s *ServerStorage) preSync() error {
+	if s.isCurrentlyOffline() {
+		return nil
+	}
+
 	s.syncingMux.Lock()
 	defer s.syncingMux.Unlock()
 
-	if !s.isCurrentlyOffline() {
+	token := s.getToken()
+	if token == "" {
 		return nil
 	}
-	token := s.getToken()
 
-	// 1. Fetch remote playlists
-	var resp schemas.GetPlaylistsFromUserResponse
-	if err := schemas.SendJSON(s.httpClient, s.endpoints["getPlaylistsFromUser"], schemas.GetPlaylistsFromUserRequest{Token: token}, &resp); err != nil {
-		return err
+	endpoint, err := s.endpointProvider.GetEndpoint("getPlaylistsFromUser")
+	if err != nil {
+		return nil
 	}
 
-	// 2. Fetch and index local playlists
-	localPlaylistsSlice, err := s.local.GetPlaylistsFromUser()
+	var resp schemas.GetPlaylistsFromUserResponse
+	if err := schemas.SendJSON(s.httpClient, endpoint, schemas.GetPlaylistsFromUserRequest{Token: token}, &resp); err != nil {
+		slog.Warn("preSync failed to reach server, going offline", "error", err)
+		s.markOffline()
+		return nil
+	}
+
+	localPlaylistsSlice, err := s.Storage.GetPlaylists()
 	if err != nil {
 		return err
 	}
@@ -172,55 +356,43 @@ func (s *ServerStorage) preSync() error {
 		localPlaylists[p.PlaylistId] = p
 	}
 
-	// 3. Process remote playlists and compare
 	for _, rp := range resp.Playlists {
 		lp, existsLocally := localPlaylists[rp.PlaylistId]
-
 		if !existsLocally || rp.ModifiedDate > lp.ModifiedDate {
-			// Server is newer or local is missing -> Download
 			if err := s.downloadPlaylistFromServer(rp, token); err != nil {
-				return err
+				slog.Error("failed downloading playlist from server", "playlistId", rp.PlaylistId, "error", err)
 			}
 		} else if lp.ModifiedDate > rp.ModifiedDate {
-			// Local is newer -> Upload
 			if err := s.uploadPlaylistToServer(lp, token); err != nil {
-				return err
+				slog.Error("failed uploading playlist to server", "playlistId", lp.PlaylistId, "error", err)
 			}
 		}
 
-		// Remove from map: it exists remotely, so it's not a local-only playlist
 		delete(localPlaylists, rp.PlaylistId)
 	}
 
-	// 4. Anything remaining in localPlaylists is local-only. Upload them.
 	for _, lp := range localPlaylists {
 		if err := s.uploadPlaylistToServer(lp, token); err != nil {
-			return err
+			slog.Error("failed uploading local-only playlist to server", "playlistId", lp.PlaylistId, "error", err)
 		}
 	}
 
-	s.offlineMux.Lock()
-	s.offline = false
-	slog.Info("enter online mode")
-	s.offlineMux.Unlock()
-
+	s.setSynced(true)
+	s.markOnline()
 	return nil
 }
 
-func (s *ServerStorage) PutUser(userProfile UserProfile) error {
-	return s.local.PutUser(userProfile)
-}
-
-func (s *ServerStorage) GetUser() (UserProfile, error) {
-	return s.local.GetUser()
-}
+// ---------------- Overridden User Storer Methods ----------------
 
 func (s *ServerStorage) DeleteUser() error {
-	return s.local.DeleteUser()
+	s.setSynced(false)
+	return s.Storage.DeleteUser()
 }
 
+// ---------------- Overridden Playlist Storer Methods ----------------
+
 func (s *ServerStorage) PutPlaylist(playlist Playlist) (Playlist, error) {
-	res, err := s.local.PutPlaylist(playlist)
+	res, err := s.Storage.PutPlaylist(playlist)
 	if err != nil {
 		return Playlist{}, err
 	}
@@ -228,92 +400,86 @@ func (s *ServerStorage) PutPlaylist(playlist Playlist) (Playlist, error) {
 	req := schemas.PutPlaylistRequest{
 		Token: s.getToken(),
 		Playlist: schemas.Playlist{
-			UserId: res.UserId, PlaylistId: res.PlaylistId,
-			Title: res.Title, ModifiedDate: res.ModifiedDate, CoverBlob: res.CoverBlob,
+			UserId:       res.UserId,
+			PlaylistId:   res.PlaylistId,
+			Title:        res.Title,
+			ModifiedDate: res.ModifiedDate,
+			CoverBlob:    res.CoverBlob,
 		},
 	}
 	tryRemote(s, "putPlaylist", req, &schemas.PutPlaylistResponse{})
 	return res, nil
 }
 
-func (s *ServerStorage) GetPlaylist(playlistId int64) (Playlist, error) {
-	return s.local.GetPlaylist(playlistId)
+func (s *ServerStorage) GetPlaylists() ([]Playlist, error) {
+	if !s.hasSynced() && !s.isCurrentlyOffline() {
+		if err := s.preSync(); err != nil {
+			slog.Error("preSync error in GetPlaylists", "error", err)
+		}
+	}
+	return s.Storage.GetPlaylists()
 }
 
 func (s *ServerStorage) DeletePlaylist(playlistId int64) error {
-	if err := s.local.DeletePlaylist(playlistId); err != nil {
+	if err := s.Storage.DeletePlaylist(playlistId); err != nil {
 		return err
 	}
 	tryRemote(s, "deletePlaylist", schemas.DeletePlaylistRequest{Token: s.getToken(), PlaylistId: playlistId}, &schemas.DeletePlaylistResponse{})
 	return nil
 }
 
+func (s *ServerStorage) PutPlaylistMusic(relation PlaylistMusic) error {
+	if err := s.Storage.PutPlaylistMusic(relation); err != nil {
+		return err
+	}
+	req := schemas.PutMusicInPlaylistRequest{
+		Token:      s.getToken(),
+		PlaylistId: relation.PlaylistId,
+		MusicId:    relation.MusicId,
+		Source:     schemas.MusicSource(relation.Source),
+		AddedAt:    relation.AddedAt,
+	}
+	tryRemote(s, "putMusicInPlaylist", req, &schemas.PutMusicInPlaylistResponse{})
+	return nil
+}
+
+func (s *ServerStorage) DeletePlaylistMusic(playlistId int64, musicId string, source MusicSource) error {
+	if err := s.Storage.DeletePlaylistMusic(playlistId, musicId, source); err != nil {
+		return err
+	}
+	req := schemas.DeleteMusicFromPlaylistRequest{
+		Token:      s.getToken(),
+		PlaylistId: playlistId,
+		MusicId:    musicId,
+		Source:     schemas.MusicSource(source),
+	}
+	tryRemote(s, "deleteMusicFromPlaylist", req, &schemas.DeleteMusicFromPlaylistResponse{})
+	return nil
+}
+
+// ---------------- Overridden Music Storer Methods ----------------
+
 func (s *ServerStorage) PutMusic(music Music) error {
-	if err := s.local.PutMusic(music); err != nil {
+	if err := s.Storage.PutMusic(music); err != nil {
 		return err
 	}
 	req := schemas.PutMusicRequest{
 		Token: s.getToken(),
 		Music: schemas.Music{
-			MusicId: music.MusicId, Source: schemas.MusicSource(music.Source),
-			Title: music.Title, LengthSeconds: music.LengthSeconds,
+			MusicId:       music.MusicId,
+			Source:        schemas.MusicSource(music.Source),
+			Title:         music.Title,
+			LengthSeconds: music.LengthSeconds,
 		},
 	}
 	tryRemote(s, "putMusic", req, &schemas.PutMusicResponse{})
 	return nil
 }
 
-func (s *ServerStorage) GetMusic(musicId string, source MusicSource) (Music, error) {
-	return s.local.GetMusic(musicId, source)
-}
-
-func (s *ServerStorage) DeleteMusic(musicId string, source MusicSource) error {
-	return s.local.DeleteMusic(musicId, source)
-}
-
-func (s *ServerStorage) PutMusicFile(music Music, content io.Reader) error {
-	return s.local.PutMusicFile(music, content)
-}
-
-func (s *ServerStorage) GetMusicFile(music Music) (io.ReadSeekCloser, error) {
-	return s.local.GetMusicFile(music)
-}
-
-func (s *ServerStorage) DeleteMusicFile(music Music) error {
-	return s.local.DeleteMusicFile(music)
-}
-
-func (s *ServerStorage) GetPlaylistsFromUser() ([]Playlist, error) {
-	return s.local.GetPlaylistsFromUser()
-}
-
-func (s *ServerStorage) GetMusicFromPlaylist(playlistId int64) ([]Music, error) {
-	return s.local.GetMusicFromPlaylist(playlistId)
-}
-
-func (s *ServerStorage) PutMusicInPlaylist(playlistId int64, musicId string, source MusicSource) error {
-	if err := s.local.PutMusicInPlaylist(playlistId, musicId, source); err != nil {
-		return err
-	}
-	req := schemas.PutMusicInPlaylistRequest{
-		Token: s.getToken(), PlaylistId: playlistId, MusicId: musicId, Source: schemas.MusicSource(source),
-	}
-	tryRemote(s, "putMusicInPlaylist", req, &schemas.PutMusicInPlaylistResponse{})
-	return nil
-}
-
-func (s *ServerStorage) DeleteMusicFromPlaylist(playlistId int64, musicId string, source MusicSource) error {
-	if err := s.local.DeleteMusicFromPlaylist(playlistId, musicId, source); err != nil {
-		return err
-	}
-	req := schemas.DeleteMusicFromPlaylistRequest{
-		Token: s.getToken(), PlaylistId: playlistId, MusicId: musicId, Source: schemas.MusicSource(source),
-	}
-	tryRemote(s, "deleteMusicFromPlaylist", req, &schemas.DeleteMusicFromPlaylistResponse{})
-	return nil
-}
+// ---------------- Overridden File Storer Methods ----------------
 
 func (s *ServerStorage) Close() error {
+	close(s.stopWatch)
 	s.httpClient.CloseIdleConnections()
-	return s.local.Close()
+	return s.Storage.Close()
 }

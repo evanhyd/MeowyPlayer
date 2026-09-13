@@ -136,7 +136,7 @@ func (p *BeepPlayer) Next() {
 
 func (p *BeepPlayer) SetPlaylist(playlist storages.Playlist, selectedMusic storages.Music) {
 	p.actionChan <- func() {
-		music, err := p.userContext.GetMusicFromPlaylist(playlist.PlaylistId)
+		music, err := p.userContext.GetAllMusic(playlist.PlaylistId)
 		if err != nil {
 			slog.Error("failed to fetch music", "error", err)
 			return

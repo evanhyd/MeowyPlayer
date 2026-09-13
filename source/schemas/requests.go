@@ -2,11 +2,10 @@ package schemas
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
-	"time"
 )
 
 type MusicSource = int64
@@ -16,7 +15,9 @@ const (
 	UnknownSource MusicSource = iota
 	YouTubeSource
 	SpotifySource
+)
 
+const (
 	LangEnglish Language = iota
 	LangFrench
 	LangChinese
@@ -227,9 +228,7 @@ func SendJSON[T any, Y any](client *http.Client, url string, request T, response
 	}
 
 	// Send request.
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, "POST", url, &buffer)
+	req, err := http.NewRequest("POST", url, &buffer)
 	if err != nil {
 		return err
 	}
@@ -243,11 +242,12 @@ func SendJSON[T any, Y any](client *http.Client, url string, request T, response
 
 	// Check if it is error response.
 	if rsp.StatusCode >= 200 && rsp.StatusCode <= 299 {
-		json.NewDecoder(rsp.Body).Decode(response)
-		return nil
+		return json.NewDecoder(rsp.Body).Decode(response)
 	} else {
 		errorRsp := ErrorResponse{}
-		json.NewDecoder(rsp.Body).Decode(&errorRsp)
+		if err := json.NewDecoder(rsp.Body).Decode(&errorRsp); err != nil || errorRsp.Error == "" {
+			return fmt.Errorf("server error http %d", rsp.StatusCode)
+		}
 		return errors.New(errorRsp.Error)
 	}
 }

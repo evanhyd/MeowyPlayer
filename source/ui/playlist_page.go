@@ -7,6 +7,7 @@ import (
 	"meowyplayer/ui/internal/mutil"
 	"meowyplayer/ui/internal/mwidget"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -20,8 +21,8 @@ import (
 type PlaylistPage struct {
 	widget.BaseWidget
 	userContext          *storages.UserContext
-	queryResults         []storages.Playlist
-	displayResults       []storages.Playlist
+	activePlaylists      []storages.Playlist
+	visiblePlaylists     []storages.Playlist
 	searchEntry          *widget.Entry
 	searchButton         *widget.Button
 	scrollList           *widget.GridWrap
@@ -46,7 +47,7 @@ func newPlaylistPage(userContext *storages.UserContext) *PlaylistPage {
 
 	p.scrollList = widget.NewGridWrap(
 		func() int {
-			return len(p.displayResults)
+			return len(p.visiblePlaylists)
 		},
 		func() fyne.CanvasObject {
 			return mwidget.NewPlaylistCard(
@@ -58,7 +59,7 @@ func newPlaylistPage(userContext *storages.UserContext) *PlaylistPage {
 			)
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
-			object.(*mwidget.PlaylistCard).Set(p.displayResults[index])
+			object.(*mwidget.PlaylistCard).Set(p.visiblePlaylists[index])
 		},
 	)
 
@@ -100,6 +101,7 @@ func (p *PlaylistPage) showEditPlaylistDialog(playlist storages.Playlist) {
 		func(confirm bool) {
 			if confirm {
 				playlist.Title, playlist.CoverBlob = editor.state()
+				playlist.ModifiedDate = time.Now().UnixNano()
 				if _, err := p.userContext.PutPlaylist(playlist); err != nil {
 					slog.Error("failed to update the playlist", "error", err)
 					return
@@ -142,7 +144,7 @@ func (p *PlaylistPage) showCreatePlaylistDialog() {
 
 func (p *PlaylistPage) fetchPlaylists() {
 	var err error
-	p.queryResults, err = p.userContext.GetPlaylistsFromUser()
+	p.activePlaylists, err = p.userContext.GetPlaylists()
 	if err != nil {
 		slog.Error("failed to query playlists", "error", err)
 		return
@@ -153,10 +155,10 @@ func (p *PlaylistPage) fetchPlaylists() {
 func (p *PlaylistPage) filterResults(title string) {
 	// Filter by title.
 	title = strings.ToLower(title)
-	p.displayResults = p.displayResults[:0]
-	for i := range p.queryResults {
-		if strings.Contains(strings.ToLower(p.queryResults[i].Title), title) {
-			p.displayResults = append(p.displayResults, p.queryResults[i])
+	p.visiblePlaylists = p.visiblePlaylists[:0]
+	for i := range p.activePlaylists {
+		if strings.Contains(strings.ToLower(p.activePlaylists[i].Title), title) {
+			p.visiblePlaylists = append(p.visiblePlaylists, p.activePlaylists[i])
 		}
 	}
 

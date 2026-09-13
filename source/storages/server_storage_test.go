@@ -1,321 +1,367 @@
 package storages
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"meowyplayer/schemas"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
+	"time"
 )
 
-// setupTestEnvironment initializes a mock HTTP server, an in-memory SQLite DB, and the ServerStorage.
-func setupTestEnvironment(t *testing.T, handler http.HandlerFunc) (*ServerStorage, func()) {
-	ts := httptest.NewServer(handler)
+type mockEndpointProvider map[string]string
 
-	// Create temporary directory for music files
-	tempDir, err := os.MkdirTemp("", "meowyplayer_test_*")
+func (m mockEndpointProvider) GetEndpoint(key string) (string, error) {
+	if v, ok := m[key]; ok && v != "" {
+		return v, nil
+	}
+	return "", fmt.Errorf("endpoint %v is not configured", key)
+}
+
+func setupTestServerStorage(t *testing.T) (*ServerStorage, *httptest.Server, func()) {
+	t.Helper()
+	tmpDir, err := os.MkdirTemp("", "server_storage_test_*")
 	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
+		t.Fatalf("failed to create temp dir: %v", err)
 	}
 
-	// Use SQLite's special :memory: identifier for an in-memory database
-	dbPath := ":memory:"
-	musicPath := filepath.Join(tempDir, "music")
+	dbPath := filepath.Join(tmpDir, "test.db")
+	musicPath := filepath.Join(tmpDir, "music")
+	localDB := NewSQLiteStorage(dbPath, musicPath)
 
-	localStore := NewSQLiteStorage(dbPath, musicPath)
-	if localStore == nil {
-		t.Fatalf("Failed to initialize SQLiteStorage")
-	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte(`{}`)); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}))
 
-	// Seed a test user so getToken() has something to return
-	err = localStore.PutUser(UserProfile{
-		UserId:   "test_user_123",
-		Username: "TestUser",
-		Token:    "mock_token_abc",
-	})
-	if err != nil {
-		t.Fatalf("Failed to seed test user: %v", err)
-	}
-
-	endpoints := map[string]string{
+	mockEndpoints := mockEndpointProvider{
+		"me":                      ts.URL + "/me",
 		"putPlaylist":             ts.URL + "/putPlaylist",
-		"getPlaylistsFromUser":    ts.URL + "/getPlaylistsFromUser",
-		"getPlaylistContent":      ts.URL + "/getPlaylistContent",
-		"putMusicInPlaylist":      ts.URL + "/putMusicInPlaylist",
-		"deletePlaylist":          ts.URL + "/deletePlaylist",
-		"putMusic":                ts.URL + "/putMusic",
-		"deleteMusicFromPlaylist": ts.URL + "/deleteMusicFromPlaylist",
 		"putMusicBulk":            ts.URL + "/putMusicBulk",
 		"putMusicInPlaylistBulk":  ts.URL + "/putMusicInPlaylistBulk",
+		"getPlaylistContent":      ts.URL + "/getPlaylistContent",
+		"getPlaylistsFromUser":    ts.URL + "/getPlaylistsFromUser",
+		"deletePlaylist":          ts.URL + "/deletePlaylist",
+		"putMusic":                ts.URL + "/putMusic",
+		"putMusicInPlaylist":      ts.URL + "/putMusicInPlaylist",
+		"deleteMusicFromPlaylist": ts.URL + "/deleteMusicFromPlaylist",
 	}
 
-	serverStore := NewServerStorage(http.DefaultClient, localStore, endpoints)
+	serverStorage := NewServerStorage(ts.Client(), localDB, mockEndpoints)
 
-	cleanup := func() {
+	return serverStorage, ts, func() {
+		if err := serverStorage.Close(); err != nil {
+			t.Errorf("failed to close server storage: %v", err)
+		}
 		ts.Close()
-		serverStore.Close()
-		os.RemoveAll(tempDir)
-	}
-
-	return serverStore, cleanup
-}
-
-// ---------------- Playlist Tests ----------------
-
-func TestServerStorage_PutPlaylist(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(schemas.PutPlaylistResponse{})
-	}
-	store, cleanup := setupTestEnvironment(t, handler)
-	defer cleanup()
-
-	p := Playlist{
-		Title:     "My Awesome Playlist",
-		CoverBlob: []byte("mock_cover_image_data"),
-	}
-
-	savedPlaylist, err := store.PutPlaylist(p)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	// 1. Verify local storage succeeded
-	localPlaylist, err := store.local.GetPlaylist(savedPlaylist.PlaylistId)
-	if err != nil {
-		t.Fatalf("Expected playlist to exist locally, got error: %v", err)
-	}
-
-	// 2. Verify CoverBlob is not nil and matches
-	if localPlaylist.CoverBlob == nil || string(localPlaylist.CoverBlob) != "mock_cover_image_data" {
-		t.Errorf("Expected CoverBlob to be 'mock_cover_image_data', got %v", localPlaylist.CoverBlob)
-	}
-
-	// 3. Verify we did not go offline (synchronous check)
-	if store.isCurrentlyOffline() {
-		t.Errorf("Expected store to remain online")
-	}
-}
-
-func TestServerStorage_DeletePlaylist(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(schemas.DeletePlaylistResponse{})
-	}
-	store, cleanup := setupTestEnvironment(t, handler)
-	defer cleanup()
-
-	pl, _ := store.PutPlaylist(Playlist{Title: "To Delete", CoverBlob: []byte("cover")})
-
-	err := store.DeletePlaylist(pl.PlaylistId)
-	if err != nil {
-		t.Fatalf("Expected DeletePlaylist to succeed, got %v", err)
-	}
-
-	// Verify local deletion
-	_, err = store.local.GetPlaylist(pl.PlaylistId)
-	if err == nil {
-		t.Errorf("Expected playlist to be deleted locally")
-	}
-}
-
-// ---------------- Music Tests ----------------
-
-func TestServerStorage_PutMusic(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(schemas.PutMusicResponse{})
-	}
-	store, cleanup := setupTestEnvironment(t, handler)
-	defer cleanup()
-
-	m := Music{
-		MusicId:       "song_123",
-		Source:        YouTubeSource,
-		Title:         "Never Gonna Give You Up",
-		LengthSeconds: 212,
-	}
-
-	err := store.PutMusic(m)
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-
-	localM, err := store.local.GetMusic("song_123", YouTubeSource)
-	if err != nil {
-		t.Fatalf("Expected music to exist locally, got %v", err)
-	}
-	if localM.Title != "Never Gonna Give You Up" {
-		t.Errorf("Title mismatch: got %v", localM.Title)
-	}
-}
-
-// ---------------- Playlist <-> Music Relation Tests ----------------
-
-func TestServerStorage_PutMusicInPlaylist(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(schemas.PutMusicInPlaylistResponse{})
-	}
-	store, cleanup := setupTestEnvironment(t, handler)
-	defer cleanup()
-
-	pl, _ := store.local.PutPlaylist(Playlist{Title: "My Mix", CoverBlob: []byte("mix_cover")})
-	store.local.PutMusic(Music{MusicId: "song_abc", Source: SpotifySource, Title: "Track 1"})
-
-	err := store.PutMusicInPlaylist(pl.PlaylistId, "song_abc", SpotifySource)
-	if err != nil {
-		t.Fatalf("Expected PutMusicInPlaylist to succeed, got %v", err)
-	}
-
-	musics, err := store.local.GetMusicFromPlaylist(pl.PlaylistId)
-	if err != nil || len(musics) != 1 {
-		t.Fatalf("Expected 1 song in playlist, got %v (err: %v)", len(musics), err)
-	}
-}
-
-func TestServerStorage_DeleteMusicFromPlaylist(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(schemas.DeleteMusicFromPlaylistResponse{})
-	}
-	store, cleanup := setupTestEnvironment(t, handler)
-	defer cleanup()
-
-	pl, _ := store.local.PutPlaylist(Playlist{Title: "My Mix", CoverBlob: []byte("mix_cover")})
-	store.local.PutMusic(Music{MusicId: "song_xyz", Source: SpotifySource})
-	store.local.PutMusicInPlaylist(pl.PlaylistId, "song_xyz", SpotifySource)
-
-	err := store.DeleteMusicFromPlaylist(pl.PlaylistId, "song_xyz", SpotifySource)
-	if err != nil {
-		t.Fatalf("Expected DeleteMusicFromPlaylist to succeed, got %v", err)
-	}
-
-	musics, _ := store.local.GetMusicFromPlaylist(pl.PlaylistId)
-	if len(musics) != 0 {
-		t.Errorf("Expected playlist to be empty, found %d songs", len(musics))
-	}
-}
-
-// ---------------- Offline / PreSync Tests ----------------
-
-func TestServerStorage_NetworkFailure_SetsOffline(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(schemas.ErrorResponse{Error: "server crash"})
-	}
-	store, cleanup := setupTestEnvironment(t, handler)
-	defer cleanup()
-
-	p := Playlist{Title: "Offline Playlist", CoverBlob: []byte("test_blob")}
-
-	// Triggers synchronous network call which will hit the 500 error
-	store.PutPlaylist(p)
-
-	if !store.isCurrentlyOffline() {
-		t.Errorf("Expected store to be marked offline after 500 error")
-	}
-}
-
-func TestServerStorage_PreSync_Recovery_FullState(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		// Mock responses for downloading a cloud playlist
-		case "/getPlaylistsFromUser":
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(schemas.GetPlaylistsFromUserResponse{
-				Playlists: []schemas.Playlist{
-					{PlaylistId: 999, Title: "Cloud Sync Playlist", CoverBlob: []byte("synced_cover_blob"), ModifiedDate: 999999999},
-				},
-			})
-		case "/getPlaylistContent":
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(schemas.GetPlaylistContentResponse{
-				Musics: []schemas.Music{
-					{MusicId: "song_1", Title: "Cloud Song", Source: int64(YouTubeSource)},
-				},
-			})
-
-		// Mock responses for uploading a local playlist
-		case "/putPlaylist":
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(schemas.PutPlaylistResponse{})
-		case "/putMusicBulk":
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(schemas.PutMusicBulkResponse{})
-		case "/putMusicInPlaylistBulk":
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(schemas.PutMusicInPlaylistBulkResponse{})
-		case "/putMusicInPlaylist":
-			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(schemas.PutMusicInPlaylistResponse{})
-		default:
-			w.WriteHeader(http.StatusNotFound)
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Errorf("failed to remove temporary test directory: %v", err)
 		}
 	}
+}
 
-	store, cleanup := setupTestEnvironment(t, handler)
+// ---------------- User Storer Tests ----------------
+
+func TestServerStorage_UserOps(t *testing.T) {
+	s, _, cleanup := setupTestServerStorage(t)
 	defer cleanup()
 
-	// Seed local data (this will get uploaded during preSync because it doesn't exist remotely)
-	localPl, _ := store.local.PutPlaylist(Playlist{Title: "Local Target", CoverBlob: []byte("local_blob")})
-	store.local.PutMusic(Music{MusicId: "song_new", Source: YouTubeSource, Title: "New Song"})
+	profile := UserProfile{UserId: "user_123", Username: "Test", Token: "token_abc"}
 
-	store.markOffline()
+	if err := s.PutUser(profile); err != nil {
+		t.Fatalf("PutUser failed: %v", err)
+	}
 
-	// Trigger modifying action -> invokes synchronous preSync()
-	err := store.PutMusicInPlaylist(localPl.PlaylistId, "song_new", YouTubeSource)
+	got, err := s.GetUser()
 	if err != nil {
-		t.Fatalf("Expected PutMusicInPlaylist to succeed locally, got %v", err)
+		t.Fatalf("GetUser failed: %v", err)
+	}
+	if got.UserId != profile.UserId {
+		t.Errorf("GetUser mismatch. got %v, want %v", got.UserId, profile.UserId)
 	}
 
-	// 1. Verify cloud playlist 999 was pulled down
-	syncedPlaylist, err := store.local.GetPlaylist(999)
-	if err != nil {
-		t.Fatalf("Expected to find synced playlist 999 locally, got %v", err)
+	s.setSynced(true)
+	if err := s.DeleteUser(); err != nil {
+		t.Fatalf("DeleteUser failed: %v", err)
 	}
-	if syncedPlaylist.CoverBlob == nil || string(syncedPlaylist.CoverBlob) != "synced_cover_blob" {
-		t.Errorf("Expected synced CoverBlob 'synced_cover_blob', got %v", syncedPlaylist.CoverBlob)
-	}
-
-	// 2. Verify cloud music was synced locally
-	syncedMusic, _ := store.local.GetMusicFromPlaylist(999)
-	if len(syncedMusic) == 0 || syncedMusic[0].MusicId != "song_1" {
-		t.Errorf("Expected song_1 to be synced to playlist 999")
-	}
-
-	// 3. Verify the store is marked back ONLINE
-	if store.isCurrentlyOffline() {
-		t.Errorf("Expected store to be back online after a successful preSync")
+	if s.hasSynced() {
+		t.Error("DeleteUser failed to reset synced flag")
 	}
 }
 
-func TestServerStorage_PreSync_Fails_ContinuesOffline(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError) // Server is still down
-	}
-	store, cleanup := setupTestEnvironment(t, handler)
+// ---------------- Playlist Storer Tests ----------------
+
+func TestServerStorage_PlaylistOps(t *testing.T) {
+	s, _, cleanup := setupTestServerStorage(t)
 	defer cleanup()
 
-	store.local.PutMusic(Music{MusicId: "m_fail_test", Source: YouTubeSource})
-	store.markOffline()
+	if err := s.PutUser(UserProfile{UserId: "user_123", Token: "mock_token"}); err != nil {
+		t.Fatalf("failed seeding user: %v", err)
+	}
 
-	// Operation happens locally, preSync fails silently but doesn't block the local save
-	err := store.PutMusic(Music{MusicId: "m_fail_test", Title: "Updated Offline", Source: YouTubeSource})
+	p := Playlist{Title: "My Playlist", CoverBlob: []byte("img")}
+
+	saved, err := s.PutPlaylist(p)
 	if err != nil {
-		t.Fatalf("Expected local operation to succeed even if preSync fails, got %v", err)
+		t.Fatalf("PutPlaylist failed: %v", err)
 	}
 
-	// Verify local operation succeeded
-	updatedM, _ := store.local.GetMusic("m_fail_test", YouTubeSource)
-	if updatedM.Title != "Updated Offline" {
-		t.Errorf("Expected local update to persist")
+	time.Sleep(50 * time.Millisecond)
+
+	got, err := s.GetPlaylist(saved.PlaylistId)
+	if err != nil {
+		t.Fatalf("GetPlaylist failed: %v", err)
+	}
+	if got.Title != p.Title {
+		t.Errorf("Title mismatch. got %v, want %v", got.Title, p.Title)
 	}
 
-	// Verify we are still offline
-	if !store.isCurrentlyOffline() {
-		t.Errorf("Expected store to remain offline because preSync failed")
+	s.setSynced(true)
+	lists, err := s.GetPlaylists()
+	if err != nil {
+		t.Fatalf("GetPlaylists failed: %v", err)
+	}
+	if len(lists) != 1 {
+		t.Errorf("Expected 1 playlist, got %d", len(lists))
+	}
+
+	if err := s.DeletePlaylist(saved.PlaylistId); err != nil {
+		t.Fatalf("DeletePlaylist failed: %v", err)
+	}
+	time.Sleep(50 * time.Millisecond)
+}
+
+// ---------------- Music Storer Tests ----------------
+
+func TestServerStorage_MusicOps(t *testing.T) {
+	s, _, cleanup := setupTestServerStorage(t)
+	defer cleanup()
+
+	m := Music{MusicId: "m1", Source: YouTubeSource, Title: "Song", LengthSeconds: 100}
+
+	if err := s.PutMusic(m); err != nil {
+		t.Fatalf("PutMusic failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	got, err := s.GetMusic(m.MusicId, m.Source)
+	if err != nil {
+		t.Fatalf("GetMusic failed: %v", err)
+	}
+	if !reflect.DeepEqual(m, got) {
+		t.Errorf("GetMusic mismatch. got %v, want %v", got, m)
+	}
+
+	if err := s.DeleteMusic(m.MusicId, m.Source); err != nil {
+		t.Fatalf("DeleteMusic failed: %v", err)
+	}
+}
+
+// ---------------- PlaylistMusic Storer Tests ----------------
+
+func TestServerStorage_PlaylistMusicOps(t *testing.T) {
+	s, _, cleanup := setupTestServerStorage(t)
+	defer cleanup()
+
+	if err := s.PutUser(UserProfile{UserId: "user_123", Token: "tok"}); err != nil {
+		t.Fatalf("PutUser err: %v", err)
+	}
+	p, err := s.Storage.PutPlaylist(Playlist{Title: "List", CoverBlob: []byte{}})
+	if err != nil {
+		t.Fatalf("PutPlaylist err: %v", err)
+	}
+
+	// FIX: Must insert the music into the database first to satisfy the FOREIGN KEY constraint
+	if err := s.PutMusic(Music{MusicId: "m1", Source: YouTubeSource, Title: "Song", LengthSeconds: 100}); err != nil {
+		t.Fatalf("PutMusic failed: %v", err)
+	}
+
+	rel := PlaylistMusic{
+		PlaylistId: p.PlaylistId,
+		MusicId:    "m1",
+		Source:     int64(YouTubeSource),
+		AddedAt:    12345,
+	}
+
+	if err := s.PutPlaylistMusic(rel); err != nil {
+		t.Fatalf("PutPlaylistMusic failed: %v", err)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	rels, err := s.GetAllPlaylistMusic(p.PlaylistId)
+	if err != nil {
+		t.Fatalf("GetPlaylistMusic failed: %v", err)
+	}
+	if len(rels) != 1 || rels[0].AddedAt != rel.AddedAt {
+		t.Errorf("GetPlaylistMusic failed to match exact relation")
+	}
+
+	if err := s.DeletePlaylistMusic(p.PlaylistId, rel.MusicId, MusicSource(rel.Source)); err != nil {
+		t.Fatalf("DeletePlaylistMusic failed: %v", err)
+	}
+}
+
+// ---------------- File Storer Tests ----------------
+
+func TestServerStorage_FileOps(t *testing.T) {
+	s, _, cleanup := setupTestServerStorage(t)
+	defer cleanup()
+
+	m := Music{MusicId: "f1", Source: YouTubeSource}
+	content := []byte("audio_data")
+
+	if err := s.PutMusicFile(m, bytes.NewReader(content)); err != nil {
+		t.Fatalf("PutMusicFile failed: %v", err)
+	}
+
+	reader, err := s.GetMusicFile(m)
+	if err != nil {
+		t.Fatalf("GetMusicFile failed: %v", err)
+	}
+
+	readData, err := io.ReadAll(reader)
+
+	if closeErr := reader.Close(); closeErr != nil {
+		t.Fatalf("Failed closing reader: %v", closeErr)
+	}
+
+	if err != nil {
+		t.Fatalf("ReadAll failed: %v", err)
+	}
+	if !bytes.Equal(readData, content) {
+		t.Errorf("File content mismatch")
+	}
+
+	if err := s.DeleteMusicFile(m); err != nil {
+		t.Fatalf("DeleteMusicFile failed: %v", err)
+	}
+}
+
+// ---------------- Sync Diffing Algorithm Tests ----------------
+
+// ---------------- Sync Diffing Algorithm Tests ----------------
+
+func TestServerStorage_DownloadPlaylistFromServer_DiffLogic(t *testing.T) {
+	s, ts, cleanup := setupTestServerStorage(t)
+	defer cleanup()
+
+	if err := s.PutUser(UserProfile{UserId: "u1", Token: "tok"}); err != nil {
+		t.Fatalf("failed user setup: %v", err)
+	}
+
+	localPl, err := s.Storage.PutPlaylist(Playlist{Title: "Diff Test", CoverBlob: []byte{}})
+	if err != nil {
+		t.Fatalf("failed playlist setup: %v", err)
+	}
+
+	_ = s.PutMusic(Music{MusicId: "stale_1", Source: YouTubeSource, Title: "Stale Song", LengthSeconds: 10})
+	_ = s.PutMusic(Music{MusicId: "drift_1", Source: YouTubeSource, Title: "Drift Song", LengthSeconds: 10})
+
+	if err := s.Storage.PutPlaylistMusic(PlaylistMusic{
+		UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "stale_1", Source: int64(YouTubeSource), AddedAt: 100,
+	}); err != nil {
+		t.Fatalf("failed relation setup: %v", err)
+	}
+
+	if err := s.Storage.PutPlaylistMusic(PlaylistMusic{
+		UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "drift_1", Source: int64(YouTubeSource), AddedAt: 200,
+	}); err != nil {
+		t.Fatalf("failed relation setup: %v", err)
+	}
+
+	ts.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/getPlaylistContent" {
+			resp := schemas.GetPlaylistContentResponse{
+				Musics: []schemas.Music{
+					{MusicId: "drift_1", Source: int64(YouTubeSource), Title: "Kept Song"},
+					{MusicId: "new_1", Source: int64(SpotifySource), Title: "New Song"},
+				},
+				Relations: []schemas.PlaylistMusic{
+					{UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "drift_1", Source: int64(YouTubeSource), AddedAt: 999},
+					{UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "new_1", Source: int64(SpotifySource), AddedAt: 500},
+				},
+			}
+			if err := json.NewEncoder(w).Encode(resp); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
+		w.Write([]byte(`{}`))
+	})
+
+	// FIX: Added CoverBlob: []byte{} to satisfy NOT NULL constraint during mock remote download
+	remotePl := schemas.Playlist{
+		UserId:     "u1",
+		PlaylistId: localPl.PlaylistId,
+		Title:      "Diff Test Remote",
+		CoverBlob:  []byte{},
+	}
+	if err := s.downloadPlaylistFromServer(remotePl, "tok"); err != nil {
+		t.Fatalf("downloadPlaylistFromServer failed: %v", err)
+	}
+
+	finalRels, err := s.GetAllPlaylistMusic(localPl.PlaylistId)
+	if err != nil {
+		t.Fatalf("GetPlaylistMusic failed: %v", err)
+	}
+
+	if len(finalRels) != 2 {
+		t.Fatalf("Diff failed: Expected exactly 2 relations, got %d", len(finalRels))
+	}
+
+	hasDrift := false
+	hasNew := false
+	for _, r := range finalRels {
+		if r.MusicId == "stale_1" {
+			t.Errorf("Diff failed: stale relation was not deleted")
+		}
+		if r.MusicId == "drift_1" {
+			hasDrift = true
+			if r.AddedAt != 999 {
+				t.Errorf("Diff failed: drift relation time was not updated to 999, got %d", r.AddedAt)
+			}
+		}
+		if r.MusicId == "new_1" {
+			hasNew = true
+		}
+	}
+	if !hasDrift || !hasNew {
+		t.Errorf("Diff failed to correctly map and insert new/drifted relations")
+	}
+}
+
+// ---------------- Offline Degradation Tests ----------------
+
+func TestServerStorage_TryRemote_OfflineDegradation(t *testing.T) {
+	s, ts, cleanup := setupTestServerStorage(t)
+	defer cleanup()
+
+	if err := s.PutUser(UserProfile{UserId: "u1", Token: "tok"}); err != nil {
+		t.Fatalf("failed to put user: %v", err)
+	}
+
+	ts.Close()
+
+	// FIX: Added CoverBlob initialization to satisfy NOT NULL constraint
+	p := Playlist{Title: "Will trigger offline", CoverBlob: []byte{}}
+	if _, err := s.PutPlaylist(p); err != nil {
+		t.Fatalf("PutPlaylist should not fail locally when server is down: %v", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	if !s.isCurrentlyOffline() {
+		t.Error("ServerStorage failed to enter offline mode after a background network failure")
 	}
 }

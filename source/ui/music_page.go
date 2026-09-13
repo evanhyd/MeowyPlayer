@@ -24,11 +24,11 @@ import (
 
 type MusicPage struct {
 	widget.BaseWidget
-	userContext    *storages.UserContext
-	playlist       storages.Playlist
-	queryResults   []storages.Music
-	displayResults []storages.Music
-	downloader     scrapers.MusicDownloader
+	userContext      *storages.UserContext
+	playlist         storages.Playlist
+	activeMusic      []storages.Music
+	visibleMusicKeys []storages.Music
+	downloader       scrapers.MusicDownloader
 
 	background          *canvas.Image
 	fadeOverlay         *canvas.LinearGradient
@@ -76,7 +76,7 @@ func newMusicPage(userContext *storages.UserContext) *MusicPage {
 
 	p.scrollList = widget.NewList(
 		func() int {
-			return len(p.displayResults)
+			return len(p.visibleMusicKeys)
 		},
 		func() fyne.CanvasObject {
 			return mwidget.NewMusicCard(
@@ -87,7 +87,7 @@ func newMusicPage(userContext *storages.UserContext) *MusicPage {
 			)
 		},
 		func(index widget.GridWrapItemID, object fyne.CanvasObject) {
-			object.(*mwidget.MusicCard).Set(p.displayResults[index])
+			object.(*mwidget.MusicCard).Set(p.visibleMusicKeys[index])
 		},
 	)
 	p.scrollList.HideSeparators = true
@@ -177,7 +177,7 @@ func (p *MusicPage) showDeleteMusicDialog(music storages.Music) {
 		widget.NewLabel(lang.L("Do you want to delete ")+music.Title+" from the playlist"),
 		func(confirm bool) {
 			if confirm {
-				if err := p.userContext.DeleteMusicFromPlaylist(p.playlist.PlaylistId, music.MusicId, music.Source); err != nil {
+				if err := p.userContext.DeletePlaylistMusic(p.playlist.PlaylistId, music.MusicId, music.Source); err != nil {
 					slog.Error("failed to delete the music from the playlist", "error", err)
 					return
 				}
@@ -202,20 +202,20 @@ func (p *MusicPage) fetchMusic(playlist storages.Playlist) {
 	p.playlistCover.Refresh()
 	p.playlistTitle.SetText(playlist.Title)
 
-	p.queryResults, err = p.userContext.GetMusicFromPlaylist(p.playlist.PlaylistId)
+	p.activeMusic, err = p.userContext.GetAllMusic(p.playlist.PlaylistId)
 	if err != nil {
-		slog.Error("failed to query music in playlist", "error", err)
+		slog.Error("failed to get music", "error", err)
 		return
 	}
 
 	var totalSeconds int64
-	for i := range p.queryResults {
-		totalSeconds += p.queryResults[i].LengthSeconds
+	for i := range p.activeMusic {
+		totalSeconds += p.activeMusic[i].LengthSeconds
 	}
 
 	p.playlistDescription.SetText(
 		fmt.Sprintf("%v %v - %v %v\n%v: %v",
-			len(p.queryResults), lang.L("songs"), mutil.SecondsToTime(totalSeconds), lang.L("minutes"),
+			len(p.activeMusic), lang.L("songs"), mutil.SecondsToTime(totalSeconds), lang.L("minutes"),
 			lang.L("Modified"), time.Unix(0, playlist.ModifiedDate).Format(time.DateTime),
 		))
 
@@ -225,10 +225,10 @@ func (p *MusicPage) fetchMusic(playlist storages.Playlist) {
 func (p *MusicPage) filterResults(title string) {
 	// Filter by title.
 	title = strings.ToLower(title)
-	p.displayResults = p.displayResults[:0]
-	for i := range p.queryResults {
-		if strings.Contains(strings.ToLower(p.queryResults[i].Title), title) {
-			p.displayResults = append(p.displayResults, p.queryResults[i])
+	p.visibleMusicKeys = p.visibleMusicKeys[:0]
+	for i := range p.activeMusic {
+		if strings.Contains(strings.ToLower(p.activeMusic[i].Title), title) {
+			p.visibleMusicKeys = append(p.visibleMusicKeys, p.activeMusic[i])
 		}
 	}
 

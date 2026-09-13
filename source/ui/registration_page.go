@@ -21,7 +21,6 @@ type RegistrationPage struct {
 	userIdEntry          *widget.Entry
 	passwordEntry        *widget.Entry
 	confirmPasswordEntry *widget.Entry
-	captchaEntry         *widget.Entry
 	submitButton         *widget.Button
 	goLoginButton        *widget.Button
 }

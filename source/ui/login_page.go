@@ -17,12 +17,11 @@ import (
 
 type LoginPage struct {
 	widget.BaseWidget
-	userContext          *storages.UserContext
-	userIdEntry          *widget.Entry
-	passwordEntry        *widget.Entry
-	confirmPasswordEntry *widget.Entry
-	submitButton         *widget.Button
-	goRegisterButton     *widget.Button
+	userContext      *storages.UserContext
+	userIdEntry      *widget.Entry
+	passwordEntry    *widget.Entry
+	submitButton     *widget.Button
+	goRegisterButton *widget.Button
 }
 
 func newLoginPage(userContext *storages.UserContext, onGoRegister func()) *LoginPage {

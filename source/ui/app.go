@@ -7,7 +7,6 @@ import (
 	"path"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/lang"
 	"fyne.io/fyne/v2/theme"
@@ -16,19 +15,18 @@ import (
 //go:embed internal/translations
 var translations embed.FS
 
-func RunApp(userContext *storages.UserContext) {
+func RunApp(meowApp fyne.App, userContext *storages.UserContext) {
 	// Localization.
 	err := lang.AddTranslationsFS(translations, path.Join("internal", "translations"))
 	if err != nil {
 		slog.Error("failed to add translation", "error", err)
 	}
 
-	// Main app.
-	meowApp := app.New()
+	// Main app configuration using the passed instance.
 	meowApp.SetIcon(resourceIconPng)
 	meowApp.Settings().SetTheme(newVanillaTheme())
 
-	// Check if already login. This bypasses the server check and allows the user to access the music player offline.
+	// Check if already login.
 	if _, err := userContext.GetUser(); err != nil {
 		authWindow := newAuthWindow(meowApp, userContext)
 		userContext.AddListener(storages.OnPutUserEvent, func(any) {
@@ -49,6 +47,7 @@ func RunApp(userContext *storages.UserContext) {
 
 func newAuthWindow(meowApp fyne.App, userContext *storages.UserContext) fyne.Window {
 	win := meowApp.NewWindow(lang.L("MeowyPlayer Auth Window"))
+	win.SetIcon(resourceIconPng)
 	win.Resize(fyne.NewSize(750, 250))
 	win.SetContent(newAuthPage(userContext))
 	win.CenterOnScreen()
@@ -57,6 +56,7 @@ func newAuthWindow(meowApp fyne.App, userContext *storages.UserContext) fyne.Win
 
 func newMusicWindow(meowApp fyne.App, userContext *storages.UserContext) fyne.Window {
 	win := meowApp.NewWindow(lang.L("MeowyPlayer"))
+	win.SetIcon(resourceIconPng)
 	win.SetMaster()
 	win.Resize(fyne.NewSize(800, 550))
 
