@@ -164,7 +164,7 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 	if err != nil {
 		return err
 	}
-	epPutMusicInPlaylistBulk, err := s.endpointProvider.GetEndpoint("putPlaylistMusicBulk")
+	epPutPlaylistMusicBulk, err := s.endpointProvider.GetEndpoint("putPlaylistMusicBulk")
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 		}
 	}
 
-	return schemas.SendJSON(s.httpClient, epPutMusicInPlaylistBulk, linkReq, &schemas.PutPlaylistMusicBulkResponse{})
+	return schemas.SendJSON(s.httpClient, epPutPlaylistMusicBulk, linkReq, &schemas.PutPlaylistMusicBulkResponse{})
 }
 
 func (s *ServerStorage) downloadPlaylistFromServer(rp schemas.Playlist, token string) error {
