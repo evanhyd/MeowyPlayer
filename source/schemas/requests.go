@@ -48,11 +48,11 @@ type Music struct {
 }
 
 type PlaylistMusic struct {
-	UserId     string `json:"userId"`
-	PlaylistId int64  `json:"playlistId"`
-	MusicId    string `json:"musicId"`
-	Source     int64  `json:"source"`
-	AddedAt    int64  `json:"addedAt"`
+	UserId       string `json:"userId"`
+	PlaylistId   int64  `json:"playlistId"`
+	MusicId      string `json:"musicId"`
+	Source       int64  `json:"source"`
+	ModifiedDate int64  `json:"modifiedDate"`
 }
 
 type ErrorResponse struct {
@@ -173,50 +173,45 @@ type PutMusicBulkRequest struct {
 type PutMusicBulkResponse struct {
 }
 
-// GetPlaylistsFromUser
-type GetPlaylistsFromUserRequest struct {
+// GetPlaylists
+type GetPlaylistsRequest struct {
 	Token string `json:"token"`
 }
-type GetPlaylistsFromUserResponse struct {
+type GetPlaylistsResponse struct {
 	Playlists []Playlist `json:"playlists"`
 }
 
-// GetMusicFromPlaylist
-type GetMusicFromPlaylistRequest struct {
+// GetAllMusic
+type GetAllMusicRequest struct {
 	Token      string `json:"token"`
 	PlaylistId int64  `json:"playlistId"`
 }
-type GetMusicFromPlaylistResponse struct {
+type GetAllMusicResponse struct {
 	Musics []Music `json:"musics"`
 }
 
-// PutMusicInPlaylist
-type PutMusicInPlaylistRequest struct {
-	Token      string      `json:"token"`
-	PlaylistId int64       `json:"playlistId"`
-	MusicId    string      `json:"musicId"`
-	Source     MusicSource `json:"source"`
-	AddedAt    int64       `json:"addedAt"` // unix nano
+// PutPlaylistMusic
+type PutPlaylistMusicRequest struct {
+	Token         string        `json:"token"`
+	PlaylistMusic PlaylistMusic `json:"playlistMusic"`
 }
-type PutMusicInPlaylistResponse struct {
+type PutPlaylistMusicResponse struct {
 }
 
-// PutMusicInPlaylistBulk
-type PutMusicInPlaylistBulkRequest struct {
-	Token     string          `json:"token"`
-	Relations []PlaylistMusic `json:"relations"`
+// PutPlaylistMusicBulk
+type PutPlaylistMusicBulkRequest struct {
+	Token         string          `json:"token"`
+	PlaylistMusic []PlaylistMusic `json:"playlistMusic"`
 }
-type PutMusicInPlaylistBulkResponse struct {
+type PutPlaylistMusicBulkResponse struct {
 }
 
 // DeleteMusicFromPlaylist
-type DeleteMusicFromPlaylistRequest struct {
-	Token      string      `json:"token"`
-	PlaylistId int64       `json:"playlistId"`
-	MusicId    string      `json:"musicId"`
-	Source     MusicSource `json:"source"`
+type DeletePlaylistMusicRequest struct {
+	Token         string        `json:"token"`
+	PlaylistMusic PlaylistMusic `json:"playlistMusic"`
 }
-type DeleteMusicFromPlaylistResponse struct {
+type DeletePlaylistMusicResponse struct {
 }
 
 func SendJSON[T any, Y any](client *http.Client, url string, request T, response *Y) error {
@@ -250,4 +245,14 @@ func SendJSON[T any, Y any](client *http.Client, url string, request T, response
 		}
 		return errors.New(errorRsp.Error)
 	}
+}
+
+func ReplyJSON(w http.ResponseWriter, code int, payload any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(payload)
+}
+
+func ReplyError(w http.ResponseWriter, code int, msg string) {
+	ReplyJSON(w, code, ErrorResponse{Error: msg})
 }

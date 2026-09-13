@@ -44,16 +44,23 @@ func setupTestServerStorage(t *testing.T) (*ServerStorage, *httptest.Server, fun
 	}))
 
 	mockEndpoints := mockEndpointProvider{
-		"me":                      ts.URL + "/me",
-		"putPlaylist":             ts.URL + "/putPlaylist",
-		"putMusicBulk":            ts.URL + "/putMusicBulk",
-		"putMusicInPlaylistBulk":  ts.URL + "/putMusicInPlaylistBulk",
-		"getPlaylistContent":      ts.URL + "/getPlaylistContent",
-		"getPlaylistsFromUser":    ts.URL + "/getPlaylistsFromUser",
-		"deletePlaylist":          ts.URL + "/deletePlaylist",
-		"putMusic":                ts.URL + "/putMusic",
-		"putMusicInPlaylist":      ts.URL + "/putMusicInPlaylist",
-		"deleteMusicFromPlaylist": ts.URL + "/deleteMusicFromPlaylist",
+		"register":             ts.URL + `/register`,
+		"login":                ts.URL + `/login`,
+		"refresh":              ts.URL + `/refresh`,
+		"reset-password":       ts.URL + `/reset-password`,
+		"me":                   ts.URL + `/me`,
+		"getPlaylist":          ts.URL + `/getPlaylist`,
+		"getPlaylistContent":   ts.URL + `/getPlaylistContent`,
+		"putPlaylist":          ts.URL + `/putPlaylist`,
+		"deletePlaylist":       ts.URL + `/deletePlaylist`,
+		"getMusic":             ts.URL + `/getMusic`,
+		"getMusicBulk":         ts.URL + `/getMusicBulk`,
+		"putMusic":             ts.URL + `/putMusic`,
+		"putMusicBulk":         ts.URL + `/putMusicBulk`,
+		"getPlaylists":         ts.URL + `/getPlaylists`,
+		"putPlaylistMusic":     ts.URL + `/putPlaylistMusic`,
+		"putPlaylistMusicBulk": ts.URL + `/putPlaylistMusicBulk`,
+		"deletePlaylistMusic":  ts.URL + `/deletePlaylistMusic`,
 	}
 
 	serverStorage := NewServerStorage(ts.Client(), localDB, mockEndpoints)
@@ -187,10 +194,10 @@ func TestServerStorage_PlaylistMusicOps(t *testing.T) {
 	}
 
 	rel := PlaylistMusic{
-		PlaylistId: p.PlaylistId,
-		MusicId:    "m1",
-		Source:     int64(YouTubeSource),
-		AddedAt:    12345,
+		PlaylistId:   p.PlaylistId,
+		MusicId:      "m1",
+		Source:       int64(YouTubeSource),
+		ModifiedDate: 12345,
 	}
 
 	if err := s.PutPlaylistMusic(rel); err != nil {
@@ -203,11 +210,11 @@ func TestServerStorage_PlaylistMusicOps(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPlaylistMusic failed: %v", err)
 	}
-	if len(rels) != 1 || rels[0].AddedAt != rel.AddedAt {
+	if len(rels) != 1 || rels[0].ModifiedDate != rel.ModifiedDate {
 		t.Errorf("GetPlaylistMusic failed to match exact relation")
 	}
 
-	if err := s.DeletePlaylistMusic(p.PlaylistId, rel.MusicId, MusicSource(rel.Source)); err != nil {
+	if err := s.DeletePlaylistMusic(rel); err != nil {
 		t.Fatalf("DeletePlaylistMusic failed: %v", err)
 	}
 }
@@ -250,8 +257,6 @@ func TestServerStorage_FileOps(t *testing.T) {
 
 // ---------------- Sync Diffing Algorithm Tests ----------------
 
-// ---------------- Sync Diffing Algorithm Tests ----------------
-
 func TestServerStorage_DownloadPlaylistFromServer_DiffLogic(t *testing.T) {
 	s, ts, cleanup := setupTestServerStorage(t)
 	defer cleanup()
@@ -269,13 +274,13 @@ func TestServerStorage_DownloadPlaylistFromServer_DiffLogic(t *testing.T) {
 	_ = s.PutMusic(Music{MusicId: "drift_1", Source: YouTubeSource, Title: "Drift Song", LengthSeconds: 10})
 
 	if err := s.Storage.PutPlaylistMusic(PlaylistMusic{
-		UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "stale_1", Source: int64(YouTubeSource), AddedAt: 100,
+		UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "stale_1", Source: int64(YouTubeSource), ModifiedDate: 100,
 	}); err != nil {
 		t.Fatalf("failed relation setup: %v", err)
 	}
 
 	if err := s.Storage.PutPlaylistMusic(PlaylistMusic{
-		UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "drift_1", Source: int64(YouTubeSource), AddedAt: 200,
+		UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "drift_1", Source: int64(YouTubeSource), ModifiedDate: 200,
 	}); err != nil {
 		t.Fatalf("failed relation setup: %v", err)
 	}
@@ -288,8 +293,8 @@ func TestServerStorage_DownloadPlaylistFromServer_DiffLogic(t *testing.T) {
 					{MusicId: "new_1", Source: int64(SpotifySource), Title: "New Song"},
 				},
 				Relations: []schemas.PlaylistMusic{
-					{UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "drift_1", Source: int64(YouTubeSource), AddedAt: 999},
-					{UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "new_1", Source: int64(SpotifySource), AddedAt: 500},
+					{UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "drift_1", Source: int64(YouTubeSource), ModifiedDate: 999},
+					{UserId: "u1", PlaylistId: localPl.PlaylistId, MusicId: "new_1", Source: int64(SpotifySource), ModifiedDate: 500},
 				},
 			}
 			if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -328,8 +333,8 @@ func TestServerStorage_DownloadPlaylistFromServer_DiffLogic(t *testing.T) {
 		}
 		if r.MusicId == "drift_1" {
 			hasDrift = true
-			if r.AddedAt != 999 {
-				t.Errorf("Diff failed: drift relation time was not updated to 999, got %d", r.AddedAt)
+			if r.ModifiedDate != 999 {
+				t.Errorf("Diff failed: drift relation time was not updated to 999, got %d", r.ModifiedDate)
 			}
 		}
 		if r.MusicId == "new_1" {

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func setupTestDB(t *testing.T) (*SQLiteStorage, func()) {
@@ -71,8 +72,9 @@ func TestSQLiteStorage_Playlist(t *testing.T) {
 	_ = s.PutUser(UserProfile{UserId: "user_123"})
 
 	p := Playlist{
-		Title:     "My Favorites",
-		CoverBlob: []byte(""),
+		Title:        "My Favorites",
+		CoverBlob:    []byte(""),
+		ModifiedDate: time.Now().UnixNano(),
 	}
 
 	// Test PutPlaylist (auto-generates IDs and Dates)
@@ -80,8 +82,8 @@ func TestSQLiteStorage_Playlist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PutPlaylist failed: %v", err)
 	}
-	if saved.PlaylistId == 0 || saved.ModifiedDate == 0 {
-		t.Error("PutPlaylist failed to auto-generate PlaylistId or ModifiedDate")
+	if saved.PlaylistId == 0 {
+		t.Error("PutPlaylist failed to auto-generate PlaylistId")
 	}
 	if saved.UserId != "user_123" {
 		t.Errorf("PutPlaylist failed to enforce UserId. got %v", saved.UserId)
@@ -168,16 +170,16 @@ func TestSQLiteStorage_PlaylistMusic(t *testing.T) {
 	_ = s.PutMusic(m2)
 
 	rel1 := PlaylistMusic{
-		PlaylistId: pl.PlaylistId,
-		MusicId:    m1.MusicId,
-		Source:     int64(m1.Source),
-		AddedAt:    100,
+		PlaylistId:   pl.PlaylistId,
+		MusicId:      m1.MusicId,
+		Source:       int64(m1.Source),
+		ModifiedDate: 100,
 	}
 	rel2 := PlaylistMusic{
-		PlaylistId: pl.PlaylistId,
-		MusicId:    m2.MusicId,
-		Source:     int64(m2.Source),
-		AddedAt:    200,
+		PlaylistId:   pl.PlaylistId,
+		MusicId:      m2.MusicId,
+		Source:       int64(m2.Source),
+		ModifiedDate: 200,
 	}
 
 	if err := s.PutMusic(m1); err != nil {
@@ -195,7 +197,7 @@ func TestSQLiteStorage_PlaylistMusic(t *testing.T) {
 		t.Fatalf("PutPlaylistMusic failed: %v", err)
 	}
 
-	// Test GetPlaylistMusic order (should be sorted by AddedAt ASC)
+	// Test GetPlaylistMusic order
 	rels, err := s.GetAllPlaylistMusic(pl.PlaylistId)
 	if err != nil {
 		t.Fatalf("GetPlaylistMusic failed: %v", err)
@@ -203,12 +205,13 @@ func TestSQLiteStorage_PlaylistMusic(t *testing.T) {
 	if len(rels) != 2 {
 		t.Fatalf("Expected 2 relations, got %d", len(rels))
 	}
-	if rels[0].MusicId != "m1" || rels[1].MusicId != "m2" {
+	if rels[0].MusicId != "m2" || rels[1].MusicId != "m1" {
 		t.Errorf("GetPlaylistMusic returned incorrect order")
 	}
 
 	// Test DeletePlaylistMusic
-	if err := s.DeletePlaylistMusic(pl.PlaylistId, m1.MusicId, m1.Source); err != nil {
+	toDelete := PlaylistMusic{PlaylistId: pl.PlaylistId, MusicId: m1.MusicId, Source: m1.Source, ModifiedDate: time.Now().UnixNano()}
+	if err := s.DeletePlaylistMusic(toDelete); err != nil {
 		t.Fatalf("DeletePlaylistMusic failed: %v", err)
 	}
 

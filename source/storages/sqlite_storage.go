@@ -122,14 +122,10 @@ func (s *SQLiteStorage) PutPlaylist(p Playlist) (Playlist, error) {
 	}
 
 	p.UserId = user.UserId
-	now := time.Now().UnixNano()
 
-	// Assign a playlistId and modifiedDate for a new playlist.
+	// Assign a playlistId for a new playlist.
 	if p.PlaylistId == 0 {
-		p.PlaylistId = now
-	}
-	if p.ModifiedDate == 0 {
-		p.ModifiedDate = now
+		p.PlaylistId = time.Now().UnixNano()
 	}
 
 	_, err = s.db.Exec(
@@ -203,12 +199,12 @@ func (s *SQLiteStorage) GetPlaylists() ([]Playlist, error) {
 	return playlists, nil
 }
 
-func (s *SQLiteStorage) PutPlaylistMusic(relation PlaylistMusic) error {
+func (s *SQLiteStorage) PutPlaylistMusic(playlistMusic PlaylistMusic) error {
 	user, err := s.GetUser()
 	if err != nil {
 		return fmt.Errorf("failed to get user: %v", err)
 	}
-	relation.UserId = user.UserId
+	playlistMusic.UserId = user.UserId
 
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -217,18 +213,18 @@ func (s *SQLiteStorage) PutPlaylistMusic(relation PlaylistMusic) error {
 	defer tx.Rollback()
 
 	res, err := tx.Exec(
-		`INSERT INTO playlist_music (user_id, playlist_id, music_id, source, added_at) 
+		`INSERT INTO playlist_music (user_id, playlist_id, music_id, source, modified_date) 
          VALUES (?, ?, ?, ?, ?)
          ON CONFLICT(user_id, playlist_id, music_id, source) 
-         DO UPDATE SET added_at = excluded.added_at`,
-		relation.UserId, relation.PlaylistId, relation.MusicId, relation.Source, relation.AddedAt,
+         DO UPDATE SET modified_date = excluded.modified_date`,
+		playlistMusic.UserId, playlistMusic.PlaylistId, playlistMusic.MusicId, playlistMusic.Source, playlistMusic.ModifiedDate,
 	)
 	if err != nil {
 		return err
 	}
 
 	if affected, _ := res.RowsAffected(); affected > 0 {
-		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`, relation.AddedAt, relation.UserId, relation.PlaylistId); err != nil {
+		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`, playlistMusic.ModifiedDate, playlistMusic.UserId, playlistMusic.PlaylistId); err != nil {
 			return err
 		}
 	}
@@ -243,9 +239,9 @@ func (s *SQLiteStorage) GetAllPlaylistMusic(playlistID int64) ([]PlaylistMusic, 
 	}
 
 	rows, err := s.db.Query(
-		`SELECT user_id, playlist_id, music_id, source, added_at 
+		`SELECT user_id, playlist_id, music_id, source, modified_date 
          FROM playlist_music WHERE user_id = ? AND playlist_id = ?
-         ORDER BY added_at DESC`,
+         ORDER BY modified_date DESC`,
 		user.UserId, playlistID,
 	)
 	if err != nil {
@@ -256,7 +252,7 @@ func (s *SQLiteStorage) GetAllPlaylistMusic(playlistID int64) ([]PlaylistMusic, 
 	relations := make([]PlaylistMusic, 0)
 	for rows.Next() {
 		var r PlaylistMusic
-		if err := rows.Scan(&r.UserId, &r.PlaylistId, &r.MusicId, &r.Source, &r.AddedAt); err != nil {
+		if err := rows.Scan(&r.UserId, &r.PlaylistId, &r.MusicId, &r.Source, &r.ModifiedDate); err != nil {
 			return nil, err
 		}
 		relations = append(relations, r)
@@ -268,7 +264,7 @@ func (s *SQLiteStorage) GetAllPlaylistMusic(playlistID int64) ([]PlaylistMusic, 
 	return relations, nil
 }
 
-func (s *SQLiteStorage) DeletePlaylistMusic(playlistID int64, musicID string, source MusicSource) error {
+func (s *SQLiteStorage) DeletePlaylistMusic(playlistMusic PlaylistMusic) error {
 	user, err := s.GetUser()
 	if err != nil {
 		return fmt.Errorf("failed to get user: %v", err)
@@ -282,14 +278,15 @@ func (s *SQLiteStorage) DeletePlaylistMusic(playlistID int64, musicID string, so
 
 	res, err := tx.Exec(
 		`DELETE FROM playlist_music WHERE user_id = ? AND playlist_id = ? AND music_id = ? AND source = ?`,
-		user.UserId, playlistID, musicID, int64(source),
+		user.UserId, playlistMusic.PlaylistId, playlistMusic.MusicId, playlistMusic.Source,
 	)
 	if err != nil {
 		return err
 	}
 
 	if affected, _ := res.RowsAffected(); affected > 0 {
-		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`, time.Now().UnixNano(), user.UserId, playlistID); err != nil {
+		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`,
+			playlistMusic.ModifiedDate, user.UserId, playlistMusic.PlaylistId); err != nil {
 			return err
 		}
 	}
@@ -334,7 +331,7 @@ func (s *SQLiteStorage) GetAllMusic(playlistID int64) ([]Music, error) {
          FROM music m
          JOIN playlist_music pm ON m.music_id = pm.music_id AND m.source = pm.source
          WHERE pm.user_id = ? AND pm.playlist_id = ?
-         ORDER BY pm.added_at DESC`,
+         ORDER BY pm.modified_date DESC`,
 		user.UserId, playlistID,
 	)
 	if err != nil {

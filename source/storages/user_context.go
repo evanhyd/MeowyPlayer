@@ -90,10 +90,10 @@ func (u *UserContext) PutPlaylistMusic(playlistMusic PlaylistMusic) error {
 	return err
 }
 
-func (u *UserContext) DeletePlaylistMusic(playlistID int64, musicID string, source MusicSource) error {
-	err := u.Storage.DeletePlaylistMusic(playlistID, musicID, source)
+func (u *UserContext) DeletePlaylistMusic(playlistMusic PlaylistMusic) error {
+	err := u.Storage.DeletePlaylistMusic(playlistMusic)
 	if err == nil {
-		u.dispatcher.Dispatch(OnDeleteMusicFromPlaylistEvent, OnDeleteMusicFromPlaylistEventData{PlaylistId: playlistID})
+		u.dispatcher.Dispatch(OnDeleteMusicFromPlaylistEvent, OnDeleteMusicFromPlaylistEventData{PlaylistId: playlistMusic.PlaylistId})
 	}
 	return err
 }

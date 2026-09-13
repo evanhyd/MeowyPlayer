@@ -16,16 +16,6 @@ import (
 )
 
 func main() {
-	// Panic handler.
-	defer func() {
-		if e := recover(); e != nil {
-			slog.Error("fyne crashed",
-				"error", e,
-				"stack", string(debug.Stack()),
-			)
-		}
-	}()
-
 	meowApp := app.New()
 
 	// Get the writable sandbox path.
@@ -39,6 +29,16 @@ func main() {
 	logFilePath := filepath.Join(baseDir, "log.txt")
 	logger := loggers.InitializeGlobalLogger(logFilePath)
 	defer logger.Close()
+
+	// Panic handler.
+	defer func() {
+		if e := recover(); e != nil {
+			slog.Error("fyne crashed",
+				"error", e,
+				"stack", string(debug.Stack()),
+			)
+		}
+	}()
 
 	// User config.
 	config := storages.GetUserConfig(baseDir)

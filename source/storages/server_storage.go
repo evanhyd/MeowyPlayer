@@ -1,7 +1,6 @@
 package storages
 
 import (
-	"fmt"
 	"log/slog"
 	"meowyplayer/schemas"
 	"net/http"
@@ -170,15 +169,10 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 		return err
 	}
 
+	// Upload playlist.
 	putReq := schemas.PutPlaylistRequest{
-		Token: token,
-		Playlist: schemas.Playlist{
-			UserId:       lp.UserId,
-			PlaylistId:   lp.PlaylistId,
-			Title:        lp.Title,
-			ModifiedDate: lp.ModifiedDate,
-			CoverBlob:    lp.CoverBlob,
-		},
+		Token:    token,
+		Playlist: schemas.Playlist(lp),
 	}
 
 	localRelations, err := s.Storage.GetAllPlaylistMusic(lp.PlaylistId)
@@ -190,32 +184,27 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 		return schemas.SendJSON(s.httpClient, epPutPlaylist, putReq, &schemas.PutPlaylistResponse{})
 	}
 
-	bulkMusic := make([]schemas.Music, len(localRelations))
-	bulkRelations := make([]schemas.PlaylistMusic, len(localRelations))
+	// Uplaod music and then playlist music.
+	allMusic, err := s.Storage.GetAllMusic(lp.PlaylistId)
+	if err != nil {
+		return err
+	}
+	bulkMusic := make([]schemas.Music, len(allMusic))
+	for i, m := range allMusic {
+		bulkMusic[i] = schemas.Music(m)
+	}
 
-	for i, rel := range localRelations {
-		m, err := s.Storage.GetMusic(rel.MusicId, MusicSource(rel.Source))
-		if err != nil {
-			return fmt.Errorf("failed fetching music metadata for sync: %v", err)
-		}
-
-		bulkMusic[i] = schemas.Music{
-			MusicId:       m.MusicId,
-			Source:        schemas.MusicSource(m.Source),
-			Title:         m.Title,
-			LengthSeconds: m.LengthSeconds,
-		}
-		bulkRelations[i] = schemas.PlaylistMusic{
-			UserId:     lp.UserId,
-			PlaylistId: lp.PlaylistId,
-			MusicId:    rel.MusicId,
-			Source:     rel.Source,
-			AddedAt:    rel.AddedAt,
-		}
+	allPlaylistMusic, err := s.Storage.GetAllPlaylistMusic(lp.PlaylistId)
+	if err != nil {
+		return err
+	}
+	bulkPlaylistMusic := make([]schemas.PlaylistMusic, len(allPlaylistMusic))
+	for i, p := range allPlaylistMusic {
+		bulkPlaylistMusic[i] = schemas.PlaylistMusic(p)
 	}
 
 	mReq := schemas.PutMusicBulkRequest{Token: token, Music: bulkMusic}
-	linkReq := schemas.PutMusicInPlaylistBulkRequest{Token: token, Relations: bulkRelations}
+	linkReq := schemas.PutPlaylistMusicBulkRequest{Token: token, PlaylistMusic: bulkPlaylistMusic}
 
 	errChan := make(chan error, 2)
 
@@ -233,7 +222,7 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 		}
 	}
 
-	return schemas.SendJSON(s.httpClient, epPutMusicInPlaylistBulk, linkReq, &schemas.PutMusicInPlaylistBulkResponse{})
+	return schemas.SendJSON(s.httpClient, epPutMusicInPlaylistBulk, linkReq, &schemas.PutPlaylistMusicBulkResponse{})
 }
 
 func (s *ServerStorage) downloadPlaylistFromServer(rp schemas.Playlist, token string) error {
@@ -297,7 +286,9 @@ func (s *ServerStorage) downloadPlaylistFromServer(rp schemas.Playlist, token st
 
 	for key, lr := range localMap {
 		if _, exists := serverMap[key]; !exists {
-			if err := s.Storage.DeletePlaylistMusic(rp.PlaylistId, lr.MusicId, MusicSource(lr.Source)); err != nil {
+			// Needed to update playlist time.
+			lr.ModifiedDate = time.Now().UnixNano()
+			if err := s.Storage.DeletePlaylistMusic(lr); err != nil {
 				return err
 			}
 		}
@@ -305,13 +296,13 @@ func (s *ServerStorage) downloadPlaylistFromServer(rp schemas.Playlist, token st
 
 	for key, rr := range serverMap {
 		lr, exists := localMap[key]
-		if !exists || lr.AddedAt != rr.AddedAt {
+		if !exists || lr.ModifiedDate != rr.ModifiedDate {
 			if err := s.Storage.PutPlaylistMusic(PlaylistMusic{
-				UserId:     rr.UserId,
-				PlaylistId: rr.PlaylistId,
-				MusicId:    rr.MusicId,
-				Source:     rr.Source,
-				AddedAt:    rr.AddedAt,
+				UserId:       rr.UserId,
+				PlaylistId:   rr.PlaylistId,
+				MusicId:      rr.MusicId,
+				Source:       rr.Source,
+				ModifiedDate: rr.ModifiedDate,
 			}); err != nil {
 				return err
 			}
@@ -339,8 +330,8 @@ func (s *ServerStorage) preSync() error {
 		return nil
 	}
 
-	var resp schemas.GetPlaylistsFromUserResponse
-	if err := schemas.SendJSON(s.httpClient, endpoint, schemas.GetPlaylistsFromUserRequest{Token: token}, &resp); err != nil {
+	var resp schemas.GetPlaylistsResponse
+	if err := schemas.SendJSON(s.httpClient, endpoint, schemas.GetPlaylistsRequest{Token: token}, &resp); err != nil {
 		slog.Warn("preSync failed to reach server, going offline", "error", err)
 		s.markOffline()
 		return nil
@@ -428,32 +419,27 @@ func (s *ServerStorage) DeletePlaylist(playlistId int64) error {
 	return nil
 }
 
-func (s *ServerStorage) PutPlaylistMusic(relation PlaylistMusic) error {
-	if err := s.Storage.PutPlaylistMusic(relation); err != nil {
+func (s *ServerStorage) PutPlaylistMusic(playlistMusic PlaylistMusic) error {
+	if err := s.Storage.PutPlaylistMusic(playlistMusic); err != nil {
 		return err
 	}
-	req := schemas.PutMusicInPlaylistRequest{
-		Token:      s.getToken(),
-		PlaylistId: relation.PlaylistId,
-		MusicId:    relation.MusicId,
-		Source:     schemas.MusicSource(relation.Source),
-		AddedAt:    relation.AddedAt,
+	req := schemas.PutPlaylistMusicRequest{
+		Token:         s.getToken(),
+		PlaylistMusic: schemas.PlaylistMusic(playlistMusic),
 	}
-	tryRemote(s, "putMusicInPlaylist", req, &schemas.PutMusicInPlaylistResponse{})
+	tryRemote(s, "putPlaylistMusic", req, &schemas.PutPlaylistMusicResponse{})
 	return nil
 }
 
-func (s *ServerStorage) DeletePlaylistMusic(playlistId int64, musicId string, source MusicSource) error {
-	if err := s.Storage.DeletePlaylistMusic(playlistId, musicId, source); err != nil {
+func (s *ServerStorage) DeletePlaylistMusic(playlistMusic PlaylistMusic) error {
+	if err := s.Storage.DeletePlaylistMusic(playlistMusic); err != nil {
 		return err
 	}
-	req := schemas.DeleteMusicFromPlaylistRequest{
-		Token:      s.getToken(),
-		PlaylistId: playlistId,
-		MusicId:    musicId,
-		Source:     schemas.MusicSource(source),
+	req := schemas.DeletePlaylistMusicRequest{
+		Token:         s.getToken(),
+		PlaylistMusic: schemas.PlaylistMusic(playlistMusic),
 	}
-	tryRemote(s, "deleteMusicFromPlaylist", req, &schemas.DeleteMusicFromPlaylistResponse{})
+	tryRemote(s, "deletePlaylistMusic", req, &schemas.DeletePlaylistMusicResponse{})
 	return nil
 }
 

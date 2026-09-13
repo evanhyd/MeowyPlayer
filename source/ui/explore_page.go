@@ -175,10 +175,10 @@ func (p *ExplorePage) showAddToPlaylistsDialog(res scrapers.Result) {
 
 		if err := p.userContext.PutMusic(m); err == nil {
 			playlistMusic := storages.PlaylistMusic{
-				PlaylistId: activePlaylists[i].PlaylistId,
-				MusicId:    m.MusicId,
-				Source:     m.Source,
-				AddedAt:    time.Now().UnixNano(),
+				PlaylistId:   activePlaylists[i].PlaylistId,
+				MusicId:      m.MusicId,
+				Source:       m.Source,
+				ModifiedDate: time.Now().UnixNano(),
 			}
 			if err := p.userContext.PutPlaylistMusic(playlistMusic); err != nil {
 				slog.Error("failed to put music in playlist", "error", err)

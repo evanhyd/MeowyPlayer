@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS playlist_music (
     playlist_id INTEGER,
     music_id TEXT,
     source INTEGER,
-    added_at INTEGER NOT NULL,      -- Unix nano
+    modified_date INTEGER NOT NULL,      -- Unix nano
 
     PRIMARY KEY(user_id, playlist_id, music_id, source),
     FOREIGN KEY(user_id, playlist_id) REFERENCES playlist(user_id, playlist_id) ON DELETE CASCADE,

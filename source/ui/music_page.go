@@ -177,7 +177,13 @@ func (p *MusicPage) showDeleteMusicDialog(music storages.Music) {
 		widget.NewLabel(lang.L("Do you want to delete ")+music.Title+" from the playlist"),
 		func(confirm bool) {
 			if confirm {
-				if err := p.userContext.DeletePlaylistMusic(p.playlist.PlaylistId, music.MusicId, music.Source); err != nil {
+				playlistMusic := storages.PlaylistMusic{
+					PlaylistId:   p.playlist.PlaylistId,
+					MusicId:      music.MusicId,
+					Source:       music.Source,
+					ModifiedDate: time.Now().UnixNano(),
+				}
+				if err := p.userContext.DeletePlaylistMusic(playlistMusic); err != nil {
 					slog.Error("failed to delete the music from the playlist", "error", err)
 					return
 				}

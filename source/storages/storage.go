@@ -19,7 +19,7 @@ type PlaylistStorer interface {
 
 	PutPlaylistMusic(playlistMusic PlaylistMusic) error
 	GetAllPlaylistMusic(playlistId int64) ([]PlaylistMusic, error)
-	DeletePlaylistMusic(playlistId int64, musicId string, source MusicSource) error
+	DeletePlaylistMusic(playlistMusic PlaylistMusic) error
 }
 
 type MusicStorer interface {

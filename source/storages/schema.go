@@ -45,9 +45,9 @@ type Music struct {
 
 // PlaylistMusic table.
 type PlaylistMusic struct {
-	UserId     string `db:"user_id" json:"userId"`
-	PlaylistId int64  `db:"playlist_id" json:"playlistId"`
-	MusicId    string `db:"music_id" json:"musicId"`
-	Source     int64  `db:"source" json:"source"`
-	AddedAt    int64  `db:"added_at" json:"addedAt"`
+	UserId       string `db:"user_id" json:"userId"`
+	PlaylistId   int64  `db:"playlist_id" json:"playlistId"`
+	MusicId      string `db:"music_id" json:"musicId"`
+	Source       int64  `db:"source" json:"source"`
+	ModifiedDate int64  `db:"modified_date" json:"modifiedDate"`
 }
