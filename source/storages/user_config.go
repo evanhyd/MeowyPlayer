@@ -43,7 +43,6 @@ func GetUserConfig(baseDir string) UserConfig {
 			"putPlaylist":          `http://147.5.96.83/api/putPlaylist`,
 			"deletePlaylist":       `http://147.5.96.83/api/deletePlaylist`,
 			"getMusic":             `http://147.5.96.83/api/getMusic`,
-			"getMusicBulk":         `http://147.5.96.83/api/getMusicBulk`,
 			"putMusic":             `http://147.5.96.83/api/putMusic`,
 			"putMusicBulk":         `http://147.5.96.83/api/putMusicBulk`,
 			"getPlaylists":         `http://147.5.96.83/api/getPlaylists`,

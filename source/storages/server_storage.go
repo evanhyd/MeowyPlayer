@@ -164,7 +164,7 @@ func (s *ServerStorage) uploadPlaylistToServer(lp Playlist, token string) error 
 	if err != nil {
 		return err
 	}
-	epPutMusicInPlaylistBulk, err := s.endpointProvider.GetEndpoint("putMusicInPlaylistBulk")
+	epPutMusicInPlaylistBulk, err := s.endpointProvider.GetEndpoint("putPlaylistMusicBulk")
 	if err != nil {
 		return err
 	}
@@ -325,7 +325,7 @@ func (s *ServerStorage) preSync() error {
 		return nil
 	}
 
-	endpoint, err := s.endpointProvider.GetEndpoint("getPlaylistsFromUser")
+	endpoint, err := s.endpointProvider.GetEndpoint("getPlaylists")
 	if err != nil {
 		return nil
 	}

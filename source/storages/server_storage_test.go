@@ -54,7 +54,6 @@ func setupTestServerStorage(t *testing.T) (*ServerStorage, *httptest.Server, fun
 		"putPlaylist":          ts.URL + `/putPlaylist`,
 		"deletePlaylist":       ts.URL + `/deletePlaylist`,
 		"getMusic":             ts.URL + `/getMusic`,
-		"getMusicBulk":         ts.URL + `/getMusicBulk`,
 		"putMusic":             ts.URL + `/putMusic`,
 		"putMusicBulk":         ts.URL + `/putMusicBulk`,
 		"getPlaylists":         ts.URL + `/getPlaylists`,
