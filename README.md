@@ -2,20 +2,20 @@
 # MeowyPlayer V3
 ## 💻It is Modern
 ![Customizable Music Player](https://i.imgur.com/Nd7hmwn.png)
-* 🎨 Minimalism user interface with modern glassy designs.
-* 🌐 Cross-platform support on Windows, Linux, and Mac.
-* 🌍 Support for multiple languages and community-driven translations.
+* 🎨 Minimalistic user interface with a modern glassy design.
+* 🌐 Cross-platform support for Windows, Linux, and Mac.
+* 🌍 Support for multiple languages and community-created translations.
 
 ## ✈️It is Fast
 ![Premium Music Resource](https://i.imgur.com/ltNPn37.png)
-* 🪶 No bulky web engines like Electron, save more resources for gaming.
+* 🪶 Doesn't use bulky web engines like Electron, so you can save more resources for gaming.
 * 📦 Self-contained with minimal external dependencies.
 
 ## ⭐It is Premium
 ![Personal Backup Server](https://i.imgur.com/GACZMJs.png)
 * 🔍 Grand unified music search engine that supports various platforms.
-* 🎵 Premium mp3 audio quality default at 320kbps.
-* 💾 Automatic backup the playlists to the cloud for free!
+* 🎵 Premium mp3 audio quality, defaulting to 320kbps.
+* 💾 Automatically backup your playlists to the cloud for free!
 
 ## Build
 **Requirements:**
@@ -44,6 +44,6 @@ With additional supports from LLM.
 ## Why MeowyPlayer
 It was a tranquil summer night in 2022. I was chilling in my room doing competitive programming while listening to my friend's anime music playlist on YouTube. I tried to port the playlist to my Spotify, but to my surprise, Spotify's search engine failed to fetch the music due to regional license restriction. Lots of anime/game OST or platform specific music were simply not available to the users. I was a broke student who could barely afford his tuition (via student loan), therefore I had to spend days hacking around all kinds of sketchy websites to collect that music. It was a very frustrated and painful process, and that's when I decided to start this project.
 
-MeowyPlayer started in July 2022 and has been re-written 5 times as of August 2026, with each iteration introducing new features, better UI designs, and more maintainable system designs.
+MeowyPlayer started in July 2022 and has been re-written 5 times as of August 2026, with each iteration introducing new features, better UI design, and a more-maintainable system design.
 
-[If you like this project, feel free to drop some tips  to help me survive the inflation](https://www.buymeacoffee.com/unboxthecat).
+[If you like this project, feel free to drop a tip to help me survive inflation](https://www.buymeacoffee.com/unboxthecat).
