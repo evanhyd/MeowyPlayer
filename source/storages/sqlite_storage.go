@@ -214,9 +214,9 @@ func (s *SQLiteStorage) PutPlaylistMusic(playlistMusic PlaylistMusic) error {
 
 	res, err := tx.Exec(
 		`INSERT INTO playlist_music (user_id, playlist_id, music_id, source, modified_date) 
-         VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(user_id, playlist_id, music_id, source) 
-         DO UPDATE SET modified_date = excluded.modified_date`,
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT(user_id, playlist_id, music_id, source) 
+		 DO UPDATE SET modified_date = excluded.modified_date`,
 		playlistMusic.UserId, playlistMusic.PlaylistId, playlistMusic.MusicId, playlistMusic.Source, playlistMusic.ModifiedDate,
 	)
 	if err != nil {
@@ -224,7 +224,11 @@ func (s *SQLiteStorage) PutPlaylistMusic(playlistMusic PlaylistMusic) error {
 	}
 
 	if affected, _ := res.RowsAffected(); affected > 0 {
-		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`, playlistMusic.ModifiedDate, playlistMusic.UserId, playlistMusic.PlaylistId); err != nil {
+		// ONLY update the playlist if the incoming track modification date is newer than the playlist's current date
+		if _, err := tx.Exec(
+			`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ? AND modified_date < ?`,
+			playlistMusic.ModifiedDate, playlistMusic.UserId, playlistMusic.PlaylistId, playlistMusic.ModifiedDate,
+		); err != nil {
 			return err
 		}
 	}
@@ -285,8 +289,10 @@ func (s *SQLiteStorage) DeletePlaylistMusic(playlistMusic PlaylistMusic) error {
 	}
 
 	if affected, _ := res.RowsAffected(); affected > 0 {
-		if _, err := tx.Exec(`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ?`,
-			playlistMusic.ModifiedDate, user.UserId, playlistMusic.PlaylistId); err != nil {
+		if _, err := tx.Exec(
+			`UPDATE playlist SET modified_date = ? WHERE user_id = ? AND playlist_id = ? AND modified_date < ?`,
+			playlistMusic.ModifiedDate, user.UserId, playlistMusic.PlaylistId, playlistMusic.ModifiedDate,
+		); err != nil {
 			return err
 		}
 	}

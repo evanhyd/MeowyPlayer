@@ -145,6 +145,7 @@ func tryRemote[T any, Y any](s *ServerStorage, endpointKey string, req T, resp *
 
 		endpoint, err := s.endpointProvider.GetEndpoint(endpointKey)
 		if err != nil {
+			slog.Error("failed to tryRemote", "error", err, "endpoint", endpoint)
 			return
 		}
 
@@ -389,14 +390,8 @@ func (s *ServerStorage) PutPlaylist(playlist Playlist) (Playlist, error) {
 	}
 
 	req := schemas.PutPlaylistRequest{
-		Token: s.getToken(),
-		Playlist: schemas.Playlist{
-			UserId:       res.UserId,
-			PlaylistId:   res.PlaylistId,
-			Title:        res.Title,
-			ModifiedDate: res.ModifiedDate,
-			CoverBlob:    res.CoverBlob,
-		},
+		Token:    s.getToken(),
+		Playlist: schemas.Playlist(res),
 	}
 	tryRemote(s, "putPlaylist", req, &schemas.PutPlaylistResponse{})
 	return res, nil

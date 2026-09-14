@@ -36,7 +36,7 @@ type BeepPlayer struct {
 
 func MakeBeepPlayer(userContext *storages.UserContext, onMissingMusic, onPlayingMusic func(storages.Music)) *BeepPlayer {
 	sync.OnceFunc(func() {
-		if err := speaker.Init(sampleRate, sampleRate.N(100*time.Millisecond)); err != nil {
+		if err := speaker.Init(sampleRate, sampleRate.N(500*time.Millisecond)); err != nil {
 			slog.Error("failed to initialize the beep speaker", "error", err)
 		}
 	})()
