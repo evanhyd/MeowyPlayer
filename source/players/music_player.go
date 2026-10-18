@@ -17,6 +17,7 @@ type MusicPlayer interface {
 	Resume()
 	Pause()
 	Previous()
+	Skip() // Same as next but ignore repeat mode.
 	Next()
 
 	SetPlaylist(playlist storages.Playlist, selectedMusic storages.Music)

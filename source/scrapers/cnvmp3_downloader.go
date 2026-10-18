@@ -95,7 +95,8 @@ func (d *cnvmp3Downloader) getVideoData(ctx context.Context, video *Result) erro
 		Error   string `json:"error"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return err
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("download failed (%d): %s", resp.StatusCode, string(body))
 	}
 	if res.Error != "" {
 		return fmt.Errorf("video data error: %s", res.Error)
@@ -130,7 +131,8 @@ func (d *cnvmp3Downloader) getVideoDownloadLink(ctx context.Context, video *Resu
 		DownloadLink string `json:"download_link"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return "", err
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("download failed (%d): %s", resp.StatusCode, string(body))
 	}
 	if res.Error != "" || res.DownloadLink == "" {
 		return "", fmt.Errorf("download link error: %s", res.Error)

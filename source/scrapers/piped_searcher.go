@@ -55,14 +55,10 @@ func (s *pipedSearcher) Search(ctx context.Context, title string) ([]Result, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("[Piped API] error response: %v", resp.Status)
-	}
-
 	var searchResp PipedSearchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil || resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("[Piped API] failed to decode JSON (%v): %v", err, body)
+		return nil, fmt.Errorf("[Piped API] http (%v), error: %v, body: %v", resp.StatusCode, err, body)
 	}
 
 	var videoItems []PipedVideoItem

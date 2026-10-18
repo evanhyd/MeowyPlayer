@@ -21,12 +21,10 @@ type BeepPlayer struct {
 	onMissingMusic func(storages.Music)
 	onPlayingMusic func(storages.Music)
 
-	musicList       ringBuffer[storages.Music]
-	randomIndexList ringBuffer[int]
-	randomHistory   int
-	isRepeating     bool
-	queueMode       QueueMode
-	volume          float64
+	musicList   ringBuffer[storages.Music]
+	queueMode   QueueMode
+	isRepeating bool
+	volume      float64
 
 	currentMusic storages.Music
 	stream       *BeepStream
@@ -103,15 +101,16 @@ func (p *BeepPlayer) Previous() {
 		if p.musicList.empty() {
 			return
 		}
-		switch p.queueMode {
-		case SequentialQueueMode:
-			p.playMusic(p.musicList.prev())
-		case RandomQueueMode:
-			if p.randomHistory > 0 {
-				p.randomHistory--
-				p.playMusic(p.musicList.data[p.randomIndexList.prev()])
-			}
+		p.playMusic(p.musicList.prev())
+	}
+}
+
+func (p *BeepPlayer) Skip() {
+	p.actionChan <- func() {
+		if p.musicList.empty() {
+			return
 		}
+		p.playMusic(p.musicList.next())
 	}
 }
 
@@ -124,13 +123,7 @@ func (p *BeepPlayer) Next() {
 			p.playMusic(p.currentMusic)
 			return
 		}
-		switch p.queueMode {
-		case SequentialQueueMode:
-			p.playMusic(p.musicList.next())
-		case RandomQueueMode:
-			p.randomHistory++
-			p.playMusic(p.musicList.data[p.randomIndexList.next()])
-		}
+		p.playMusic(p.musicList.next())
 	}
 }
 
@@ -148,7 +141,7 @@ func (p *BeepPlayer) SetPlaylist(playlist storages.Playlist, selectedMusic stora
 		}
 		p.musicList.set(music)
 		p.musicList.index = idx
-		p.queueMode = SequentialQueueMode
+		p.SetQueueMode(p.queueMode)
 		p.playMusic(selectedMusic)
 	}
 }
@@ -156,11 +149,12 @@ func (p *BeepPlayer) SetPlaylist(playlist storages.Playlist, selectedMusic stora
 func (p *BeepPlayer) SetQueueMode(mode QueueMode) {
 	p.actionChan <- func() {
 		p.queueMode = mode
-		if mode == SequentialQueueMode && len(p.musicList.data) > 0 {
-			p.musicList.index = p.randomIndexList.current()
-		} else if mode == RandomQueueMode {
-			p.randomIndexList.set(rand.Perm(len(p.musicList.data)))
-			p.randomHistory = 0
+		if mode == RandomQueueMode {
+			currentMusic := p.musicList.current()
+			rand.Shuffle(p.musicList.size(), func(i, j int) {
+				p.musicList.data[i], p.musicList.data[j] = p.musicList.data[j], p.musicList.data[i]
+			})
+			p.musicList.index = slices.Index(p.musicList.data, currentMusic)
 		}
 	}
 }

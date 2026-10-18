@@ -64,8 +64,17 @@ func newMusicController(userContext *storages.UserContext) *MusicController {
 		c.playButton.SetIcon(theme.MediaPauseIcon())
 	})
 
-	c.modeDropDown.Add(fyne.NewMenuItemWithIcon(lang.L("Sequential"), theme.MailForwardIcon(), func() { c.musicPlayer.SetQueueMode(players.SequentialQueueMode) }))
-	c.modeDropDown.Add(fyne.NewMenuItemWithIcon(lang.L("Random"), resourceRandomSvg, func() { c.musicPlayer.SetQueueMode(players.RandomQueueMode) }))
+	c.modeDropDown.Add(fyne.NewMenuItemWithIcon(lang.L("Sequential"), theme.MailForwardIcon(), func() {
+		c.musicPlayer.SetRepeat(false)
+		c.musicPlayer.SetQueueMode(players.SequentialQueueMode)
+	}))
+	c.modeDropDown.Add(fyne.NewMenuItemWithIcon(lang.L("Random"), resourceRandomSvg, func() {
+		c.musicPlayer.SetRepeat(false)
+		c.musicPlayer.SetQueueMode(players.RandomQueueMode)
+	}))
+	c.modeDropDown.Add(fyne.NewMenuItemWithIcon(lang.L("Repeat"), theme.MediaReplayIcon(), func() {
+		c.musicPlayer.SetRepeat(true)
+	}))
 	c.modeDropDown.Select(0)
 
 	c.skipPrevButton.Importance = widget.LowImportance
@@ -87,7 +96,7 @@ func newMusicController(userContext *storages.UserContext) *MusicController {
 
 	c.skipNextButton.Importance = widget.LowImportance
 	c.skipNextButton.OnTapped = func() {
-		c.musicPlayer.Next()
+		c.musicPlayer.Skip()
 		c.playButton.SetIcon(theme.MediaPauseIcon())
 	}
 

@@ -14,6 +14,10 @@ func (b *ringBuffer[T]) empty() bool {
 	return len(b.data) == 0
 }
 
+func (b *ringBuffer[T]) size() int {
+	return len(b.data)
+}
+
 func (b ringBuffer[T]) current() T {
 	return b.data[b.index]
 }
