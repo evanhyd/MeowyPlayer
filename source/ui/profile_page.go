@@ -20,6 +20,7 @@ type ProfilePage struct {
 	usernameLabel         *widget.Label
 	registrationDateLabel *widget.Label
 	storagePathLabel      *widget.Label
+	onlineStatuslabel     *widget.Label
 	logoutButton          *widget.Button
 }
 

@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var _ MusicDownloader = (*cnvmp3Downloader)(nil)
@@ -24,7 +25,7 @@ type cnvmp3Downloader struct {
 func NewCnvmp3Downloader() *cnvmp3Downloader {
 	rsp, err := http.Get(`https://cnvmp3.com/`)
 	if err != nil {
-		slog.Error("failed to obtain cvnmp3 download video url", "error", err)
+		slog.Error("failed to obtain cnvmp3 download video url", "error", err)
 		return nil
 	}
 	defer rsp.Body.Close()
@@ -32,46 +33,65 @@ func NewCnvmp3Downloader() *cnvmp3Downloader {
 	content, _ := io.ReadAll(rsp.Body)
 	str := string(content)
 
-	referer := regexp.MustCompile(`<link rel="canonical" href="(.+)">`).FindStringSubmatch(str)[1]
-	token := regexp.MustCompile(`data\.token = "(.+)";`).FindStringSubmatch(str)[1]
-	path := regexp.MustCompile(`function downloadVideo\(.+\) \{.+\n.+fetch\('(.+)', \{`).FindStringSubmatch(str)[1]
+	referer := regexp.MustCompile(`<link rel="canonical" href="([^"]+)">`).FindStringSubmatch(str)[1]
+	token := regexp.MustCompile(`data\.token\s*=\s*"([^"]+)";`).FindStringSubmatch(str)[1]
+	path := regexp.MustCompile(`(?s)function downloadVideo.*?fetch\('([^']+)'`).FindStringSubmatch(str)[1]
 
 	return &cnvmp3Downloader{
 		referer:                 referer,
 		token:                   token,
-		downloadVideoScriptPath: `https://cnvmp3.com/` + path,
+		downloadVideoScriptPath: `https://cnvmp3.com/` + strings.TrimPrefix(path, "/"),
 	}
 }
 
 func (d *cnvmp3Downloader) Download(ctx context.Context, video Result) (io.ReadCloser, error) {
-	if err := d.getVideoData(ctx, &video); err != nil {
-		return nil, err
-	}
 	filelink, err := d.getVideoDownloadLink(ctx, &video)
 	if err != nil {
-		return nil, err
+		if err := d.getVideoData(ctx, &video); err != nil {
+			return nil, err
+		}
+		filelink, err = d.requestConversion(ctx, &video)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, filelink, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("host", "apiv17dlp.cnvmp3.me")
-	req.Header.Set("referer", d.referer)
+	for attempt := 0; attempt < 10; attempt++ {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
 
-	musicResp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, filelink, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("referer", d.referer)
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-	// Prevents saving JSON error responses as MP3 files
-	if musicResp.StatusCode != http.StatusOK || strings.Contains(musicResp.Header.Get("Content-Type"), "json") {
-		defer musicResp.Body.Close()
+		musicResp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		contentType := musicResp.Header.Get("Content-Type")
+		if musicResp.StatusCode == http.StatusOK && !strings.Contains(contentType, "json") {
+			return musicResp.Body, nil
+		}
+
 		body, _ := io.ReadAll(musicResp.Body)
+		musicResp.Body.Close()
+
+		if strings.Contains(string(body), "File not found") && attempt < 9 {
+			time.Sleep(1500 * time.Millisecond)
+			continue
+		}
+
 		return nil, fmt.Errorf("download failed (%d): %s", musicResp.StatusCode, string(body))
 	}
 
-	return musicResp.Body, nil
+	return nil, fmt.Errorf("download timed out waiting for server")
 }
 
 func (d *cnvmp3Downloader) getVideoData(ctx context.Context, video *Result) error {
@@ -82,6 +102,7 @@ func (d *cnvmp3Downloader) getVideoData(ctx context.Context, video *Result) erro
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, "https://cnvmp3.com/get_video_data.php", bytes.NewBuffer(data))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("referer", d.referer)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -90,9 +111,8 @@ func (d *cnvmp3Downloader) getVideoData(ctx context.Context, video *Result) erro
 	defer resp.Body.Close()
 
 	var res struct {
-		Success bool   `json:"success"`
-		Title   string `json:"title"`
-		Error   string `json:"error"`
+		Title string `json:"title"`
+		Error string `json:"error"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		body, _ := io.ReadAll(resp.Body)
@@ -109,6 +129,46 @@ func (d *cnvmp3Downloader) getVideoData(ctx context.Context, video *Result) erro
 }
 
 func (d *cnvmp3Downloader) getVideoDownloadLink(ctx context.Context, video *Result) (string, error) {
+	data, _ := json.Marshal(map[string]any{
+		"youtube_id":  video.ID,
+		"quality":     0, // 0 = 320kbps
+		"formatValue": 1, // 1 = MP3
+	})
+
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, "https://cnvmp3.com/check_database.php", bytes.NewBuffer(data))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("referer", d.referer)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var res struct {
+		Success bool `json:"success"`
+		Data    struct {
+			ServerPath string `json:"server_path"`
+			Title      string `json:"title"`
+		} `json:"data"`
+		Error any `json:"error"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return "", err
+	}
+
+	if !res.Success || res.Data.ServerPath == "" {
+		return "", fmt.Errorf("not in database")
+	}
+
+	if video.Title == "" && res.Data.Title != "" {
+		video.Title = res.Data.Title
+	}
+
+	return formatDownloadURL(res.Data.ServerPath), nil
+}
+
+func (d *cnvmp3Downloader) requestConversion(ctx context.Context, video *Result) (string, error) {
 	data, _ := json.Marshal(map[string]any{
 		"url":         "https://www.youtube.com/watch?v=" + video.ID,
 		"quality":     0,
@@ -132,13 +192,30 @@ func (d *cnvmp3Downloader) getVideoDownloadLink(ctx context.Context, video *Resu
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("download failed (%d): %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("conversion script failed (%d): %s", resp.StatusCode, string(body))
 	}
 	if res.Error != "" || res.DownloadLink == "" {
-		return "", fmt.Errorf("download link error: %s", res.Error)
+		return "", fmt.Errorf("conversion error: %s", res.Error)
 	}
 
-	paramCutOff := strings.Index(res.DownloadLink, "=") + 1
-	res.DownloadLink = res.DownloadLink[:paramCutOff] + url.PathEscape(res.DownloadLink[paramCutOff:])
-	return res.DownloadLink, nil
+	return formatDownloadURL(res.DownloadLink), nil
+}
+
+func formatDownloadURL(rawURL string) string {
+	idx := strings.Index(rawURL, "?file=")
+	if idx == -1 {
+		return rawURL
+	}
+
+	base := rawURL[:idx+len("?file=")]
+	filePath := rawURL[idx+len("?file="):]
+
+	parts := strings.Split(filePath, "/")
+	for i, part := range parts {
+		escaped := url.QueryEscape(part)
+		escaped = strings.ReplaceAll(escaped, "+", "%20")
+		parts[i] = escaped
+	}
+
+	return base + strings.Join(parts, "/")
 }
